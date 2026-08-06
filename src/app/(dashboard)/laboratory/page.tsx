@@ -1,0 +1,169 @@
+"use client";
+
+import Link from "next/link";
+import { Smartphone } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { RoleGuard } from "@/components/role-guard";
+import {
+  Avatar,
+  Badge,
+  Card,
+  CardHeader,
+  PageHeader,
+  PrimaryButton,
+} from "@/components/ui";
+import { api } from "@/lib/api";
+import { useVisits } from "@/lib/visits";
+
+type LabOverview = {
+  activeTestTypes: number;
+  pendingRequests: number;
+  urgentRequests: number;
+  statRequests: number;
+  samplesRegistered: number;
+  samplesAwaitingProcessing: number;
+  resultsAwaitingVerification: number;
+  criticalUnverified: number;
+  todaysCompleted: number;
+};
+
+export default function LaboratoryOverviewPage() {
+  const { visits } = useVisits();
+  const [data, setData] = useState<LabOverview | null>(null);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      setData(await api<LabOverview>("/laboratory/overview"));
+      setError("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load overview");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const visitQueue = visits.filter((v) => v.stage === "LAB_PENDING");
+
+  const stats = data
+    ? [
+        { label: "Active test types", value: data.activeTestTypes },
+        { label: "Pending requests", value: data.pendingRequests },
+        { label: "Urgent", value: data.urgentRequests },
+        { label: "STAT", value: data.statRequests },
+        { label: "Samples registered", value: data.samplesRegistered },
+        { label: "Samples in process", value: data.samplesAwaitingProcessing },
+        { label: "Awaiting verification", value: data.resultsAwaitingVerification },
+        { label: "Critical unverified", value: data.criticalUnverified },
+        { label: "Completed today", value: data.todaysCompleted },
+      ]
+    : [];
+
+  return (
+    <RoleGuard module="laboratory">
+      <PageHeader
+        title="Laboratory"
+        subtitle={
+          loading
+            ? "Loading board…"
+            : "Requests, samples, and results from /laboratory"
+        }
+        action={
+          <div className="flex flex-wrap gap-2">
+            <Link href="/laboratory/requests">
+              <PrimaryButton>Requests</PrimaryButton>
+            </Link>
+            <Link href="/laboratory/results">
+              <button
+                type="button"
+                className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:border-brand-300 hover:text-brand-700"
+              >
+                Results
+              </button>
+            </Link>
+            <button
+              type="button"
+              onClick={() => void load()}
+              className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:border-brand-300 hover:text-brand-700"
+            >
+              Refresh
+            </button>
+          </div>
+        }
+      />
+      {error && <p className="mb-4 text-sm text-rose-500">{error}</p>}
+
+      <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+        {stats.map((s) => (
+          <Card key={s.label} className="p-4">
+            <p className="text-xs text-slate-400">{s.label}</p>
+            <p className="mt-1 text-2xl font-semibold text-slate-900">{s.value}</p>
+          </Card>
+        ))}
+      </div>
+
+      {data && data.criticalUnverified > 0 && (
+        <Card className="mb-5 border border-rose-200 bg-rose-50/40 p-4">
+          <p className="text-sm font-semibold text-rose-700">
+            {data.criticalUnverified} critical result
+            {data.criticalUnverified === 1 ? "" : "s"} awaiting verification
+          </p>
+          <Link
+            href="/laboratory/results?critical=1"
+            className="mt-1 inline-block text-xs font-medium text-rose-600 underline"
+          >
+            Review critical results
+          </Link>
+        </Card>
+      )}
+
+      {visitQueue.length > 0 && (
+        <Card className="mb-5">
+          <CardHeader
+            title="Visit pipeline (legacy)"
+            subtitle="Visits still in LAB_PENDING — prefer formal requests when possible"
+          />
+          <ul className="space-y-3 px-5 pb-5">
+            {visitQueue.map((v) => (
+              <li key={v.id} className="flex items-center gap-3 rounded-2xl bg-[#f3f7f7] p-4">
+                <Avatar name={v.patientName} />
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-slate-800">{v.patientName}</p>
+                  <p className="text-[11px] text-slate-400">
+                    {v.mrn} · {(v.labOrder?.tests.length ?? 0)} test(s)
+                  </p>
+                </div>
+                <Badge tone="amber">LAB_PENDING</Badge>
+                <Smartphone className="h-4 w-4 text-slate-300" />
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {[
+          { href: "/laboratory/test-types", label: "Test Types", hint: "Panels & parameters" },
+          { href: "/laboratory/requests", label: "Requests", hint: "Order & track" },
+          { href: "/laboratory/samples", label: "Samples", hint: "Collection lifecycle" },
+          { href: "/laboratory/results", label: "Results", hint: "Entry & verification" },
+        ].map((l) => (
+          <Link
+            key={l.href}
+            href={l.href}
+            className="rounded-2xl border border-slate-100 bg-white p-4 shadow-[0_1px_3px_rgba(23,40,46,0.05)] hover:border-brand-200"
+          >
+            <p className="font-semibold text-slate-800">{l.label}</p>
+            <p className="mt-1 text-xs text-slate-400">{l.hint}</p>
+          </Link>
+        ))}
+      </div>
+    </RoleGuard>
+  );
+}
