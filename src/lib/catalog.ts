@@ -1,7 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "./api";
+import type { CatalogClinicalService } from "./clinical-service";
+import { unwrapPage } from "./pagination";
+
+export type { CatalogClinicalService } from "./clinical-service";
 
 export type CatalogPatient = {
   id: string;
@@ -12,6 +16,97 @@ export type CatalogPatient = {
   phone: string;
   lastVisit: string;
   status: "Active" | "Admitted" | "Discharged";
+};
+
+export type PatientSummary = {
+  total: number;
+  female: number;
+  male: number;
+  other: number;
+  recent7d: number;
+};
+
+export type PatientDetail = {
+  id: string;
+  mrn: string;
+  referenceCode: string;
+  name: string;
+  age: number;
+  gender: string;
+  phone: string;
+  email: string;
+  address: string;
+  dateOfBirth: string;
+  bloodGroup: string;
+  occupation: string;
+  maritalStatus: string;
+  allergies: string;
+  chronicDiseases: string;
+  registeredAt: string;
+  emergencyContact: {
+    name: string;
+    phone: string;
+    relationship: string;
+  } | null;
+  physical: { height: number | null; weight: number | null };
+  counts: {
+    scheduledVisits: number;
+    consultations: number;
+    vitals: number;
+    prescriptions: number;
+    encounters?: number;
+  };
+  latestVitals: {
+    measuredAt: string;
+    bloodPressure: string;
+    heartRate: number | null;
+    temperature: number | null;
+    weight: number | null;
+    height: number | null;
+    oxygenSaturation: number | null;
+  } | null;
+  appointments: Array<{
+    id: string;
+    appointmentNumber: string;
+    date: string;
+    time: string;
+    provider: string;
+    status: string;
+    rawStatus: string;
+  }>;
+  consultations: Array<{
+    id: string;
+    date: string;
+    physician: string;
+    diagnosis: string;
+    status: string;
+  }>;
+  vitalsHistory: Array<{
+    id: string;
+    measuredAt: string;
+    bloodPressure: string;
+    heartRate: number | null;
+    respiratoryRate: number | null;
+    temperature: number | null;
+    weight: number | null;
+    height: number | null;
+    oxygenSaturation: number | null;
+    notes: string;
+    urgencyLevel?: string;
+  }>;
+  visitTimeline?: Array<{
+    id: string;
+    kind: "appointment" | "visit" | "consultation";
+    label: string;
+    date: string;
+    time: string;
+    when: string;
+    provider: string;
+    status: string;
+    summary: string;
+    href: string;
+    appointmentId?: string | null;
+  }>;
 };
 
 export type CatalogDoctor = {
@@ -86,10 +181,10 @@ function useCatalogResource<T>(path: string) {
     setLoading(true);
     setError(null);
     try {
-      const rows = await api<T[]>(path);
-      setData(rows);
+      const page = unwrapPage<T>(await api(path));
+      setData(page.items);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load");
+      setError(err instanceof Error ? err.message : "Unable to load records");
       setData([]);
     } finally {
       setLoading(false);
@@ -103,13 +198,78 @@ function useCatalogResource<T>(path: string) {
   return { data, loading, error, refresh };
 }
 
-export const usePatients = () => useCatalogResource<CatalogPatient>("/catalog/patients");
-export const useDoctors = () => useCatalogResource<CatalogDoctor>("/catalog/doctors");
+export function usePaginatedCatalog<T>(
+  path: string,
+  params: Record<string, string | number | undefined>,
+) {
+  const [items, setItems] = useState<T[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(50);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const qs = useMemo(() => {
+    const q = new URLSearchParams();
+    q.set("page", String(params.page ?? page));
+    q.set("limit", String(params.limit ?? limit));
+    for (const [k, v] of Object.entries(params)) {
+      if (k === "page" || k === "limit") continue;
+      if (v === undefined || v === "") continue;
+      q.set(k, String(v));
+    }
+    return q.toString();
+  }, [params, page, limit]);
+
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = unwrapPage<T>(await api(`${path}?${qs}`));
+      setItems(res.items);
+      setTotal(res.total);
+      setPage(res.page);
+      setLimit(res.limit);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to load records");
+      setItems([]);
+      setTotal(0);
+    } finally {
+      setLoading(false);
+    }
+  }, [path, qs]);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  return {
+    items,
+    total,
+    page,
+    limit,
+    loading,
+    error,
+    refresh,
+    setPage,
+  };
+}
+
+export const usePatients = () =>
+  useCatalogResource<CatalogPatient>("/catalog/patients?limit=50");
+export const useDoctors = () =>
+  useCatalogResource<CatalogDoctor>("/catalog/doctors?limit=50");
 export const useDepartments = () =>
   useCatalogResource<CatalogDepartment>("/catalog/departments");
 export const useMedications = () =>
   useCatalogResource<CatalogMedication>("/catalog/medications");
 export const useLabTests = () => useCatalogResource<CatalogLabTest>("/catalog/lab-tests");
+export const useClinicalServices = (kind?: "service" | "surgery") =>
+  useCatalogResource<CatalogClinicalService>(
+    kind
+      ? `/catalog/clinical-services?kind=${kind}`
+      : "/catalog/clinical-services",
+  );
 export const useStaffCatalog = () => useCatalogResource<CatalogStaff>("/catalog/staff");
 /** Single Nest insurance gateway catalog (SHA + private insurers). */
 export const useInsurers = () =>
@@ -134,10 +294,86 @@ export type CatalogAppointment = {
   rawStatus?: string;
 };
 
+export type AppointmentSummary = {
+  total: number;
+  pending: number;
+  scheduled: number;
+  completed: number;
+  cancelled: number;
+};
+
+export type AppointmentDetail = {
+  id: string;
+  appointmentNumber: string;
+  date: string;
+  time: string;
+  status: string;
+  rawStatus?: string;
+  type: string;
+  reason: string;
+  notes: string;
+  additionalNotes?: string;
+  bookedAt: string;
+  updatedAt: string;
+  patient: {
+    id: string;
+    name: string;
+    mrn: string;
+    phone: string;
+    email: string;
+    gender: string;
+    bloodGroup: string;
+    age: number;
+  };
+  provider: {
+    id: string;
+    name: string;
+    title: string;
+    specialization: string;
+    department: string;
+  };
+  counts: {
+    consultations: number;
+    labRequests: number;
+    prescriptions: number;
+  };
+  consultations: Array<{
+    id: string;
+    date: string;
+    diagnosis: string;
+    status: string;
+  }>;
+  labRequests: Array<{
+    id: string;
+    requestNumber: string;
+    test: string;
+    priority: string;
+    status: string;
+    requestedAt: string;
+  }>;
+  prescriptions: Array<{
+    id: string;
+    prescriptionId: string;
+    prescriptionNumber: string;
+    medication: string;
+    regimen: string;
+    status: string;
+  }>;
+  clinicalNotes: Array<{
+    id: string;
+    date: string;
+    status: string;
+    text: string;
+  }>;
+};
+
 export type FeeSchedule = {
   consult: number;
   lab: number;
   medication: number;
+  consultServiceCode?: string;
+  consultServiceName?: string;
+  consultationFeeEnabled?: boolean;
 };
 
 export type CatalogWard = {
@@ -236,7 +472,58 @@ export type DashboardSummary = {
 };
 
 export const useAppointments = () =>
-  useCatalogResource<CatalogAppointment>("/catalog/appointments");
+  useCatalogResource<CatalogAppointment>("/catalog/appointments?limit=50");
+
+export function useAppointmentSummary() {
+  const [data, setData] = useState<AppointmentSummary | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      setData(await api<AppointmentSummary>("/catalog/appointments/summary"));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load summary");
+      setData(null);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  return { data, loading, error, refresh };
+}
+
+export function usePatientSummary() {
+  const [data, setData] = useState<PatientSummary | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      setData(await api<PatientSummary>("/catalog/patients/summary"));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load summary");
+      setData(null);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  return { data, loading, error, refresh };
+}
+
 export const useWards = () => useCatalogResource<CatalogWard>("/catalog/wards");
 export const useRadiologyQueue = () =>
   useCatalogResource<CatalogScanRequest>("/catalog/radiology-queue");

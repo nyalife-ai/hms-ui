@@ -47,43 +47,78 @@ type DeskCopy = {
 };
 
 const DESK_COPY: Record<Role, DeskCopy> = {
+  SUPER_ADMIN: {
+    title: "Hospital Management",
+    subtitle: (n) =>
+      `Hello ${n} — oversee hospital operations, users, departments, and system administration.`,
+  },
+
   ADMIN: {
-    title: "Hospital overview",
-    subtitle: (n) => `Hello ${n} — staff, departments, and hospital performance.`,
+    title: "Hospital Administration",
+    subtitle: (n) =>
+      `Hello ${n} — manage staff, departments, hospital services, and daily operations.`,
   },
+
   DOCTOR: {
-    title: "Clinical desk",
-    subtitle: (n) => `Hello ${n} — consultations, patients, and your schedule.`,
+    title: "Clinical Workspace",
+    subtitle: (n) =>
+      `Hello ${n} — manage consultations, patient care, clinical records, and your schedule.`,
   },
+
   NURSE: {
-    title: "Nursing desk",
-    subtitle: (n) => `Hello ${n} — triage, patients, and inpatient care.`,
+    title: "Nursing Workspace",
+    subtitle: (n) =>
+      `Hello ${n} — manage patient care, observations, triage, and nursing activities.`,
   },
+
   RECEPTIONIST: {
-    title: "Front desk overview",
-    subtitle: (n) => `Hello ${n} — check-ins, appointments, and billing.`,
+    title: "Reception & Patient Services",
+    subtitle: (n) =>
+      `Hello ${n} — manage patient registration, appointments, check-ins, and front-desk services.`,
   },
+
   PHARMACIST: {
-    title: "Pharmacy desk",
-    subtitle: (n) => `Hello ${n} — medications, stock, and prescriptions.`,
+    title: "Pharmacy Management",
+    subtitle: (n) =>
+      `Hello ${n} — manage prescriptions, medication dispensing, inventory, and pharmacy services.`,
   },
+
   LAB_TECHNICIAN: {
-    title: "Laboratory desk",
-    subtitle: (n) => `Hello ${n} — samples, requests, and results.`,
+    title: "Laboratory Services",
+    subtitle: (n) =>
+      `Hello ${n} — manage laboratory requests, patient samples, tests, and results.`,
   },
+
   RADIOLOGIST: {
-    title: "Radiology desk",
-    subtitle: (n) => `Hello ${n} — imaging queue and findings.`,
+    title: "Radiology Services",
+    subtitle: (n) =>
+      `Hello ${n} — manage imaging requests, examinations, reports, and radiology findings.`,
   },
+
   ACCOUNTANT: {
-    title: "Finance desk",
-    subtitle: (n) => `Hello ${n} — invoices, payments, and settlement.`,
+    title: "Hospital Finance",
+    subtitle: (n) =>
+      `Hello ${n} — manage billing, invoices, payments, financial records, and hospital accounts.`,
   },
 };
 
 type WorkspaceLink = { href: string; label: string; icon: LucideIcon };
 
 const WORKSPACE: Partial<Record<Role, { title: string; subtitle: string; links: WorkspaceLink[] }>> = {
+  SUPER_ADMIN: {
+    title: "Hospital overview",
+    subtitle: "Full access to every hospital desk and administrative tools",
+    links: [
+      { href: "/front-desk", label: "Front desk", icon: ConciergeBell },
+      { href: "/consultations", label: "Consultations", icon: ClipboardPlus },
+      { href: "/pharmacy", label: "Pharmacy", icon: Pill },
+      { href: "/laboratory", label: "Laboratory", icon: FlaskConical },
+      { href: "/radiology", label: "Radiology", icon: ScanLine },
+      { href: "/inpatient", label: "IPD", icon: BedDouble },
+      { href: "/staff", label: "Staff & roles", icon: UserCog },
+      { href: "/billing", label: "Billing", icon: Receipt },
+    ],
+  },
   ADMIN: {
     title: "Administrator workspace",
     subtitle: "Configuration and oversight — OPD desks are staffed by reception, nursing, and doctors",
@@ -200,6 +235,7 @@ function RoleStats({
   const doctors = String(summary?.doctors ?? 0);
 
   switch (role) {
+    case "SUPER_ADMIN":
     case "ADMIN":
       return (
         <>
@@ -357,23 +393,29 @@ export default function DashboardPage() {
   const revenueSeries = summary?.revenueSeries ?? [];
   const reports = summary?.reports ?? [];
 
-  const showHospitalCharts = role === "ADMIN";
-  const showRevenue = role === "ADMIN" || role === "RECEPTIONIST" || role === "ACCOUNTANT";
+  const showHospitalCharts = role === "ADMIN" || role === "SUPER_ADMIN";
+  const showRevenue =
+    role === "ADMIN" ||
+    role === "SUPER_ADMIN" ||
+    role === "RECEPTIONIST" ||
+    role === "ACCOUNTANT";
   const showAppointments =
     role === "ADMIN" ||
+    role === "SUPER_ADMIN" ||
     role === "DOCTOR" ||
     role === "NURSE" ||
     role === "RECEPTIONIST";
-  const showDoctorsRail = role === "RECEPTIONIST";
+  const showDoctorsRail = role === "RECEPTIONIST" || role === "SUPER_ADMIN";
   const showReports =
     role === "ADMIN" ||
+    role === "SUPER_ADMIN" ||
     role === "RECEPTIONIST" ||
     role === "ACCOUNTANT" ||
     role === "DOCTOR" ||
     role === "NURSE";
 
   const appointmentTitle =
-    role === "ADMIN"
+    role === "ADMIN" || role === "SUPER_ADMIN"
       ? "Schedule snapshot"
       : role === "DOCTOR"
         ? "Your schedule"

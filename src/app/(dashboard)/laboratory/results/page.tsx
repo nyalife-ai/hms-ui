@@ -1,39 +1,61 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { ClipboardCheck, ClipboardList, FlaskConical } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
+import { LabResultRowActions } from "@/components/lab-result-row-actions";
+import { PaginationBar } from "@/components/pagination-bar";
 import { RoleGuard } from "@/components/role-guard";
 import {
   Badge,
   Card,
   CardHeader,
   PageHeader,
+  StatCard,
   Table,
   type BadgeTone,
 } from "@/components/ui";
 import { api } from "@/lib/api";
+import { fetchHospitalSettings } from "@/lib/hospital";
+import { openLabReportPdf } from "@/lib/lab-report-pdf";
+import type { LabRequestDetail, LabResultBundle } from "@/lib/lab-types";
+import { statusLabel } from "@/lib/lab-types";
+import { buildListQuery, toPageMeta, unwrapPage } from "@/lib/pagination";
+import { useDebouncedValue } from "@/lib/use-debounced-value";
 
-type ResultRow = {
-  id: string;
-  requestId: string;
-  requestNumber: string | null;
-  patientName: string | null;
-  mrn: string | null;
-  parameterName: string | null;
-  testName: string | null;
-  resultValue: string | null;
-  interpretation: string | null;
-  isCritical: boolean;
-  isVerified: boolean;
-  performedAt: string | null;
-  verifiedAt: string | null;
+const inputClass =
+  "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+
+const STATUS_TONE: Record<string, BadgeTone> = {
+  PENDING: "amber",
+  IN_PROGRESS: "teal",
+  COMPLETED: "green",
+  CANCELLED: "slate",
+};
+
+const PAGE_SIZE = 20;
+
+type Summary = {
+  total: number;
+  completedToday: number;
+  completedThisWeek: number;
 };
 
 export default function LabResultsPage() {
-  const [rows, setRows] = useState<ResultRow[]>([]);
+  const router = useRouter();
+  const [rows, setRows] = useState<LabResultBundle[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [summary, setSummary] = useState<Summary | null>(null);
+  const [summaryLoading, setSummaryLoading] = useState(true);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [status, setStatus] = useState("");
   const [criticalOnly, setCriticalOnly] = useState(false);
   const [unverifiedOnly, setUnverifiedOnly] = useState(false);
-  const [busyId, setBusyId] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const search = useDebouncedValue(searchInput, 400);
+  const [printBusy, setPrintBusy] = useState("");
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -41,89 +63,173 @@ export default function LabResultsPage() {
     if (params.get("critical") === "1") setCriticalOnly(true);
   }, []);
 
-  const qs = useMemo(() => {
-    const p = new URLSearchParams();
-    if (criticalOnly) p.set("criticalOnly", "true");
-    if (unverifiedOnly) p.set("unverifiedOnly", "true");
-    return p.toString();
-  }, [criticalOnly, unverifiedOnly]);
+  const loadSummary = useCallback(async () => {
+    setSummaryLoading(true);
+    try {
+      const s = await api<Summary>("/laboratory/results/summary");
+      setSummary(s);
+    } catch {
+      setSummary({ total: 0, completedToday: 0, completedThisWeek: 0 });
+    } finally {
+      setSummaryLoading(false);
+    }
+  }, []);
 
   const load = useCallback(async () => {
+    setLoading(true);
     try {
-      const data = await api<{ items: ResultRow[] }>(`/laboratory/results?${qs}`);
-      setRows(data.items);
+      const qs = buildListQuery({
+        search: search || undefined,
+        status: status || undefined,
+        criticalOnly: criticalOnly ? "true" : undefined,
+        unverifiedOnly: unverifiedOnly ? "true" : undefined,
+        take: PAGE_SIZE,
+        skip: (page - 1) * PAGE_SIZE,
+      });
+      const data = await api(`/laboratory/results/bundles?${qs}`);
+      const pageData = unwrapPage<LabResultBundle>(data);
+      setRows(pageData.items);
+      setTotal(pageData.total);
       setError("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load");
+    } finally {
+      setLoading(false);
     }
-  }, [qs]);
+  }, [search, status, criticalOnly, unverifiedOnly, page]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
-  const verify = async (r: ResultRow) => {
-    setBusyId(r.id);
+  useEffect(() => {
+    void loadSummary();
+  }, [loadSummary]);
+
+  const printBundle = async (requestId: string) => {
+    setPrintBusy(requestId);
     try {
-      await api(`/laboratory/requests/${r.requestId}/results/${r.id}/verify`, {
-        method: "POST",
-      });
-      await load();
+      const [detail, hospital] = await Promise.all([
+        api<LabRequestDetail>(`/laboratory/results/${requestId}`),
+        fetchHospitalSettings(),
+      ]);
+      await openLabReportPdf({ detail, hospital });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Verify failed");
+      setError(err instanceof Error ? err.message : "PDF failed");
     } finally {
-      setBusyId("");
+      setPrintBusy("");
     }
   };
 
-  const tone = (interp: string | null): BadgeTone => {
-    if (interp === "CRITICAL") return "red";
-    if (interp === "HIGH" || interp === "LOW") return "amber";
-    return "green";
-  };
+  const meta = toPageMeta({ total, page, limit: PAGE_SIZE });
+  const kpi = summary ?? { total: 0, completedToday: 0, completedThisWeek: 0 };
 
   return (
     <RoleGuard module="laboratory">
+      <div className="mb-2 text-[11px] font-medium uppercase tracking-wide text-slate-400">
+        Home / Dashboard / Lab Results
+      </div>
       <PageHeader
-        title="Results"
-        subtitle="Entry history, verification, and critical flags"
+        title="Lab Results"
+        subtitle={
+          loading
+            ? "Loading…"
+            : `${total.toLocaleString()} result report${total === 1 ? "" : "s"} · one row per lab request`
+        }
       />
       {error && <p className="mb-4 text-sm text-rose-500">{error}</p>}
-      <div className="mb-4 flex flex-wrap gap-3">
-        <label className="flex items-center gap-2 text-sm text-slate-600">
+
+      <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <StatCard
+          label="Total Results"
+          value={summaryLoading ? "…" : String(kpi.total)}
+          deltaLabel="requests with entered results"
+          icon={FlaskConical}
+        />
+        <StatCard
+          label="Completed Today"
+          value={summaryLoading ? "…" : String(kpi.completedToday)}
+          deltaLabel="finalised today"
+          icon={ClipboardCheck}
+        />
+        <StatCard
+          label="Completed This Week"
+          value={summaryLoading ? "…" : String(kpi.completedThisWeek)}
+          deltaLabel="since start of week"
+          icon={ClipboardList}
+        />
+      </div>
+
+      <div className="mb-4 grid grid-cols-1 gap-2 md:grid-cols-4">
+        <input
+          className={inputClass}
+          placeholder="Search request # / patient / MRN"
+          value={searchInput}
+          onChange={(e) => {
+            setSearchInput(e.target.value);
+            setPage(1);
+          }}
+        />
+        <select
+          className={inputClass}
+          value={status}
+          onChange={(e) => {
+            setStatus(e.target.value);
+            setPage(1);
+          }}
+        >
+          <option value="">All statuses</option>
+          {["PENDING", "IN_PROGRESS", "COMPLETED", "CANCELLED"].map((s) => (
+            <option key={s} value={s}>
+              {statusLabel(s)}
+            </option>
+          ))}
+        </select>
+        <label className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-600">
           <input
             type="checkbox"
             checked={criticalOnly}
-            onChange={(e) => setCriticalOnly(e.target.checked)}
+            onChange={(e) => {
+              setCriticalOnly(e.target.checked);
+              setPage(1);
+            }}
           />
           Critical only
         </label>
-        <label className="flex items-center gap-2 text-sm text-slate-600">
+        <label className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-600">
           <input
             type="checkbox"
             checked={unverifiedOnly}
-            onChange={(e) => setUnverifiedOnly(e.target.checked)}
+            onChange={(e) => {
+              setUnverifiedOnly(e.target.checked);
+              setPage(1);
+            }}
           />
           Unverified only
         </label>
       </div>
+
       <Card>
-        <CardHeader title="Results" subtitle={`${rows.length} shown`} />
+        <CardHeader
+          title="Results by request"
+          subtitle={`${total.toLocaleString()} total`}
+        />
         <Table
           headers={[
             "Request",
             "Patient",
-            "Parameter",
-            "Value",
-            "Interpretation",
-            "Verified",
+            "Panels",
+            "Results",
+            "Verification",
+            "Status",
+            "Updated",
             "",
           ]}
         >
           {rows.map((r) => (
             <tr
               key={r.id}
-              className={`hover:bg-slate-50/60 ${r.isCritical ? "bg-rose-50/40" : ""}`}
+              className={`hover:bg-slate-50/60 ${r.criticalCount > 0 ? "bg-rose-50/30" : ""}`}
             >
               <td className="px-5 py-3.5 font-medium text-slate-800">
                 {r.requestNumber}
@@ -132,37 +238,47 @@ export default function LabResultsPage() {
                 {r.patientName}
                 <span className="block text-xs text-slate-400">{r.mrn}</span>
               </td>
-              <td className="px-5 py-3.5 text-slate-500">
-                {r.parameterName}
-                <span className="block text-xs text-slate-400">{r.testName}</span>
+              <td className="px-5 py-3.5 text-slate-500 text-xs">
+                {r.panels.length ? r.panels.join(", ") : "—"}
               </td>
-              <td className="px-5 py-3.5 text-slate-800">{r.resultValue}</td>
-              <td className="px-5 py-3.5">
-                <Badge tone={tone(r.interpretation)}>{r.interpretation}</Badge>
+              <td className="px-5 py-3.5 text-slate-700">
+                {r.resultCount}
+                {r.criticalCount > 0 && (
+                  <span className="ml-1 text-xs text-rose-500">
+                    · {r.criticalCount} critical
+                  </span>
+                )}
               </td>
               <td className="px-5 py-3.5">
-                <Badge tone={r.isVerified ? "green" : "amber"}>
-                  {r.isVerified ? "Verified" : "Pending"}
+                <Badge tone={r.allVerified ? "green" : "amber"}>
+                  {r.verifiedCount}/{r.resultCount}
+                  {r.allVerified ? " verified" : " pending"}
                 </Badge>
               </td>
               <td className="px-5 py-3.5">
-                {!r.isVerified && (
-                  <button
-                    type="button"
-                    disabled={busyId === r.id}
-                    className="rounded-full bg-brand-50 px-3 py-1 text-xs text-brand-700 disabled:opacity-50"
-                    onClick={() => void verify(r)}
-                  >
-                    {busyId === r.id ? "…" : "Verify"}
-                  </button>
-                )}
+                <Badge tone={STATUS_TONE[r.status] ?? "slate"}>
+                  {statusLabel(r.status)}
+                </Badge>
+              </td>
+              <td className="px-5 py-3.5 text-xs text-slate-500">
+                {r.updatedAt.slice(0, 10)}
+              </td>
+              <td className="px-5 py-3.5">
+                <LabResultRowActions
+                  printDisabled={printBusy === r.id || r.resultCount === 0}
+                  onPrint={() => void printBundle(r.id)}
+                  onView={() => router.push(`/laboratory/results/${r.id}`)}
+                />
               </td>
             </tr>
           ))}
         </Table>
-        {rows.length === 0 && (
-          <p className="px-5 pb-5 text-sm text-slate-400">No results match filters.</p>
+        {rows.length === 0 && !loading && (
+          <p className="px-5 pb-5 text-sm text-slate-400">
+            No result reports match filters.
+          </p>
         )}
+        <PaginationBar meta={meta} onPageChange={setPage} disabled={loading} />
       </Card>
     </RoleGuard>
   );

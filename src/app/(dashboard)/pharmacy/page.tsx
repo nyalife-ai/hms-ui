@@ -1,7 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { Smartphone } from "lucide-react";
+import {
+  AlertTriangle,
+  ClipboardList,
+  Package,
+  Pill,
+  ShoppingCart,
+  Smartphone,
+  Truck,
+  Syringe,
+} from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { MpesaCheckoutModal } from "@/components/mpesa-checkout";
 import { RoleGuard } from "@/components/role-guard";
@@ -11,6 +20,8 @@ import {
   CardHeader,
   PageHeader,
   PrimaryButton,
+  StatCard,
+  StatCardSkeleton,
 } from "@/components/ui";
 import { api } from "@/lib/api";
 import { useFeeSchedule } from "@/lib/catalog";
@@ -43,6 +54,7 @@ export default function PharmacyOverviewPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [checkoutVisit, setCheckoutVisit] = useState<Visit | null>(null);
+  const [dispensingId, setDispensingId] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -50,7 +62,7 @@ export default function PharmacyOverviewPage() {
       setData(await api<PharmacyOverview>("/pharmacy/overview"));
       setError("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load overview");
+      setError(err instanceof Error ? err.message : "Unable to load pharmacy board");
     } finally {
       setLoading(false);
     }
@@ -63,22 +75,44 @@ export default function PharmacyOverviewPage() {
   const dispenseQueue = visits.filter(
     (v) =>
       v.stage === "READY_FOR_BILLING" &&
-      v.payment.method === "CASH" &&
       (v.prescriptions?.length ?? 0) > 0 &&
-      !v.pharmacy?.dispensed &&
-      !v.billing?.receiptId,
+      !v.pharmacy?.dispensed,
   );
+
+  const dispenseVisit = async (visit: Visit) => {
+    setDispensingId(visit.id);
+    setError("");
+    try {
+      await api("/pharmacy/dispense", {
+        method: "POST",
+        body: JSON.stringify({
+          visitId: visit.id,
+          lines: (visit.prescriptions ?? []).map((p) => ({
+            medication: p.medication,
+            medicationId: p.medicationId,
+            quantity: Math.max(1, Number(p.quantity) || 1),
+          })),
+        }),
+      });
+      await refreshVisits();
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Visit dispense failed");
+    } finally {
+      setDispensingId("");
+    }
+  };
 
   const stats = data
     ? [
-        { label: "Medications", value: data.medications },
-        { label: "Active suppliers", value: data.activeSuppliers },
-        { label: "Pending Rx", value: data.pendingPrescriptions },
-        { label: "Open POs", value: data.openPurchaseOrders },
-        { label: "Low stock batches", value: data.lowStockBatches },
-        { label: "Expiring ≤30d", value: data.expiringSoonBatches },
-        { label: "Expired with stock", value: data.expiredBatchesWithStock },
-        { label: "Dispenses today", value: data.todaysDispenses },
+        { label: "Medications", value: data.medications, icon: Pill },
+        { label: "Active suppliers", value: data.activeSuppliers, icon: Truck },
+        { label: "Pending Rx", value: data.pendingPrescriptions, icon: ClipboardList },
+        { label: "Open POs", value: data.openPurchaseOrders, icon: ShoppingCart },
+        { label: "Low stock batches", value: data.lowStockBatches, icon: AlertTriangle },
+        { label: "Expiring ≤30d", value: data.expiringSoonBatches, icon: Package },
+        { label: "Expired with stock", value: data.expiredBatchesWithStock, icon: AlertTriangle },
+        { label: "Dispenses today", value: data.todaysDispenses, icon: Syringe },
       ]
     : [];
 
@@ -87,9 +121,7 @@ export default function PharmacyOverviewPage() {
       <PageHeader
         title="Pharmacy"
         subtitle={
-          loading
-            ? "Loading board…"
-            : "Stock, prescriptions, and purchase orders from /pharmacy"
+          loading ? "Loading board…" : "Stock, prescriptions, and purchase orders"
         }
         action={
           <div className="flex flex-wrap gap-2">
@@ -117,12 +149,17 @@ export default function PharmacyOverviewPage() {
       {error && <p className="mb-4 text-sm text-rose-500">{error}</p>}
 
       <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-4">
-        {stats.map((s) => (
-          <Card key={s.label} className="p-4">
-            <p className="text-xs text-slate-400">{s.label}</p>
-            <p className="mt-1 text-2xl font-semibold text-slate-900">{s.value}</p>
-          </Card>
-        ))}
+        {loading &&
+          Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)}
+        {!loading &&
+          stats.map((s) => (
+            <StatCard
+              key={s.label}
+              label={s.label}
+              value={String(s.value)}
+              icon={s.icon}
+            />
+          ))}
       </div>
 
       <Card className="mb-5">
@@ -159,7 +196,16 @@ export default function PharmacyOverviewPage() {
                     </li>
                   ))}
                 </ul>
-                <div className="mt-3 flex justify-end">
+                <div className="mt-3 flex flex-wrap justify-end gap-2">
+                  <button
+                    type="button"
+                    disabled={dispensingId === v.id}
+                    onClick={() => void dispenseVisit(v)}
+                    className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:border-brand-200 disabled:opacity-50"
+                  >
+                    <Syringe className="h-3.5 w-3.5" />
+                    {dispensingId === v.id ? "Dispensing…" : "Dispense stock (FEFO)"}
+                  </button>
                   <button
                     type="button"
                     onClick={() => setCheckoutVisit(v)}
@@ -192,11 +238,13 @@ export default function PharmacyOverviewPage() {
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {[
-          { href: "/pharmacy/medications", label: "Medications", hint: "Formulary CRUD" },
-          { href: "/pharmacy/batches", label: "Batches", hint: "Lots, damage, expiry" },
+          { href: "/pharmacy/medications", label: "Medications", hint: "Formulary, edit, clinical notes" },
+          { href: "/pharmacy/categories", label: "Categories", hint: "Formulary groups" },
+          { href: "/pharmacy/batches", label: "Batches", hint: "Lots, adjust, damage, expiry, return" },
+          { href: "/pharmacy/stock", label: "Stock ledger", hint: "All movements" },
           { href: "/pharmacy/suppliers", label: "Suppliers", hint: "Vendor registry" },
           { href: "/pharmacy/purchase-orders", label: "Purchase orders", hint: "Draft → send → receive" },
-          { href: "/pharmacy/prescriptions", label: "Prescriptions", hint: "Create & FEFO dispense" },
+          { href: "/pharmacy/prescriptions", label: "Prescriptions", hint: "Create, cancel, void, FEFO" },
         ].map((l) => (
           <Link
             key={l.href}

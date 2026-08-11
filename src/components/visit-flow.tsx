@@ -103,30 +103,83 @@ export function VitalsGrid({ visit }: { visit: Visit }) {
 }
 
 export function PaymentInfo({ visit }: { visit: Visit }) {
-  const { payment } = visit;
-  if (payment.method === "CASH") {
-    return (
+  const fee = visit.billing?.consultFeeStatus;
+  const feeAmount = visit.billing?.consultFeeAmount ?? visit.billing?.total;
+  const feeBlock =
+    fee === "PAID" ? (
+      <div className="flex items-center gap-2.5 rounded-xl bg-emerald-50 px-3.5 py-3">
+        <Check className="h-4 w-4 shrink-0 text-emerald-600" />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium text-emerald-900">Consultation fee paid</p>
+          <p className="text-[11px] text-emerald-700/80">
+            {visit.billing?.invoiceNumber ? `${visit.billing.invoiceNumber} · ` : ""}
+            {feeAmount != null ? `KES ${Number(feeAmount).toLocaleString()}` : ""}
+            {visit.billing?.paymentChannel ? ` · ${visit.billing.paymentChannel}` : ""}
+          </p>
+        </div>
+        <Badge tone="green">Paid</Badge>
+      </div>
+    ) : fee === "PENDING" ? (
+      <div className="flex items-center gap-2.5 rounded-xl bg-amber-50 px-3.5 py-3">
+        <Banknote className="h-4 w-4 shrink-0 text-amber-600" />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium text-amber-900">Send patient to finance</p>
+          <p className="text-[11px] text-amber-800/80">
+            Draft invoice {visit.billing?.invoiceNumber ?? ""}
+            {feeAmount != null ? ` · KES ${Number(feeAmount).toLocaleString()}` : ""}
+          </p>
+        </div>
+        <Badge tone="amber">Unpaid</Badge>
+      </div>
+    ) : fee === "WAIVED" ? (
       <div className="flex items-center gap-2.5 rounded-xl bg-[#f3f7f7] px-3.5 py-3">
         <Banknote className="h-4 w-4 shrink-0 text-slate-400" />
-        <p className="text-sm font-medium text-slate-700">Paying cash</p>
+        <p className="text-sm font-medium text-slate-700">Consultation fee waived</p>
       </div>
+    ) : null;
+
+  const payMethod =
+    visit.payment.method === "CASH" ? (
+      <div className="flex items-center gap-2.5 rounded-xl bg-[#f3f7f7] px-3.5 py-3">
+        <Banknote className="h-4 w-4 shrink-0 text-slate-400" />
+        <p className="text-sm font-medium text-slate-700">Paying cash / M-Pesa</p>
+      </div>
+    ) : (
+      (() => {
+        const tone =
+          visit.payment.status === "APPROVED"
+            ? "teal"
+            : visit.payment.status === "REJECTED"
+              ? "red"
+              : "amber";
+        return (
+          <div className="flex items-center gap-2.5 rounded-xl bg-[#f3f7f7] px-3.5 py-3">
+            <ShieldCheck className="h-4 w-4 shrink-0 text-brand-500" />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium text-slate-700">{visit.payment.provider}</p>
+              <p className="text-[11px] text-slate-400">
+                Policy {visit.payment.policyNumber}
+                {visit.payment.benefitBalance
+                  ? ` · Balance KES ${visit.payment.benefitBalance.toLocaleString()}`
+                  : ""}
+              </p>
+            </div>
+            <Badge tone={tone}>
+              {visit.payment.status === "APPROVED"
+                ? "Cover approved"
+                : visit.payment.status === "REJECTED"
+                  ? "Rejected"
+                  : "Pending"}
+            </Badge>
+          </div>
+        );
+      })()
     );
-  }
-  const tone =
-    payment.status === "APPROVED" ? "teal" : payment.status === "REJECTED" ? "red" : "amber";
+
   return (
-    <div className="flex items-center gap-2.5 rounded-xl bg-[#f3f7f7] px-3.5 py-3">
-      <ShieldCheck className="h-4 w-4 shrink-0 text-brand-500" />
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-slate-700">{payment.provider}</p>
-        <p className="text-[11px] text-slate-400">
-          Policy {payment.policyNumber}
-          {payment.benefitBalance ? ` · Balance KES ${payment.benefitBalance.toLocaleString()}` : ""}
-        </p>
-      </div>
-      <Badge tone={tone}>
-        {payment.status === "APPROVED" ? "Cover approved" : payment.status === "REJECTED" ? "Rejected" : "Pending"}
-      </Badge>
+    <div className="space-y-2">
+      {feeBlock}
+      {payMethod}
     </div>
   );
 }

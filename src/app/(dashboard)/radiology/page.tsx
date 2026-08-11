@@ -1,11 +1,21 @@
 "use client";
 
 import { Plus, X } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { DoctorSearchSelect } from "@/components/doctor-search-select";
+import { FieldLabel } from "@/components/field-label";
+import { PaginationBar } from "@/components/pagination-bar";
+import { PatientSearchSelect } from "@/components/patient-search-select";
 import { RoleGuard } from "@/components/role-guard";
 import { Avatar, Badge, Card, PageHeader, PrimaryButton, Table, type BadgeTone } from "@/components/ui";
 import { api } from "@/lib/api";
-import { useDoctors, usePatients, useRadiologyQueue, useScanTypes } from "@/lib/catalog";
+import {
+  usePaginatedCatalog,
+  useScanTypes,
+  type CatalogScanRequest,
+} from "@/lib/catalog";
+import { toPageMeta } from "@/lib/pagination";
+import { useDebouncedValue } from "@/lib/use-debounced-value";
 
 const STATUS_TONES: Record<string, BadgeTone> = {
   Scheduled: "blue",
@@ -19,9 +29,19 @@ const inputClass =
   "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 export default function RadiologyPage() {
-  const { data: scans, loading, error, refresh } = useRadiologyQueue();
-  const { data: patients } = usePatients();
-  const { data: doctors } = useDoctors();
+  const [page, setPage] = useState(1);
+  const [searchInput, setSearchInput] = useState("");
+  const search = useDebouncedValue(searchInput, 400);
+  const params = useMemo(
+    () => ({
+      page,
+      limit: 50,
+      search: search || undefined,
+    }),
+    [page, search],
+  );
+  const { items: scans, total, limit, loading, error, refresh } =
+    usePaginatedCatalog<CatalogScanRequest>("/catalog/radiology-queue", params);
   const { data: scanTypes } = useScanTypes();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -50,6 +70,10 @@ export default function RadiologyPage() {
         }),
       });
       setOpen(false);
+      setPatientId("");
+      setDoctorId("");
+      setScanTypeId("");
+      setIndication("");
       await refresh();
     } catch (err) {
       setFormError(err instanceof Error ? err.message : "Request failed");
@@ -73,17 +97,34 @@ export default function RadiologyPage() {
     }
   };
 
+  const meta = toPageMeta({ total, page, limit });
+
   return (
     <RoleGuard module="radiology">
       <PageHeader
         title="Radiology"
-        subtitle={loading ? "Loading…" : "Imaging requests — start, complete, or cancel"}
+        subtitle={
+          loading
+            ? "Loading…"
+            : `${total.toLocaleString()} imaging requests — start, complete, or cancel`
+        }
         action={
           <PrimaryButton onClick={() => setOpen(true)}>
             <Plus className="h-4 w-4" /> New scan request
           </PrimaryButton>
         }
       />
+      <div className="mb-4">
+        <input
+          className={inputClass}
+          placeholder="Search patient, scan, doctor…"
+          value={searchInput}
+          onChange={(e) => {
+            setSearchInput(e.target.value);
+            setPage(1);
+          }}
+        />
+      </div>
       <Card>
         {error && <p className="px-5 py-3 text-sm text-rose-500">{error}</p>}
         {formError && <p className="px-5 py-3 text-sm text-rose-500">{formError}</p>}
@@ -143,6 +184,7 @@ export default function RadiologyPage() {
             );
           })}
         </Table>
+        <PaginationBar meta={meta} onPageChange={setPage} disabled={loading} />
       </Card>
 
       {open && (
@@ -155,30 +197,31 @@ export default function RadiologyPage() {
               </button>
             </div>
             <div className="space-y-3">
-              <select className={inputClass} value={patientId} onChange={(e) => setPatientId(e.target.value)}>
-                <option value="">Select patient</option>
-                {patients.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select>
-              <select className={inputClass} value={scanTypeId} onChange={(e) => setScanTypeId(e.target.value)}>
-                <option value="">Select scan</option>
-                {scanTypes.map((s) => (
-                  <option key={s.id} value={s.id}>{s.scan_type}</option>
-                ))}
-              </select>
-              <select className={inputClass} value={doctorId} onChange={(e) => setDoctorId(e.target.value)}>
-                <option value="">Requesting doctor (optional)</option>
-                {doctors.map((d) => (
-                  <option key={d.id} value={d.id}>{d.name}</option>
-                ))}
-              </select>
-              <input
-                className={inputClass}
-                value={indication}
-                onChange={(e) => setIndication(e.target.value)}
-                placeholder="Clinical indication"
-              />
+              <div>
+                <FieldLabel required>Patient</FieldLabel>
+                <PatientSearchSelect value={patientId} onChange={(id) => setPatientId(id)} />
+              </div>
+              <div>
+                <FieldLabel required>Scan type</FieldLabel>
+                <select className={inputClass} value={scanTypeId} onChange={(e) => setScanTypeId(e.target.value)}>
+                  <option value="">Select scan</option>
+                  {scanTypes.map((s) => (
+                    <option key={s.id} value={s.id}>{s.scan_type}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <FieldLabel optional>Requesting doctor</FieldLabel>
+                <DoctorSearchSelect value={doctorId} onChange={(id) => setDoctorId(id)} />
+              </div>
+              <div>
+                <FieldLabel optional>Clinical indication</FieldLabel>
+                <input
+                  className={inputClass}
+                  value={indication}
+                  onChange={(e) => setIndication(e.target.value)}
+                />
+              </div>
               {formError && <p className="text-sm text-rose-500">{formError}</p>}
               <PrimaryButton disabled={busy} onClick={submit}>
                 {busy ? "Submitting…" : "Create request"}

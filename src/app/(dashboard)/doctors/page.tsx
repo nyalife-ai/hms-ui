@@ -3,20 +3,41 @@
 import { MessageCircle, Phone, Plus, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import { FieldLabel } from "@/components/field-label";
+import { PaginationBar } from "@/components/pagination-bar";
+import { PatientSearchSelect } from "@/components/patient-search-select";
 import { RoleGuard } from "@/components/role-guard";
 import { Avatar, Badge, Card, PageHeader, PrimaryButton } from "@/components/ui";
 import { api } from "@/lib/api";
-import { useDepartments, useDoctors, usePatients, type CatalogDoctor } from "@/lib/catalog";
+import {
+  useDepartments,
+  usePaginatedCatalog,
+  type CatalogDoctor,
+} from "@/lib/catalog";
+import { toPageMeta } from "@/lib/pagination";
+import { useDebouncedValue } from "@/lib/use-debounced-value";
 
 const inputClass =
   "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 export default function DoctorsPage() {
   const router = useRouter();
-  const { data: doctors, loading, error, refresh } = useDoctors();
+  const [page, setPage] = useState(1);
+  const [searchInput, setSearchInput] = useState("");
+  const [departmentId, setDepartmentFilter] = useState("");
+  const search = useDebouncedValue(searchInput, 400);
+  const params = useMemo(
+    () => ({
+      page,
+      limit: 50,
+      search: search || undefined,
+      departmentId: departmentId || undefined,
+    }),
+    [page, search, departmentId],
+  );
+  const { items: doctors, total, limit, loading, error, refresh } =
+    usePaginatedCatalog<CatalogDoctor>("/catalog/doctors", params);
   const { data: departments } = useDepartments();
-  const { data: patients } = usePatients();
-  const [specialty, setSpecialty] = useState("All");
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState("");
@@ -25,22 +46,15 @@ export default function DoctorsPage() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [spec, setSpec] = useState("General Medicine");
-  const [departmentId, setDepartmentId] = useState("");
+  const [createDeptId, setCreateDeptId] = useState("");
   const [assignDoctor, setAssignDoctor] = useState<CatalogDoctor | null>(null);
   const [assignPatientId, setAssignPatientId] = useState("");
   const [assignDate, setAssignDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [assignTime, setAssignTime] = useState("09:00");
   const [menuId, setMenuId] = useState("");
 
-  const specialties = useMemo(() => {
-    const set = new Set(doctors.map((d) => d.specialty).filter(Boolean));
-    return ["All", ...[...set].sort()];
-  }, [doctors]);
-
-  const filtered =
-    specialty === "All"
-      ? doctors
-      : doctors.filter((d) => d.specialty === specialty);
+  const meta = toPageMeta({ total, page, limit });
+  const availableCount = doctors.filter((d) => d.available).length;
 
   return (
     <RoleGuard module="doctors">
@@ -49,7 +63,7 @@ export default function DoctorsPage() {
         subtitle={
           loading
             ? "Loading doctors…"
-            : `${doctors.length} doctors · ${doctors.filter((d) => d.available).length} available today`
+            : `${total.toLocaleString()} doctors · ${availableCount} available on this page`
         }
         action={
           <PrimaryButton onClick={() => setOpen(true)}>
@@ -60,24 +74,35 @@ export default function DoctorsPage() {
 
       {error && <p className="mb-4 text-sm text-rose-500">{error}</p>}
 
-      <div className="mb-5 flex gap-1 overflow-x-auto border-b border-slate-200/70 pb-px">
-        {specialties.map((s) => (
-          <button
-            key={s}
-            onClick={() => setSpecialty(s)}
-            className={`whitespace-nowrap px-4 py-2.5 text-sm font-medium transition ${
-              specialty === s
-                ? "border-b-2 border-brand-500 text-brand-700"
-                : "text-slate-400 hover:text-slate-600"
-            }`}
-          >
-            {s}
-          </button>
-        ))}
+      <div className="mb-5 grid grid-cols-1 gap-2 md:grid-cols-2">
+        <input
+          className={inputClass}
+          placeholder="Search name or specialty…"
+          value={searchInput}
+          onChange={(e) => {
+            setSearchInput(e.target.value);
+            setPage(1);
+          }}
+        />
+        <select
+          className={inputClass}
+          value={departmentId}
+          onChange={(e) => {
+            setDepartmentFilter(e.target.value);
+            setPage(1);
+          }}
+        >
+          <option value="">All departments</option>
+          {departments.map((d) => (
+            <option key={d.id} value={d.id}>
+              {d.name}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-        {filtered.map((doc) => (
+        {doctors.map((doc) => (
           <Card key={doc.id} className="flex flex-col p-5">
             <div className="flex items-start justify-between">
               <div>
@@ -174,11 +199,18 @@ export default function DoctorsPage() {
         ))}
       </div>
       {loading && (
-        <p className="py-10 text-center text-sm text-slate-400">Loading from API…</p>
+        <div className="space-y-2 py-6">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-24 animate-pulse rounded-2xl bg-slate-100" />
+          ))}
+        </div>
       )}
-      {!loading && filtered.length === 0 && (
+      {!loading && doctors.length === 0 && (
         <p className="py-10 text-center text-sm text-slate-400">No doctors found.</p>
       )}
+      <div className="mt-4 rounded-2xl border border-slate-100 bg-white">
+        <PaginationBar meta={meta} onPageChange={setPage} disabled={loading} />
+      </div>
 
       {assignDoctor && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
@@ -192,31 +224,32 @@ export default function DoctorsPage() {
               </button>
             </div>
             <div className="space-y-3">
-              <select
-                className={inputClass}
-                value={assignPatientId}
-                onChange={(e) => setAssignPatientId(e.target.value)}
-              >
-                <option value="">Select patient</option>
-                {patients.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} · {p.mrn}
-                  </option>
-                ))}
-              </select>
+              <div>
+                <FieldLabel required>Patient</FieldLabel>
+                <PatientSearchSelect
+                  value={assignPatientId}
+                  onChange={(id) => setAssignPatientId(id)}
+                />
+              </div>
               <div className="grid grid-cols-2 gap-3">
-                <input
-                  className={inputClass}
-                  type="date"
-                  value={assignDate}
-                  onChange={(e) => setAssignDate(e.target.value)}
-                />
-                <input
-                  className={inputClass}
-                  type="time"
-                  value={assignTime}
-                  onChange={(e) => setAssignTime(e.target.value)}
-                />
+                <div>
+                  <FieldLabel required>Date</FieldLabel>
+                  <input
+                    className={inputClass}
+                    type="date"
+                    value={assignDate}
+                    onChange={(e) => setAssignDate(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <FieldLabel required>Time</FieldLabel>
+                  <input
+                    className={inputClass}
+                    type="time"
+                    value={assignTime}
+                    onChange={(e) => setAssignTime(e.target.value)}
+                  />
+                </div>
               </div>
               {formError && <p className="text-sm text-rose-500">{formError}</p>}
               <PrimaryButton
@@ -266,18 +299,36 @@ export default function DoctorsPage() {
             </div>
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
-                <input className={inputClass} placeholder="First name" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
-                <input className={inputClass} placeholder="Last name" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+                <div>
+                  <FieldLabel required>First name</FieldLabel>
+                  <input className={inputClass} value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+                </div>
+                <div>
+                  <FieldLabel required>Last name</FieldLabel>
+                  <input className={inputClass} value={lastName} onChange={(e) => setLastName(e.target.value)} />
+                </div>
               </div>
-              <input className={inputClass} placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
-              <input className={inputClass} placeholder="Phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
-              <input className={inputClass} placeholder="Specialty" value={spec} onChange={(e) => setSpec(e.target.value)} />
-              <select className={inputClass} value={departmentId} onChange={(e) => setDepartmentId(e.target.value)}>
-                <option value="">Department (optional)</option>
-                {departments.map((d) => (
-                  <option key={d.id} value={d.id}>{d.name}</option>
-                ))}
-              </select>
+              <div>
+                <FieldLabel required>Email</FieldLabel>
+                <input className={inputClass} value={email} onChange={(e) => setEmail(e.target.value)} />
+              </div>
+              <div>
+                <FieldLabel optional>Phone</FieldLabel>
+                <input className={inputClass} value={phone} onChange={(e) => setPhone(e.target.value)} />
+              </div>
+              <div>
+                <FieldLabel required>Specialty</FieldLabel>
+                <input className={inputClass} value={spec} onChange={(e) => setSpec(e.target.value)} />
+              </div>
+              <div>
+                <FieldLabel optional>Department</FieldLabel>
+                <select className={inputClass} value={createDeptId} onChange={(e) => setCreateDeptId(e.target.value)}>
+                  <option value="">Select department</option>
+                  {departments.map((d) => (
+                    <option key={d.id} value={d.id}>{d.name}</option>
+                  ))}
+                </select>
+              </div>
               {formError && <p className="text-sm text-rose-500">{formError}</p>}
               <PrimaryButton
                 disabled={busy}
@@ -298,7 +349,7 @@ export default function DoctorsPage() {
                         phone: phone || undefined,
                         role: "DOCTOR",
                         specialty: spec,
-                        departmentId: departmentId || undefined,
+                        departmentId: createDeptId || undefined,
                         asDoctor: true,
                       }),
                     });

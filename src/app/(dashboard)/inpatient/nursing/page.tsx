@@ -1,7 +1,8 @@
 "use client";
 
 import { Plus, X } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { FieldLabel } from "@/components/field-label";
 import { RoleGuard } from "@/components/role-guard";
 import {
   Card,
@@ -12,6 +13,8 @@ import {
 } from "@/components/ui";
 import { api } from "@/lib/api";
 import { useStaffCatalog, type ActiveAdmission } from "@/lib/catalog";
+import { unwrapPage } from "@/lib/pagination";
+import { useDebouncedValue } from "@/lib/use-debounced-value";
 
 const inputClass =
   "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
@@ -26,26 +29,58 @@ type NursingNote = {
 
 export default function IpdNursingPage() {
   const { data: staff } = useStaffCatalog();
-  const nurses = staff.filter((s) =>
-    /nurse|admin|doctor/i.test(s.role) || s.role === "NURSE",
+  const nurses = staff.filter(
+    (s) => s.status === "Active" && (s.role === "NURSE" || s.role === "DOCTOR" || s.role === "ADMIN" || s.role === "SUPER_ADMIN"),
   );
   const [admissions, setAdmissions] = useState<ActiveAdmission[]>([]);
   const [admissionId, setAdmissionId] = useState("");
+  const [admitSearch, setAdmitSearch] = useState("");
+  const debouncedAdmitSearch = useDebouncedValue(admitSearch, 400);
   const [notes, setNotes] = useState<NursingNote[]>([]);
   const [error, setError] = useState("");
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [nurseId, setNurseId] = useState("");
   const [notesText, setNotesText] = useState("");
-  const [vitalsJson, setVitalsJson] = useState('{"hr":72,"bp":"120/80","temp":36.8}');
+  const [hr, setHr] = useState("72");
+  const [bp, setBp] = useState("120/80");
+  const [temp, setTemp] = useState("36.8");
+  const [includeHistory, setIncludeHistory] = useState(false);
+  const [history, setHistory] = useState<ActiveAdmission[]>([]);
 
   const loadAdmissions = useCallback(async () => {
     try {
-      const rows = await api<ActiveAdmission[]>("/ipd/admissions?active=true");
-      setAdmissions(rows);
-      if (!admissionId && rows[0]) setAdmissionId(rows[0].id);
+      const qs = new URLSearchParams({
+        active: "true",
+        page: "1",
+        limit: "50",
+      });
+      if (debouncedAdmitSearch.trim()) qs.set("search", debouncedAdmitSearch.trim());
+      const res = unwrapPage<ActiveAdmission>(
+        await api(`/ipd/admissions?${qs.toString()}`),
+      );
+      setAdmissions(res.items);
+      if (!admissionId && res.items[0]) setAdmissionId(res.items[0].id);
+      setError("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load admissions");
+      setError(err instanceof Error ? err.message : "Unable to load admissions");
+    }
+  }, [admissionId, debouncedAdmitSearch]);
+
+  const loadHistory = useCallback(async (patientId: string) => {
+    if (!patientId) {
+      setHistory([]);
+      return;
+    }
+    try {
+      const res = unwrapPage<ActiveAdmission>(
+        await api(
+          `/ipd/admissions?patientId=${encodeURIComponent(patientId)}&page=1&limit=20`,
+        ),
+      );
+      setHistory(res.items.filter((a) => a.id !== admissionId));
+    } catch {
+      setHistory([]);
     }
   }, [admissionId]);
 
@@ -61,7 +96,7 @@ export default function IpdNursingPage() {
       setNotes(rows);
       setError("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load notes");
+      setError(err instanceof Error ? err.message : "Unable to load notes");
     }
   }, [admissionId]);
 
@@ -73,27 +108,36 @@ export default function IpdNursingPage() {
     void loadNotes();
   }, [loadNotes]);
 
+  const selected = useMemo(
+    () => admissions.find((a) => a.id === admissionId) ?? null,
+    [admissions, admissionId],
+  );
+
+  useEffect(() => {
+    if (includeHistory && selected?.patientId) {
+      void loadHistory(selected.patientId);
+    } else {
+      setHistory([]);
+    }
+  }, [includeHistory, selected?.patientId, loadHistory]);
+
   const addNote = async () => {
     if (!admissionId || !notesText.trim() || !nurseId) {
-      setError("Select admission, nurse, and enter notes");
+      setError("Select an admission and nurse, and enter notes.");
       return;
-    }
-    let vitalSignsSnapshot: Record<string, unknown> | undefined;
-    if (vitalsJson.trim()) {
-      try {
-        vitalSignsSnapshot = JSON.parse(vitalsJson) as Record<string, unknown>;
-      } catch {
-        setError("Vital signs must be valid JSON");
-        return;
-      }
     }
     setBusy(true);
     try {
+      const vitalSignsSnapshot = {
+        hr: Number(hr) || undefined,
+        bp: bp.trim() || undefined,
+        temp: Number(temp) || undefined,
+      };
       await api(`/ipd/admissions/${admissionId}/nursing-notes`, {
         method: "POST",
         body: JSON.stringify({
           nurseId,
-          notesText,
+          notesText: notesText.trim(),
           vitalSignsSnapshot,
         }),
       });
@@ -101,77 +145,115 @@ export default function IpdNursingPage() {
       setNotesText("");
       await loadNotes();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save note");
+      setError(err instanceof Error ? err.message : "Unable to save note");
     } finally {
       setBusy(false);
     }
   };
 
-  const selected = admissions.find((a) => a.id === admissionId);
-
   return (
     <RoleGuard module="inpatient">
       <PageHeader
-        title="Nursing / Clinical Records"
-        subtitle="Append-only nursing notes for active admissions"
+        title="Nursing notes"
+        subtitle="Record daily observations for admitted patients"
         action={
-          <PrimaryButton
-            onClick={() => setOpen(true)}
-            disabled={!admissionId}
-          >
+          <PrimaryButton onClick={() => setOpen(true)} disabled={!admissionId}>
             <Plus className="h-4 w-4" /> Add note
           </PrimaryButton>
         }
       />
+
       {error && <p className="mb-4 text-sm text-rose-500">{error}</p>}
 
-      <div className="mb-4 max-w-lg">
-        <select
-          className={inputClass}
-          value={admissionId}
-          onChange={(e) => setAdmissionId(e.target.value)}
-        >
-          <option value="">Select active admission</option>
-          {admissions.map((a) => (
-            <option key={a.id} value={a.id}>
-              {a.patientName} · {a.wardName} Bed {a.bedNumber}
-            </option>
-          ))}
-        </select>
-        {selected && (
-          <p className="mt-2 text-sm text-slate-500">
-            {selected.diagnosis || "No diagnosis"} · admitted{" "}
-            {new Date(selected.admittedAt).toLocaleString()}
-          </p>
+      <Card className="mb-5 p-5">
+        <div className="grid gap-3 md:grid-cols-2">
+          <div>
+            <FieldLabel>Search admissions</FieldLabel>
+            <input
+              className={inputClass}
+              placeholder="Patient name or MRN…"
+              value={admitSearch}
+              onChange={(e) => setAdmitSearch(e.target.value)}
+            />
+          </div>
+          <div>
+            <FieldLabel required>Active admission</FieldLabel>
+            <select
+              className={inputClass}
+              value={admissionId}
+              onChange={(e) => setAdmissionId(e.target.value)}
+            >
+              <option value="">Select admission</option>
+              {admissions.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.patientName} · {a.mrn} · {a.wardName} {a.bedNumber}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <label className="mt-3 flex items-center gap-2 text-sm text-slate-600">
+          <input
+            type="checkbox"
+            checked={includeHistory}
+            onChange={(e) => setIncludeHistory(e.target.checked)}
+          />
+          Show previous admissions for this patient
+        </label>
+        {includeHistory && history.length > 0 && (
+          <div className="mt-3">
+            <FieldLabel>Previous admissions</FieldLabel>
+            <select
+              className={inputClass}
+              value=""
+              onChange={(e) => {
+                if (e.target.value) setAdmissionId(e.target.value);
+              }}
+            >
+              <option value="">Switch to a previous admission…</option>
+              {history.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.status} · {a.wardName} ·{" "}
+                  {a.admittedAt ? new Date(a.admittedAt).toLocaleDateString() : "—"}
+                </option>
+              ))}
+            </select>
+          </div>
         )}
-      </div>
+      </Card>
 
       <Card>
         <CardHeader
-          title="Note history"
-          subtitle={selected ? selected.patientName : "Select an admission"}
+          title={selected ? `Notes · ${selected.patientName}` : "Notes"}
+          subtitle={
+            selected
+              ? `${selected.wardName} · Bed ${selected.bedNumber} · ${selected.mrn}`
+              : "Select an admission"
+          }
         />
         <Table headers={["When", "Nurse", "Notes", "Vitals"]}>
           {notes.map((n) => (
-            <tr key={n.id} className="hover:bg-slate-50/60">
-              <td className="px-5 py-3.5 text-xs text-slate-400">
+            <tr key={n.id} className="transition hover:bg-slate-50/60">
+              <td className="px-5 py-3.5 text-slate-500 text-xs">
                 {new Date(n.createdAt).toLocaleString()}
               </td>
-              <td className="px-5 py-3.5 text-slate-600">{n.nurseName}</td>
+              <td className="px-5 py-3.5 text-slate-700">{n.nurseName}</td>
               <td className="px-5 py-3.5 text-slate-700 whitespace-pre-wrap">
                 {n.notesText}
               </td>
-              <td className="px-5 py-3.5 font-mono text-xs text-slate-500">
+              <td className="px-5 py-3.5 text-xs text-slate-500">
                 {n.vitalSignsSnapshot
-                  ? JSON.stringify(n.vitalSignsSnapshot)
+                  ? Object.entries(n.vitalSignsSnapshot)
+                      .map(([k, v]) => `${k}: ${String(v)}`)
+                      .join(" · ")
                   : "—"}
               </td>
             </tr>
           ))}
         </Table>
-        {admissionId && notes.length === 0 && (
+        {!notes.length && (
           <p className="px-5 py-8 text-center text-sm text-slate-400">
-            No nursing notes yet for this admission
+            No notes for this admission yet
           </p>
         )}
       </Card>
@@ -181,32 +263,54 @@ export default function IpdNursingPage() {
           <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-base font-semibold text-slate-900">Add nursing note</h2>
-              <button onClick={() => setOpen(false)} className="rounded-lg p-1 text-slate-400 hover:bg-slate-50">
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="rounded-lg p-1 text-slate-400 hover:bg-slate-50"
+              >
                 <X className="h-4 w-4" />
               </button>
             </div>
             <div className="space-y-3">
-              <select className={inputClass} value={nurseId} onChange={(e) => setNurseId(e.target.value)}>
-                <option value="">Responsible nurse / clinician</option>
-                {(nurses.length ? nurses : staff).map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name} ({s.role})
-                  </option>
-                ))}
-              </select>
-              <textarea
-                className={`${inputClass} min-h-28 resize-y`}
-                value={notesText}
-                onChange={(e) => setNotesText(e.target.value)}
-                placeholder="Clinical notes"
-              />
-              <textarea
-                className={`${inputClass} min-h-20 resize-y font-mono text-xs`}
-                value={vitalsJson}
-                onChange={(e) => setVitalsJson(e.target.value)}
-                placeholder='Vital signs JSON e.g. {"hr":72}'
-              />
-              <PrimaryButton disabled={busy} onClick={addNote}>
+              <div>
+                <FieldLabel required>Nurse</FieldLabel>
+                <select
+                  className={inputClass}
+                  value={nurseId}
+                  onChange={(e) => setNurseId(e.target.value)}
+                >
+                  <option value="">Select nurse</option>
+                  {nurses.map((n) => (
+                    <option key={n.id} value={n.id}>
+                      {n.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <FieldLabel required>Clinical notes</FieldLabel>
+                <textarea
+                  className={inputClass}
+                  rows={4}
+                  value={notesText}
+                  onChange={(e) => setNotesText(e.target.value)}
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <FieldLabel optional>Heart rate</FieldLabel>
+                  <input className={inputClass} value={hr} onChange={(e) => setHr(e.target.value)} />
+                </div>
+                <div>
+                  <FieldLabel optional>Blood pressure</FieldLabel>
+                  <input className={inputClass} value={bp} onChange={(e) => setBp(e.target.value)} />
+                </div>
+                <div>
+                  <FieldLabel optional>Temperature °C</FieldLabel>
+                  <input className={inputClass} value={temp} onChange={(e) => setTemp(e.target.value)} />
+                </div>
+              </div>
+              <PrimaryButton disabled={busy} onClick={() => void addNote()}>
                 {busy ? "Saving…" : "Save note"}
               </PrimaryButton>
             </div>

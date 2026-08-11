@@ -1,7 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { Smartphone } from "lucide-react";
+import {
+  Activity,
+  AlertTriangle,
+  CheckCircle2,
+  ClipboardList,
+  FlaskConical,
+  Timer,
+  Zap,
+} from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { RoleGuard } from "@/components/role-guard";
 import {
@@ -11,6 +19,8 @@ import {
   CardHeader,
   PageHeader,
   PrimaryButton,
+  StatCard,
+  StatCardSkeleton,
 } from "@/components/ui";
 import { api } from "@/lib/api";
 import { useVisits } from "@/lib/visits";
@@ -39,7 +49,7 @@ export default function LaboratoryOverviewPage() {
       setData(await api<LabOverview>("/laboratory/overview"));
       setError("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load overview");
+      setError(err instanceof Error ? err.message : "Unable to load laboratory board");
     } finally {
       setLoading(false);
     }
@@ -53,15 +63,15 @@ export default function LaboratoryOverviewPage() {
 
   const stats = data
     ? [
-        { label: "Active test types", value: data.activeTestTypes },
-        { label: "Pending requests", value: data.pendingRequests },
-        { label: "Urgent", value: data.urgentRequests },
-        { label: "STAT", value: data.statRequests },
-        { label: "Samples registered", value: data.samplesRegistered },
-        { label: "Samples in process", value: data.samplesAwaitingProcessing },
-        { label: "Awaiting verification", value: data.resultsAwaitingVerification },
-        { label: "Critical unverified", value: data.criticalUnverified },
-        { label: "Completed today", value: data.todaysCompleted },
+        { label: "Active test types", value: data.activeTestTypes, icon: FlaskConical },
+        { label: "Pending requests", value: data.pendingRequests, icon: ClipboardList },
+        { label: "Urgent", value: data.urgentRequests, icon: Timer },
+        { label: "STAT", value: data.statRequests, icon: Zap },
+        { label: "Samples registered", value: data.samplesRegistered, icon: Activity },
+        { label: "Samples in process", value: data.samplesAwaitingProcessing, icon: Activity },
+        { label: "Awaiting verification", value: data.resultsAwaitingVerification, icon: CheckCircle2 },
+        { label: "Critical unverified", value: data.criticalUnverified, icon: AlertTriangle },
+        { label: "Completed today", value: data.todaysCompleted, icon: CheckCircle2 },
       ]
     : [];
 
@@ -69,11 +79,7 @@ export default function LaboratoryOverviewPage() {
     <RoleGuard module="laboratory">
       <PageHeader
         title="Laboratory"
-        subtitle={
-          loading
-            ? "Loading board…"
-            : "Requests, samples, and results from /laboratory"
-        }
+        subtitle={loading ? "Loading board…" : "Requests, samples, and results"}
         action={
           <div className="flex flex-wrap gap-2">
             <Link href="/laboratory/requests">
@@ -100,12 +106,18 @@ export default function LaboratoryOverviewPage() {
       {error && <p className="mb-4 text-sm text-rose-500">{error}</p>}
 
       <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
-        {stats.map((s) => (
-          <Card key={s.label} className="p-4">
-            <p className="text-xs text-slate-400">{s.label}</p>
-            <p className="mt-1 text-2xl font-semibold text-slate-900">{s.value}</p>
-          </Card>
-        ))}
+        {loading &&
+          Array.from({ length: 5 }).map((_, i) => <StatCardSkeleton key={i} />)}
+        {!loading &&
+          stats.map((s) => (
+            <StatCard
+              key={s.label}
+              label={s.label}
+              value={String(s.value)}
+              icon={s.icon}
+              deltaLabel="live board"
+            />
+          ))}
       </div>
 
       {data && data.criticalUnverified > 0 && (
@@ -126,21 +138,26 @@ export default function LaboratoryOverviewPage() {
       {visitQueue.length > 0 && (
         <Card className="mb-5">
           <CardHeader
-            title="Visit pipeline (legacy)"
-            subtitle="Visits still in LAB_PENDING — prefer formal requests when possible"
+            title="Outpatient lab queue"
+            subtitle="Patients waiting after consultation — open the linked request to collect samples and enter results"
           />
           <ul className="space-y-3 px-5 pb-5">
             {visitQueue.map((v) => (
-              <li key={v.id} className="flex items-center gap-3 rounded-2xl bg-[#f3f7f7] p-4">
+              <li key={v.id} className="flex flex-wrap items-center gap-3 rounded-2xl bg-[#f3f7f7] p-4">
                 <Avatar name={v.patientName} />
-                <div className="flex-1">
+                <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold text-slate-800">{v.patientName}</p>
                   <p className="text-[11px] text-slate-400">
                     {v.mrn} · {(v.labOrder?.tests.length ?? 0)} test(s)
                   </p>
                 </div>
-                <Badge tone="amber">LAB_PENDING</Badge>
-                <Smartphone className="h-4 w-4 text-slate-300" />
+                <Badge tone="amber">Pending</Badge>
+                <Link
+                  href={`/laboratory/requests?search=${encodeURIComponent(v.mrn)}`}
+                  className="rounded-full bg-brand-500 px-3 py-1.5 text-xs font-semibold text-white"
+                >
+                  Open request
+                </Link>
               </li>
             ))}
           </ul>
@@ -150,6 +167,11 @@ export default function LaboratoryOverviewPage() {
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {[
           { href: "/laboratory/test-types", label: "Test Types", hint: "Panels & parameters" },
+          {
+            href: "/laboratory/services",
+            label: "Services & Procedures",
+            hint: "Vaccines, procedures, surgeries",
+          },
           { href: "/laboratory/requests", label: "Requests", hint: "Order & track" },
           { href: "/laboratory/samples", label: "Samples", hint: "Collection lifecycle" },
           { href: "/laboratory/results", label: "Results", hint: "Entry & verification" },

@@ -25,6 +25,7 @@ export interface SessionUser {
   role: Role;
   position: string;
   permissions: string[];
+  twoFactorEnabled?: boolean;
 }
 
 interface AuthResponse {
@@ -35,15 +36,27 @@ interface AuthResponse {
   user: SessionUser;
 }
 
+export type LoginOutcome =
+  | { kind: "session"; user: SessionUser }
+  | {
+      kind: "twoFactor";
+      hash: string;
+      expiresInMinutes: number;
+      message: string;
+    };
+
 interface AuthContextValue {
   user: SessionUser | null;
   loading: boolean;
   demoAuthEnabled: boolean;
   /** Demo role picker — only when backend ENABLE_DEMO_AUTH allows it */
   loginAsRole: (role: Role) => Promise<void>;
-  loginWithPassword: (email: string, password: string) => Promise<void>;
+  loginWithPassword: (email: string, password: string) => Promise<LoginOutcome>;
+  verifyLoginOtp: (hash: string, otp: string) => Promise<void>;
   logout: () => Promise<void>;
   changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
+  setTwoFactorEnabled: (enabled: boolean) => Promise<SessionUser>;
+  refreshMe: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -54,6 +67,7 @@ function normalizeUser(user: SessionUser): SessionUser {
   return {
     ...user,
     permissions: user.permissions ?? [],
+    twoFactorEnabled: Boolean(user.twoFactorEnabled),
   };
 }
 
@@ -113,10 +127,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     applySession(res);
   };
 
-  const loginWithPassword = async (email: string, password: string) => {
-    const res = await api<AuthResponse>("/auth/login", {
+  const loginWithPassword = async (
+    email: string,
+    password: string,
+  ): Promise<LoginOutcome> => {
+    const res = await api<
+      AuthResponse & {
+        twoFactorRequired?: boolean;
+        hash?: string;
+        expiresInMinutes?: number;
+        message?: string;
+      }
+    >("/auth/login", {
       method: "POST",
       body: JSON.stringify({ email, password }),
+    });
+
+    if (res.twoFactorRequired && res.hash) {
+      return {
+        kind: "twoFactor",
+        hash: res.hash,
+        expiresInMinutes: res.expiresInMinutes ?? 10,
+        message: res.message || "Enter the verification code sent to your email.",
+      };
+    }
+
+    applySession(res);
+    return { kind: "session", user: normalizeUser(res.user) };
+  };
+
+  const verifyLoginOtp = async (hash: string, otp: string) => {
+    const res = await api<AuthResponse>("/auth/verify-login-otp", {
+      method: "POST",
+      body: JSON.stringify({ hash, otp }),
     });
     applySession(res);
   };
@@ -151,6 +194,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   };
 
+  const setTwoFactorEnabled = async (enabled: boolean) => {
+    const me = await api<SessionUser>("/auth/me/two-factor", {
+      method: "PATCH",
+      body: JSON.stringify({ enabled }),
+    });
+    const next = normalizeUser(me);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    setUser(next);
+    return next;
+  };
+
+  const refreshMe = async () => {
+    const me = await api<SessionUser>("/auth/me");
+    const next = normalizeUser(me);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    setUser(next);
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -159,8 +220,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         demoAuthEnabled,
         loginAsRole,
         loginWithPassword,
+        verifyLoginOtp,
         logout,
         changePassword,
+        setTwoFactorEnabled,
+        refreshMe,
       }}
     >
       {children}
@@ -184,6 +248,7 @@ export const DEMO_ACCOUNT_HINTS: Array<{
   role: Role;
   name: string;
 }> = [
+  { email: "super@nyalife.health", role: "SUPER_ADMIN", name: "System Administrator" },
   { email: "admin@nyalife.health", role: "ADMIN", name: "Terrine Herman" },
   { email: "a.okello@nyalife.health", role: "DOCTOR", name: "Dr. Amina Okello" },
   { email: "g.wanjiru@nyalife.health", role: "NURSE", name: "Grace Wanjiru" },

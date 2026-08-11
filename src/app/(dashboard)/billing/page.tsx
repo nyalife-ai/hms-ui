@@ -1,9 +1,26 @@
 "use client";
 
-import { CheckCircle2, Loader2, Plus, RefreshCw, Send, Smartphone, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import Link from "next/link";
+import {
+  CheckCircle2,
+  ClipboardList,
+  FileText,
+  Loader2,
+  Plus,
+  RefreshCw,
+  Send,
+  Smartphone,
+  Wallet,
+  X,
+} from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { FieldLabel } from "@/components/field-label";
+import { InvoicePrintModal } from "@/components/invoice-print-modal";
 import { MpesaCheckoutModal } from "@/components/mpesa-checkout";
+import { PatientSearchSelect } from "@/components/patient-search-select";
 import { ReceiptModal, type ReceiptData } from "@/components/receipt-modal";
+import { RecordInvoicePaymentModal } from "@/components/record-invoice-payment-modal";
+import type { InvoiceHit } from "@/components/invoice-search-select";
 import { RoleGuard } from "@/components/role-guard";
 import {
   Avatar,
@@ -12,58 +29,65 @@ import {
   CardHeader,
   PageHeader,
   PrimaryButton,
-  Table,
-  cell,
+  StatCard,
+  StatCardSkeleton,
   type BadgeTone,
 } from "@/components/ui";
 import { api } from "@/lib/api";
-import { useFeeSchedule, useInvoices, usePatients } from "@/lib/catalog";
+import { buildListQuery } from "@/lib/pagination";
 import { useVisits, type Visit } from "@/lib/visits";
 
 const inputClass =
   "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
-const STATUS_TONES: Record<string, BadgeTone> = {
-  Paid: "green",
-  Pending: "blue",
-  Partial: "amber",
-  Overdue: "red",
+type BillingOverview = {
+  todayIssuedInvoicesTotal: string;
+  todayIssuedInvoiceCount: number;
+  todayCompletedPaymentsTotal: string;
+  outstandingAr: string;
+  pendingClaimsCount: number;
 };
 
-function visitTotal(
-  visit: Visit,
-  fees: { consult: number; lab: number; medication: number },
-): number {
-  const tests = visit.labOrder?.tests.length ?? 0;
-  const meds = visit.prescriptions?.length ?? 0;
-  return fees.consult + tests * fees.lab + meds * fees.medication;
+type VisitQuote = {
+  totalAmount: string;
+  subtotal: string;
+  lines: Array<{ description: string; quantity: number; unitPrice: string; totalPrice: string }>;
+};
+
+function formatKes(value: string | number | undefined | null): string {
+  const n = Number(value ?? 0);
+  if (!Number.isFinite(n)) return "0";
+  return n.toLocaleString();
 }
 
-function claimItems(
-  visit: Visit,
-  fees: { consult: number; lab: number; medication: number },
-) {
-  return [
-    { description: "Consultation", amount: fees.consult },
-    ...(visit.labOrder?.tests ?? []).map((t) => ({
-      description: `Lab: ${t.name}`,
-      amount: fees.lab,
-    })),
-    ...(visit.prescriptions ?? []).map((p) => ({
-      description: `Medication: ${p.medication}`,
-      amount: fees.medication,
-    })),
-  ];
+function quoteKey(visit: Visit): string {
+  const lab = visit.labOrder?.tests.length ?? 0;
+  const med = visit.prescriptions?.length ?? 0;
+  const consult = visit.billing?.consultFeeStatus === "PAID" ? 0 : 1;
+  return `${consult}-${lab}-${med}`;
+}
+
+function claimItemsFromQuote(quote: VisitQuote | undefined) {
+  if (quote?.lines?.length) {
+    return quote.lines.map((l) => ({
+      description: l.description,
+      amount: Number(l.totalPrice) || 0,
+    }));
+  }
+  return [{ description: "Consultation", amount: 0 }];
 }
 
 export default function BillingPage() {
   const { visits, finalizeBilling, syncClaim, refresh } = useVisits();
-  const { data: invoices, refresh: refreshInvoices } = useInvoices();
-  const { data: patients } = usePatients();
-  const { fees } = useFeeSchedule();
   const billable = visits.filter((v) => v.stage === "READY_FOR_BILLING");
+  const awaitingConsultFee = visits.filter((v) => v.stage === "AWAITING_PAYMENT");
   const awaitingInsurer = visits.filter((v) => v.stage === "CLAIM_SUBMITTED");
   const completedToday = visits.filter((v) => v.stage === "COMPLETED");
+
+  const [overview, setOverview] = useState<BillingOverview | null>(null);
+  const [overviewLoading, setOverviewLoading] = useState(true);
+  const [overviewError, setOverviewError] = useState("");
+  const [quotes, setQuotes] = useState<Record<string, VisitQuote>>({});
   const [busyId, setBusyId] = useState("");
   const [checkingId, setCheckingId] = useState("");
   const [invoiceOpen, setInvoiceOpen] = useState(false);
@@ -75,10 +99,74 @@ export default function BillingPage() {
   const [notice, setNotice] = useState("");
   const [mpesaVisit, setMpesaVisit] = useState<Visit | null>(null);
   const [viewReceipt, setViewReceipt] = useState<ReceiptData | null>(null);
+  const [payInvoice, setPayInvoice] = useState<InvoiceHit | null>(null);
+  const [cashConfirm, setCashConfirm] = useState<Visit | null>(null);
+  const [printInvoiceId, setPrintInvoiceId] = useState("");
 
-  const outstanding = invoices
-    .filter((i) => i.status !== "Paid")
-    .reduce((sum, i) => sum + i.amount, 0);
+  const loadOverview = useCallback(async () => {
+    setOverviewLoading(true);
+    try {
+      setOverview(await api<BillingOverview>("/billing/overview"));
+      setOverviewError("");
+    } catch (err) {
+      setOverviewError(err instanceof Error ? err.message : "Unable to load billing overview");
+    } finally {
+      setOverviewLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadOverview();
+  }, [loadOverview]);
+
+  const quoteKeysNeeded = useMemo(() => {
+    const keys = new Set<string>();
+    for (const v of [...billable, ...awaitingInsurer]) {
+      const key = quoteKey(v);
+      const [c, l, m] = key.split("-").map(Number);
+      if ((c || 0) + (l || 0) + (m || 0) > 0) keys.add(key);
+    }
+    return Array.from(keys).sort().join("|");
+  }, [billable, awaitingInsurer]);
+
+  useEffect(() => {
+    if (!quoteKeysNeeded) return;
+    let cancelled = false;
+    const keys = quoteKeysNeeded.split("|");
+    void (async () => {
+      const next: Record<string, VisitQuote> = {};
+      await Promise.all(
+        keys.map(async (key) => {
+          const [consult, lab, med] = key.split("-").map(Number);
+          try {
+            const qs = buildListQuery({
+              consultCount: consult || 1,
+              labCount: lab || undefined,
+              medCount: med || undefined,
+            });
+            const quote = await api<VisitQuote>(`/billing/quote/visit?${qs}`);
+            next[key] = quote;
+          } catch {
+            // leave missing; UI falls back to — until retry
+          }
+        }),
+      );
+      if (!cancelled) setQuotes((prev) => ({ ...prev, ...next }));
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [quoteKeysNeeded]);
+
+  const visitAmount = (visit: Visit): number => {
+    const key = quoteKey(visit);
+    const [c, l, m] = key.split("-").map(Number);
+    if ((c || 0) + (l || 0) + (m || 0) === 0) {
+      return visit.billing?.consultFeeAmount ?? visit.billing?.total ?? 0;
+    }
+    const q = quotes[key];
+    return Number(q?.totalAmount ?? 0) || 0;
+  };
 
   // Auto-poll insurer while claims are pending — signs patient off when accepted
   useEffect(() => {
@@ -93,7 +181,7 @@ export default function BillingPage() {
           if (cancelled) return;
           if (result.signedOff) {
             setNotice(`${v.patientName} — insurer accepted claim; patient signed off.`);
-            await refreshInvoices();
+            void loadOverview();
           }
         } catch {
           // keep polling; transient switch errors are expected
@@ -115,10 +203,34 @@ export default function BillingPage() {
     setViewReceipt(r);
   };
 
-  const settle = async (visit: Visit) => {
-    const total = visitTotal(visit, fees);
+  const settle = async (visit: Visit, channel: "MPESA" | "CASH" = "MPESA") => {
+    const total = visitAmount(visit);
     if (visit.payment.method !== "INSURANCE") {
-      setMpesaVisit(visit);
+      if (channel === "MPESA") {
+        setMpesaVisit(visit);
+        return;
+      }
+      setBusyId(visit.id);
+      setNotice("");
+      try {
+        const settled = await finalizeBilling(visit.id, total);
+        setCashConfirm(null);
+        setNotice(`${visit.patientName} — cash settlement recorded.`);
+        void loadOverview();
+        if (settled.billing?.receiptId) {
+          try {
+            await openReceipt(settled.billing.receiptId);
+          } catch {
+            // receipt modal optional if fetch fails
+          }
+        } else if (settled.billing?.invoiceId) {
+          setPrintInvoiceId(settled.billing.invoiceId);
+        }
+      } catch (err) {
+        window.alert(err instanceof Error ? err.message : "Cash settlement failed.");
+      } finally {
+        setBusyId("");
+      }
       return;
     }
     setBusyId(visit.id);
@@ -148,7 +260,7 @@ export default function BillingPage() {
             visitNumber: visit.mrn,
             visitStart: visit.checkedInAt,
             visitEnd: new Date().toISOString(),
-            items: claimItems(visit, fees),
+            items: claimItemsFromQuote(quotes[quoteKey(visit)]),
             total,
           },
         }),
@@ -157,9 +269,8 @@ export default function BillingPage() {
         window.alert(data.error || "Claim submission failed.");
         return;
       }
-      // Hold visit at CLAIM_SUBMITTED — do not complete until insurer accepts
       await finalizeBilling(visit.id, total, data.claimId);
-      await refreshInvoices();
+      void loadOverview();
       setNotice(
         `${visit.patientName} — claim submitted. Waiting for insurer approval before sign-off.`,
       );
@@ -177,7 +288,7 @@ export default function BillingPage() {
       const result = await syncClaim(visit.id, visit.payment.providerId);
       if (result.signedOff) {
         setNotice(`${visit.patientName} — insurer accepted claim; patient signed off.`);
-        await refreshInvoices();
+        void loadOverview();
       } else if (result.status === "REJECTED") {
         setNotice(
           `${visit.patientName} — claim rejected. Record cash payment to complete the visit.`,
@@ -191,7 +302,6 @@ export default function BillingPage() {
   };
 
   const cashFallback = (visit: Visit) => {
-    // After claim rejection, collect via M-Pesa at reception
     setMpesaVisit(visit);
   };
 
@@ -200,19 +310,32 @@ export default function BillingPage() {
       setInvError("Patient and amount are required.");
       return;
     }
+    const amount = Number(invAmount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setInvError("Enter a valid amount.");
+      return;
+    }
     setInvBusy(true);
     setInvError("");
     try {
-      await api("/ops/invoices", {
+      await api("/billing/invoices", {
         method: "POST",
         body: JSON.stringify({
           patientId: invPatientId,
-          amount: Number(invAmount),
-          description: invDesc || "Services",
+          notes: invDesc || undefined,
+          lines: [
+            {
+              description: invDesc || "Services",
+              quantity: 1,
+              unitPrice: amount,
+            },
+          ],
         }),
       });
       setInvoiceOpen(false);
-      await refreshInvoices();
+      setInvPatientId("");
+      setNotice("Draft invoice created.");
+      void loadOverview();
     } catch (err) {
       setInvError(err instanceof Error ? err.message : "Could not create invoice");
     } finally {
@@ -220,21 +343,158 @@ export default function BillingPage() {
     }
   };
 
+  const stats = overview
+    ? [
+        {
+          label: "Issued today",
+          value: `KES ${formatKes(overview.todayIssuedInvoicesTotal)}`,
+          delta: `${overview.todayIssuedInvoiceCount} invoice(s)`,
+          icon: FileText,
+        },
+        {
+          label: "Payments today",
+          value: `KES ${formatKes(overview.todayCompletedPaymentsTotal)}`,
+          delta: "completed",
+          icon: Wallet,
+        },
+        {
+          label: "Outstanding AR",
+          value: `KES ${formatKes(overview.outstandingAr)}`,
+          delta: "open balances",
+          icon: ClipboardList,
+        },
+        {
+          label: "Pending claims",
+          value: String(overview.pendingClaimsCount),
+          delta: "with insurers",
+          icon: Send,
+        },
+      ]
+    : [];
+
+  const outstandingLabel = overview
+    ? `KES ${formatKes(overview.outstandingAr)} outstanding`
+    : "…";
+
   return (
     <RoleGuard module="billing">
       <PageHeader
         title="Billing"
-        subtitle={`${billable.length} ready · ${awaitingInsurer.length} awaiting insurer · KES ${outstanding.toLocaleString()} outstanding`}
+        subtitle={`${billable.length} ready · ${awaitingInsurer.length} awaiting insurer · ${outstandingLabel}`}
         action={
-          <PrimaryButton onClick={() => setInvoiceOpen(true)}>
-            <Plus className="h-4 w-4" /> Create invoice
-          </PrimaryButton>
+          <div className="flex flex-wrap gap-2">
+            <Link href="/billing/invoices">
+              <button
+                type="button"
+                className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:border-brand-300 hover:text-brand-700"
+              >
+                Invoices
+              </button>
+            </Link>
+            <PrimaryButton onClick={() => setInvoiceOpen(true)}>
+              <Plus className="h-4 w-4" /> Create invoice
+            </PrimaryButton>
+            <button
+              type="button"
+              onClick={() => void loadOverview()}
+              className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:border-brand-300 hover:text-brand-700"
+            >
+              Refresh
+            </button>
+          </div>
         }
       />
 
+      {overviewError && <p className="mb-4 text-sm text-rose-500">{overviewError}</p>}
       {notice && (
         <p className="mb-4 rounded-xl bg-brand-50 px-4 py-3 text-sm text-brand-800">{notice}</p>
       )}
+
+      <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+        {overviewLoading &&
+          Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)}
+        {!overviewLoading &&
+          stats.map((s) => (
+            <StatCard
+              key={s.label}
+              label={s.label}
+              value={s.value}
+              icon={s.icon}
+              deltaLabel={s.delta}
+            />
+          ))}
+      </div>
+
+      <Card className="mb-5">
+        <CardHeader
+          title="Consultation fees from triage"
+          subtitle="Record payment against the draft invoice (Invoices / Payments pages work the same). Patient returns to triage when paid."
+        />
+        {awaitingConsultFee.length === 0 ? (
+          <p className="px-5 pb-5 text-sm text-slate-400">
+            No patients waiting for consultation-fee payment.
+          </p>
+        ) : (
+          <ul className="space-y-3 px-5 pb-5">
+            {awaitingConsultFee.map((v) => {
+              const amount = v.billing?.consultFeeAmount ?? v.billing?.total ?? 0;
+              return (
+                <li key={v.id} className="rounded-2xl bg-[#f3f7f7] p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <Avatar name={v.patientName} />
+                      <div>
+                        <p className="text-sm font-semibold text-slate-800">{v.patientName}</p>
+                        <p className="text-[11px] text-slate-400">
+                          {v.mrn}
+                          {v.billing?.invoiceNumber
+                            ? ` · ${v.billing.invoiceNumber}`
+                            : " · draft invoice"}
+                        </p>
+                      </div>
+                    </div>
+                    <p className="text-lg font-bold text-slate-900">
+                      KES {Number(amount).toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      disabled={!v.billing?.invoiceId}
+                      onClick={() => {
+                        if (!v.billing?.invoiceId) return;
+                        setPayInvoice({
+                          id: v.billing.invoiceId,
+                          invoiceNumber: v.billing.invoiceNumber ?? "Draft",
+                          patientId: "",
+                          patientName: v.patientName,
+                          patientMrn: v.mrn,
+                          totalAmount: String(amount),
+                          outstanding: String(amount),
+                          discount: "0",
+                          status: "DRAFT",
+                        });
+                      }}
+                      className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                    >
+                      <Wallet className="h-4 w-4" />
+                      Record payment
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setMpesaVisit(v)}
+                      className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
+                    >
+                      <Smartphone className="h-4 w-4" />
+                      Send M-Pesa request
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </Card>
 
       <Card className="mb-5">
         <CardHeader
@@ -248,7 +508,8 @@ export default function BillingPage() {
         ) : (
           <ul className="space-y-3 px-5 pb-5">
             {billable.map((v) => {
-              const total = visitTotal(v, fees);
+              const total = visitAmount(v);
+              const quoted = Boolean(quotes[quoteKey(v)]);
               const insurance = v.payment.method === "INSURANCE";
               const authorized = Boolean(
                 v.payment.authToken ||
@@ -273,7 +534,7 @@ export default function BillingPage() {
                     </div>
                     <div className="text-right">
                       <p className="text-lg font-bold text-slate-900">
-                        KES {total.toLocaleString()}
+                        {quoted ? `KES ${total.toLocaleString()}` : "…"}
                       </p>
                       <p className="text-[11px] text-slate-400">
                         Consultation
@@ -305,25 +566,47 @@ export default function BillingPage() {
                     ) : (
                       <Badge tone="slate">Paying cash</Badge>
                     )}
-                    <button
-                      onClick={() => settle(v)}
-                      disabled={busyId === v.id || !canClaim}
-                      className="inline-flex items-center gap-2 rounded-full bg-brand-500 px-4 py-2 text-xs font-semibold text-white transition hover:bg-brand-600 disabled:opacity-50"
-                    >
-                      {busyId === v.id ? (
+                    <div className="flex flex-wrap gap-2">
+                      {!insurance && (
                         <>
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" /> Submitting…
-                        </>
-                      ) : insurance ? (
-                        <>
-                          <Send className="h-3.5 w-3.5" /> Submit Insurance Claim
-                        </>
-                      ) : (
-                        <>
-                          <Smartphone className="h-3.5 w-3.5" /> Pay with M-Pesa
+                          <button
+                            type="button"
+                            onClick={() => setCashConfirm(v)}
+                            disabled={busyId === v.id || !quoted}
+                            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 transition hover:border-brand-300 disabled:opacity-50"
+                          >
+                            <Wallet className="h-3.5 w-3.5" />
+                            Collect cash
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void settle(v, "MPESA")}
+                            disabled={busyId === v.id || !quoted}
+                            className="inline-flex items-center gap-2 rounded-full bg-brand-500 px-4 py-2 text-xs font-semibold text-white transition hover:bg-brand-600 disabled:opacity-50"
+                          >
+                            <Smartphone className="h-3.5 w-3.5" /> Pay with M-Pesa
+                          </button>
                         </>
                       )}
-                    </button>
+                      {insurance && (
+                        <button
+                          type="button"
+                          onClick={() => void settle(v)}
+                          disabled={busyId === v.id || !canClaim || !quoted}
+                          className="inline-flex items-center gap-2 rounded-full bg-brand-500 px-4 py-2 text-xs font-semibold text-white transition hover:bg-brand-600 disabled:opacity-50"
+                        >
+                          {busyId === v.id ? (
+                            <>
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" /> Submitting…
+                            </>
+                          ) : (
+                            <>
+                              <Send className="h-3.5 w-3.5" /> Submit Insurance Claim
+                            </>
+                          )}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </li>
               );
@@ -332,18 +615,43 @@ export default function BillingPage() {
         )}
       </Card>
 
+      {payInvoice && (
+        <RecordInvoicePaymentModal
+          initialInvoice={payInvoice}
+          onClose={() => setPayInvoice(null)}
+          onPaid={(result) => {
+            setPayInvoice(null);
+            setNotice(
+              `Payment recorded for ${result.invoiceNumber}. Patient can return to triage.`,
+            );
+            void refresh();
+            void loadOverview();
+            if (result.invoiceId) setPrintInvoiceId(result.invoiceId);
+          }}
+        />
+      )}
+
       {mpesaVisit && (
         <MpesaCheckoutModal
           visitId={mpesaVisit.id}
           patientName={mpesaVisit.patientName}
           defaultPhone={mpesaVisit.phone}
-          amount={visitTotal(mpesaVisit, fees)}
+          amount={
+            mpesaVisit.stage === "AWAITING_PAYMENT"
+              ? Number(mpesaVisit.billing?.consultFeeAmount ?? mpesaVisit.billing?.total ?? 0)
+              : visitAmount(mpesaVisit)
+          }
           source="RECEPTION"
           onClose={() => setMpesaVisit(null)}
           onPaid={() => {
             void refresh();
-            void refreshInvoices();
-            setNotice(`${mpesaVisit.patientName} — M-Pesa paid; receipt issued.`);
+            void loadOverview();
+            setNotice(
+              mpesaVisit.stage === "AWAITING_PAYMENT"
+                ? `${mpesaVisit.patientName} — consultation fee paid via M-Pesa. Patient can return to triage.`
+                : `${mpesaVisit.patientName} — M-Pesa paid; receipt issued.`,
+            );
+            setMpesaVisit(null);
           }}
         />
       )}
@@ -388,17 +696,20 @@ export default function BillingPage() {
                     </div>
                   </div>
                   <p className="text-sm font-bold text-slate-900">
-                    KES {(v.billing?.total ?? visitTotal(v, fees)).toLocaleString()}
+                    KES{" "}
+                    {formatKes(
+                      v.billing?.total ?? quotes[quoteKey(v)]?.totalAmount ?? 0,
+                    )}
                   </p>
                 </div>
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
                   <Badge
                     tone={
-                      v.billing?.claimStatus === "REJECTED"
+                      (v.billing?.claimStatus === "REJECTED"
                         ? "red"
                         : v.billing?.claimStatus === "ACCEPTED"
                           ? "green"
-                          : "blue"
+                          : "blue") as BadgeTone
                     }
                   >
                     {v.billing?.claimStatus === "REJECTED"
@@ -484,11 +795,24 @@ export default function BillingPage() {
                   )}
                   {v.billing?.receiptId && (
                     <button
+                      type="button"
                       onClick={() => void openReceipt(v.billing!.receiptId!)}
                       className="text-xs font-semibold text-brand-600 hover:underline"
                     >
-                      {v.billing.receiptNumber || "Receipt"}
+                      Print receipt
                     </button>
+                  )}
+                  {v.billing?.invoiceId && (
+                    <button
+                      type="button"
+                      onClick={() => setPrintInvoiceId(v.billing!.invoiceId!)}
+                      className="text-xs font-semibold text-brand-600 hover:underline"
+                    >
+                      Print invoice
+                    </button>
+                  )}
+                  {!v.billing?.receiptId && v.billing?.invoiceNumber && (
+                    <span className="text-[11px] text-slate-400">{v.billing.invoiceNumber}</span>
                   )}
                 </div>
               </li>
@@ -497,70 +821,100 @@ export default function BillingPage() {
         </Card>
       )}
 
-      <Card>
-        <CardHeader title="Invoices" subtitle="Recent invoice history" />
-        <Table headers={["Invoice", "Patient", "Amount (KES)", "Issued", "Due", "Status"]}>
-          {invoices.map((inv) => (
-            <tr key={inv.id} className="transition hover:bg-slate-50/60">
-              <td className={`${cell} font-semibold text-slate-800`}>{inv.number}</td>
-              <td className={cell}>
-                <div className="flex items-center gap-3">
-                  <Avatar name={inv.patient} size="sm" />
-                  <span className="text-slate-600">{inv.patient}</span>
-                </div>
-              </td>
-              <td className={`${cell} text-slate-500`}>{inv.amount.toLocaleString()}</td>
-              <td className={`${cell} text-slate-500`}>{inv.issued}</td>
-              <td className={`${cell} text-slate-500`}>{inv.due}</td>
-              <td className={cell}>
-                <Badge tone={STATUS_TONES[inv.status] ?? "slate"}>{inv.status}</Badge>
-              </td>
-            </tr>
-          ))}
-        </Table>
-        {invoices.length === 0 && (
-          <p className="px-5 pb-5 text-sm text-slate-400">No invoices yet.</p>
-        )}
-      </Card>
+      {cashConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+          <div className="w-full max-w-md space-y-4 rounded-2xl bg-white p-5 shadow-xl">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-base font-semibold text-slate-900">Confirm cash collection</h3>
+                <p className="mt-1 text-sm text-slate-500">
+                  This will issue the invoice, post the payment to the ledger, and mark the visit
+                  complete. This cannot be undone from here.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCashConfirm(null)}
+                className="text-slate-400 hover:text-slate-600"
+                aria-label="Close"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="rounded-xl bg-[#f3f7f7] px-3.5 py-3 text-sm">
+              <p className="font-semibold text-slate-800">{cashConfirm.patientName}</p>
+              <p className="text-[11px] text-slate-500">
+                {cashConfirm.mrn}
+                {cashConfirm.diagnosis ? ` · ${cashConfirm.diagnosis}` : ""}
+              </p>
+              <p className="mt-2 text-lg font-bold text-slate-900">
+                KES {visitAmount(cashConfirm).toLocaleString()}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={busyId === cashConfirm.id}
+                onClick={() => void settle(cashConfirm, "CASH")}
+                className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                {busyId === cashConfirm.id ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Wallet className="h-4 w-4" />
+                )}
+                {busyId === cashConfirm.id ? "Recording…" : "Yes, collect cash"}
+              </button>
+              <button
+                type="button"
+                disabled={busyId === cashConfirm.id}
+                onClick={() => setCashConfirm(null)}
+                className="rounded-full border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {printInvoiceId && (
+        <InvoicePrintModal
+          invoiceId={printInvoiceId}
+          onClose={() => setPrintInvoiceId("")}
+        />
+      )}
 
       {invoiceOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
           <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-base font-semibold text-slate-800">Create invoice</h3>
+              <h3 className="text-base font-semibold text-slate-800">Create draft invoice</h3>
               <button onClick={() => setInvoiceOpen(false)} className="text-slate-400 hover:text-slate-600">
                 <X className="h-4 w-4" />
               </button>
             </div>
             <div className="space-y-3">
               <div>
-                <label className="text-xs font-semibold text-slate-600">Patient</label>
-                <select
-                  className={`mt-1.5 ${inputClass}`}
+                <FieldLabel required>Patient</FieldLabel>
+                <PatientSearchSelect
                   value={invPatientId}
-                  onChange={(e) => setInvPatientId(e.target.value)}
-                >
-                  <option value="">Select…</option>
-                  {patients.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name} · {p.mrn}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(id) => setInvPatientId(id)}
+                />
               </div>
               <div>
-                <label className="text-xs font-semibold text-slate-600">Amount (KES)</label>
+                <FieldLabel required>Amount (KES)</FieldLabel>
                 <input
-                  className={`mt-1.5 ${inputClass}`}
+                  className={inputClass}
                   value={invAmount}
                   onChange={(e) => setInvAmount(e.target.value)}
                   inputMode="numeric"
                 />
               </div>
               <div>
-                <label className="text-xs font-semibold text-slate-600">Description</label>
+                <FieldLabel optional>Description</FieldLabel>
                 <input
-                  className={`mt-1.5 ${inputClass}`}
+                  className={inputClass}
                   value={invDesc}
                   onChange={(e) => setInvDesc(e.target.value)}
                 />
@@ -572,7 +926,7 @@ export default function BillingPage() {
                 className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand-500 py-2.5 text-sm font-semibold text-white hover:bg-brand-600 disabled:opacity-50"
               >
                 {invBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                Create
+                Create draft
               </button>
             </div>
           </div>

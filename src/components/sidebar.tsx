@@ -6,8 +6,24 @@ import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, LogOut, X } from "lucide-react";
 import { BrandLogo } from "@/components/brand-logo";
 import { useAuth } from "@/lib/auth";
-import { navForRole, type NavItem } from "@/lib/nav";
+import { navForRole, type NavChild, type NavItem } from "@/lib/nav";
 import { useShell } from "@/lib/shell";
+
+/** Exact match, or nested under this href only when no sibling is more specific. */
+function isAccordionChildActive(
+  pathname: string,
+  childHref: string,
+  siblings: NavChild[],
+): boolean {
+  if (pathname === childHref) return true;
+  if (!pathname.startsWith(`${childHref}/`)) return false;
+  return !siblings.some(
+    (s) =>
+      s.href !== childHref &&
+      s.href.length > childHref.length &&
+      (pathname === s.href || pathname.startsWith(`${s.href}/`)),
+  );
+}
 
 function NavLinkItem({
   item,
@@ -75,10 +91,11 @@ function NavLinkItem({
       {open && (
         <ul className="mt-1 space-y-0.5 border-l border-slate-100 ml-6 pl-2">
           {item.children!.map((child) => {
-            const active =
-              pathname === child.href ||
-              (child.href !== "/inpatient" &&
-                pathname.startsWith(`${child.href}/`));
+            const active = isAccordionChildActive(
+              pathname,
+              child.href,
+              item.children!,
+            );
             return (
               <li key={child.href}>
                 <Link

@@ -1,13 +1,13 @@
 "use client";
 
-import { Send } from "lucide-react";
-import { useState } from "react";
+import { Loader2, RefreshCw, Send } from "lucide-react";
+import { useMemo, useState } from "react";
 import { RoleGuard } from "@/components/role-guard";
-import { Avatar, Card, CardHeader, PageHeader } from "@/components/ui";
+import { Avatar, Badge, Card, CardHeader, PageHeader } from "@/components/ui";
 import { PaymentInfo, PipelineStepper, VisitQueueList } from "@/components/visit-flow";
 import { useAuth } from "@/lib/auth";
 import { useDoctors } from "@/lib/catalog";
-import { useVisits, type Vitals } from "@/lib/visits";
+import { useVisits, type Visit, type Vitals } from "@/lib/visits";
 
 const inputClass =
   "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
@@ -32,52 +32,137 @@ const VITAL_FIELDS: { key: keyof Vitals; label: string; placeholder: string }[] 
   { key: "weightKg", label: "Weight (kg)", placeholder: "70" },
 ];
 
+function fifo(visits: Visit[]) {
+  return visits
+    .slice()
+    .sort(
+      (a, b) =>
+        new Date(a.checkedInAt).getTime() - new Date(b.checkedInAt).getTime(),
+    );
+}
+
 export default function TriagePage() {
   const { user } = useAuth();
-  const { visits, recordTriage } = useVisits();
+  const { visits, loading, refresh, recordTriage } = useVisits();
   const { data: doctors } = useDoctors();
 
-  const queue = visits.filter((v) => v.stage === "CHECKED_IN");
+  const queue = useMemo(
+    () => fifo(visits.filter((v) => v.stage === "CHECKED_IN")),
+    [visits],
+  );
+  const atFinance = useMemo(
+    () => fifo(visits.filter((v) => v.stage === "AWAITING_PAYMENT")),
+    [visits],
+  );
+
   const [selectedId, setSelectedId] = useState<string>("");
   const [vitals, setVitals] = useState<Vitals>(EMPTY_VITALS);
   const [doctorName, setDoctorName] = useState("");
+  const [submitBusy, setSubmitBusy] = useState(false);
+  const [refreshBusy, setRefreshBusy] = useState(false);
+  const [error, setError] = useState("");
 
   const selected = queue.find((v) => v.id === selectedId) ?? queue[0];
   const availableDoctors = doctors.filter((d) => d.available);
-
   const vitalsComplete = VITAL_FIELDS.every((f) => vitals[f.key].trim() !== "");
 
-  const submit = () => {
+  const onRefresh = async () => {
+    setRefreshBusy(true);
+    setError("");
+    try {
+      await refresh();
+    } finally {
+      setRefreshBusy(false);
+    }
+  };
+
+  const submit = async () => {
     if (!selected || !vitalsComplete || !doctorName || !user) return;
-    recordTriage(selected.id, vitals, doctorName, user.name);
-    setVitals(EMPTY_VITALS);
-    setDoctorName("");
-    setSelectedId("");
+    setSubmitBusy(true);
+    setError("");
+    try {
+      await recordTriage(selected.id, vitals, doctorName, user.name);
+      setVitals(EMPTY_VITALS);
+      setDoctorName("");
+      setSelectedId("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not send to doctor");
+    } finally {
+      setSubmitBusy(false);
+    }
   };
 
   return (
     <RoleGuard module="triage">
       <PageHeader
         title="Triage"
-        subtitle={`${queue.length} patient${queue.length === 1 ? "" : "s"} waiting for vitals`}
+        subtitle={`${queue.length} ready · ${atFinance.length} still at finance · oldest first`}
+        action={
+          <button
+            type="button"
+            onClick={() => void onRefresh()}
+            disabled={refreshBusy || loading}
+            className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:border-brand-300 hover:text-brand-700 disabled:opacity-50"
+          >
+            {refreshBusy || loading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
+            Refresh
+          </button>
+        }
       />
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_1.4fr]">
-        {/* Queue */}
-        <Card className="h-fit">
-          <CardHeader title="Waiting for Triage" subtitle="Sent from the front desk" />
-          <VisitQueueList
-            visits={queue}
-            selectedId={selected?.id}
-            onSelect={(id) => {
-              setSelectedId(id);
-              setVitals(EMPTY_VITALS);
-            }}
-            emptyMessage="No patients waiting. New check-ins from the front desk appear here."
-          />
-        </Card>
+      {error && (
+        <p className="mb-4 rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</p>
+      )}
 
-        {/* Vitals form */}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_1.4fr]">
+        <div className="space-y-4">
+          <Card className="h-fit">
+            <CardHeader
+              title="Waiting for Triage"
+              subtitle="Fees are charged at the front desk — oldest check-ins first"
+            />
+            <VisitQueueList
+              visits={queue}
+              selectedId={selected?.id}
+              onSelect={(id) => {
+                setSelectedId(id);
+                setVitals(EMPTY_VITALS);
+                setError("");
+              }}
+              emptyMessage="No patients waiting. After finance payment they return here automatically."
+            />
+          </Card>
+
+          {atFinance.length > 0 && (
+            <Card className="h-fit">
+              <CardHeader
+                title="Still at finance"
+                subtitle="Waiting for consultation-fee payment before triage"
+              />
+              <ul className="space-y-1 px-3 pb-4">
+                {atFinance.map((v) => (
+                  <li key={v.id} className="flex items-center gap-3 rounded-xl px-2.5 py-2.5">
+                    <Avatar name={v.patientName} size="sm" />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-slate-800">
+                        {v.patientName}
+                      </p>
+                      <p className="text-[11px] text-slate-400">
+                        {v.billing?.invoiceNumber ?? "Draft invoice"} · pay at Billing
+                      </p>
+                    </div>
+                    <Badge tone="amber">Unpaid</Badge>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          )}
+        </div>
+
         {selected ? (
           <Card>
             <CardHeader
@@ -88,6 +173,23 @@ export default function TriagePage() {
             <div className="space-y-5 px-5 pb-5">
               <PipelineStepper visit={selected} />
               <PaymentInfo visit={selected} />
+
+              {(selected.reasonForVisit || selected.additionalNotes) && (
+                <div className="rounded-xl border border-brand-100 bg-brand-50/50 px-4 py-3 text-sm">
+                  {selected.reasonForVisit && (
+                    <p>
+                      <span className="font-semibold text-slate-700">Reason for visit: </span>
+                      <span className="text-slate-600">{selected.reasonForVisit}</span>
+                    </p>
+                  )}
+                  {selected.additionalNotes && (
+                    <p className={selected.reasonForVisit ? "mt-1.5" : undefined}>
+                      <span className="font-semibold text-slate-700">Reception notes: </span>
+                      <span className="text-slate-600">{selected.additionalNotes}</span>
+                    </p>
+                  )}
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {VITAL_FIELDS.map((f) => (
@@ -105,8 +207,14 @@ export default function TriagePage() {
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-600">Assign to available doctor</label>
-                <select className={`mt-1.5 ${inputClass}`} value={doctorName} onChange={(e) => setDoctorName(e.target.value)}>
+                <label className="text-xs font-semibold text-slate-600">
+                  Assign to available doctor
+                </label>
+                <select
+                  className={`mt-1.5 ${inputClass}`}
+                  value={doctorName}
+                  onChange={(e) => setDoctorName(e.target.value)}
+                >
                   <option value="">Select a doctor in session…</option>
                   {availableDoctors.map((d) => (
                     <option key={d.id} value={d.name}>
@@ -117,17 +225,23 @@ export default function TriagePage() {
               </div>
 
               <button
-                onClick={submit}
-                disabled={!vitalsComplete || !doctorName}
+                type="button"
+                onClick={() => void submit()}
+                disabled={!vitalsComplete || !doctorName || submitBusy}
                 className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand-500 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-40"
               >
-                <Send className="h-4 w-4" /> Send to Doctor
+                {submitBusy ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
+                {submitBusy ? "Sending…" : "Send to Doctor"}
               </button>
             </div>
           </Card>
         ) : (
           <Card className="flex min-h-64 items-center justify-center p-10 text-sm text-slate-400">
-            Select a patient from the queue to record vitals.
+            Select a patient from the triage queue to record vitals.
           </Card>
         )}
       </div>

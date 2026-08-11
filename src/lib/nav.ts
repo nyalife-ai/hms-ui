@@ -22,6 +22,8 @@ import { canAccess, MODULE_ACCESS, type Role } from "./roles";
 export interface NavChild {
   label: string;
   href: string;
+  /** When set, child is filtered separately from the parent module. */
+  module?: keyof typeof MODULE_ACCESS;
 }
 
 export interface NavItem {
@@ -92,6 +94,7 @@ export const NAV_SECTIONS: NavSection[] = [
         children: [
           { label: "Overview", href: "/laboratory" },
           { label: "Test Types", href: "/laboratory/test-types" },
+          { label: "Services & Procedures", href: "/laboratory/services" },
           { label: "Requests", href: "/laboratory/requests" },
           { label: "Samples", href: "/laboratory/samples" },
           { label: "Results", href: "/laboratory/results" },
@@ -106,7 +109,9 @@ export const NAV_SECTIONS: NavSection[] = [
         children: [
           { label: "Overview", href: "/pharmacy" },
           { label: "Medications", href: "/pharmacy/medications" },
+          { label: "Categories", href: "/pharmacy/categories" },
           { label: "Batches", href: "/pharmacy/batches" },
+          { label: "Stock ledger", href: "/pharmacy/stock" },
           { label: "Suppliers", href: "/pharmacy/suppliers" },
           { label: "Purchase Orders", href: "/pharmacy/purchase-orders" },
           { label: "Prescriptions", href: "/pharmacy/prescriptions" },
@@ -117,9 +122,34 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     title: "General",
     items: [
-      { label: "Billing", href: "/billing", icon: Receipt, module: "billing" },
+      {
+        label: "Billing",
+        href: "/billing",
+        icon: Receipt,
+        module: "billing",
+        children: [
+          { label: "Overview", href: "/billing", module: "billing" },
+          { label: "Invoices", href: "/billing/invoices", module: "billing" },
+          { label: "Payments", href: "/billing/payments", module: "billing" },
+          { label: "Claims", href: "/billing/claims", module: "billing" },
+          { label: "Services", href: "/billing/services", module: "billing-ledger" },
+          { label: "Accounts", href: "/billing/accounts", module: "billing-ledger" },
+          { label: "Journals", href: "/billing/journals", module: "billing-ledger" },
+          { label: "Tax rates", href: "/billing/tax-rates", module: "billing-ledger" },
+          { label: "Periods", href: "/billing/periods", module: "billing-ledger" },
+        ],
+      },
       { label: "Messages", href: "/messages", icon: MessageSquare, module: "messages" },
-      { label: "Settings", href: "/settings", icon: Settings, module: "settings" },
+      {
+        label: "Settings",
+        href: "/settings",
+        icon: Settings,
+        module: "settings",
+        children: [
+          { label: "Hospital", href: "/settings", module: "settings" },
+          { label: "Audit logs", href: "/settings/audit", module: "settings" },
+        ],
+      },
     ],
   },
 ];
@@ -128,8 +158,14 @@ export const NAV_SECTIONS: NavSection[] = [
 export function navForRole(role: Role, permissions?: string[]): NavSection[] {
   return NAV_SECTIONS.map((section) => ({
     ...section,
-    items: section.items.filter((item) =>
-      canAccess(role, item.module, permissions),
-    ),
+    items: section.items
+      .filter((item) => canAccess(role, item.module, permissions))
+      .map((item) => {
+        if (!item.children?.length) return item;
+        const children = item.children.filter((child) =>
+          canAccess(role, child.module ?? item.module, permissions),
+        );
+        return { ...item, children };
+      }),
   })).filter((section) => section.items.length > 0);
 }

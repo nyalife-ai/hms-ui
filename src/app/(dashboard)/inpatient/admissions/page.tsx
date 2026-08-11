@@ -2,6 +2,9 @@
 
 import { Plus, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { DoctorSearchSelect } from "@/components/doctor-search-select";
+import { FieldLabel } from "@/components/field-label";
+import { PatientSearchSelect } from "@/components/patient-search-select";
 import { RoleGuard } from "@/components/role-guard";
 import {
   Avatar,
@@ -14,13 +17,8 @@ import {
 } from "@/components/ui";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import {
-  useDoctors,
-  usePatients,
-  useWards,
-  type ActiveAdmission,
-  type IpdBed,
-} from "@/lib/catalog";
+import { useWards, type ActiveAdmission, type IpdBed } from "@/lib/catalog";
+import { unwrapPage } from "@/lib/pagination";
 
 const inputClass =
   "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
@@ -28,8 +26,6 @@ const inputClass =
 export default function IpdAdmissionsPage() {
   const { user } = useAuth();
   const { data: wards, loading, error, refresh } = useWards();
-  const { data: patients } = usePatients();
-  const { data: doctors } = useDoctors();
   const totalBeds = wards.reduce((sum, w) => sum + w.totalBeds, 0);
   const occupied = wards.reduce((sum, w) => sum + w.occupied, 0);
 
@@ -53,6 +49,10 @@ export default function IpdAdmissionsPage() {
   const [dischargeMeds, setDischargeMeds] = useState("");
   const [dischargeFollowUp, setDischargeFollowUp] = useState("");
   const [dischargeBusy, setDischargeBusy] = useState(false);
+  const [dischargeLines, setDischargeLines] = useState<
+    Array<{ medicationId: string; dosage: string; frequency: string; duration: string; quantity: string }>
+  >([{ medicationId: "", dosage: "", frequency: "TDS", duration: "5 days", quantity: "1" }]);
+  const [formulary, setFormulary] = useState<Array<{ id: string; medicationName: string }>>([]);
 
   const [transferId, setTransferId] = useState("");
   const [transferBedId, setTransferBedId] = useState("");
@@ -77,15 +77,22 @@ export default function IpdAdmissionsPage() {
 
   const refreshBoard = useCallback(async () => {
     try {
-      const [a, b, discharged, transferred] = await Promise.all([
-        api<ActiveAdmission[]>("/ipd/admissions?active=true"),
-        api<IpdBed[]>("/ipd/beds?available=true"),
-        api<ActiveAdmission[]>("/ipd/admissions?status=DISCHARGED&take=15"),
-        api<ActiveAdmission[]>("/ipd/admissions?status=TRANSFERRED&take=10"),
+      const [a, b, discharged, transferred, meds] = await Promise.all([
+        api("/ipd/admissions?active=true"),
+        api("/ipd/beds?available=true"),
+        api("/ipd/admissions?status=DISCHARGED&limit=15"),
+        api("/ipd/admissions?status=TRANSFERRED&limit=10"),
+        api("/pharmacy/medications?limit=100&active=true").catch(() => ({ items: [] })),
       ]);
-      setAdmissions(a);
-      setBeds(b);
-      setHistory([...discharged, ...transferred].slice(0, 20));
+      setAdmissions(unwrapPage<ActiveAdmission>(a).items);
+      setBeds(unwrapPage<IpdBed>(b).items);
+      setHistory(
+        [
+          ...unwrapPage<ActiveAdmission>(discharged).items,
+          ...unwrapPage<ActiveAdmission>(transferred).items,
+        ].slice(0, 20),
+      );
+      setFormulary(unwrapPage<{ id: string; medicationName: string }>(meds).items);
       setListError("");
     } catch (err) {
       setListError(err instanceof Error ? err.message : "Could not load admissions");
@@ -139,6 +146,15 @@ export default function IpdAdmissionsPage() {
     if (!dischargeId || !dischargeDoctorId) return;
     setDischargeBusy(true);
     try {
+      const prescriptionLines = dischargeLines
+        .filter((l) => l.medicationId)
+        .map((l) => ({
+          medicationId: l.medicationId,
+          dosage: l.dosage.trim() || "As directed",
+          frequency: l.frequency.trim() || "As directed",
+          duration: l.duration.trim() || "As directed",
+          quantity: Math.max(1, Number(l.quantity) || 1),
+        }));
       await api(`/ipd/admissions/${dischargeId}/discharge`, {
         method: "POST",
         body: JSON.stringify({
@@ -147,6 +163,7 @@ export default function IpdAdmissionsPage() {
           summary: dischargeSummary || undefined,
           medications: dischargeMeds || undefined,
           followUpInstructions: dischargeFollowUp || undefined,
+          prescriptionLines: prescriptionLines.length ? prescriptionLines : undefined,
         }),
       });
       setDischargeId("");
@@ -154,6 +171,9 @@ export default function IpdAdmissionsPage() {
       setDischargeDiagnosis("");
       setDischargeMeds("");
       setDischargeFollowUp("");
+      setDischargeLines([
+        { medicationId: "", dosage: "", frequency: "TDS", duration: "5 days", quantity: "1" },
+      ]);
       await Promise.all([refresh(), refreshBoard()]);
     } catch (err) {
       setListError(err instanceof Error ? err.message : "Discharge failed");
@@ -372,47 +392,52 @@ export default function IpdAdmissionsPage() {
               </button>
             </div>
             <div className="space-y-3">
-              <select className={inputClass} value={patientId} onChange={(e) => setPatientId(e.target.value)}>
-                <option value="">Select patient</option>
-                {patients.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select>
-              <select
-                className={inputClass}
-                value={wardId}
-                onChange={(e) => {
-                  setWardId(e.target.value);
-                  setBedId("");
-                }}
-              >
-                <option value="">Any ward with free beds</option>
-                {wards.map((w) => (
-                  <option key={w.id} value={w.id}>
-                    {w.name} ({w.totalBeds - w.occupied} free)
-                  </option>
-                ))}
-              </select>
-              <select className={inputClass} value={bedId} onChange={(e) => setBedId(e.target.value)}>
-                <option value="">First available bed</option>
-                {availableForWard.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.wardName} · Bed {b.bedNumber}
-                  </option>
-                ))}
-              </select>
-              <select className={inputClass} value={doctorId} onChange={(e) => setDoctorId(e.target.value)}>
-                <option value="">Admitting doctor</option>
-                {doctors.map((d) => (
-                  <option key={d.id} value={d.id}>{d.name}</option>
-                ))}
-              </select>
-              <input
-                className={inputClass}
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                placeholder="Primary diagnosis / reason"
-              />
+              <div>
+                <FieldLabel required>Patient</FieldLabel>
+                <PatientSearchSelect value={patientId} onChange={(id) => setPatientId(id)} />
+              </div>
+              <div>
+                <FieldLabel optional>Ward</FieldLabel>
+                <select
+                  className={inputClass}
+                  value={wardId}
+                  onChange={(e) => {
+                    setWardId(e.target.value);
+                    setBedId("");
+                  }}
+                >
+                  <option value="">Any ward with free beds</option>
+                  {wards.map((w) => (
+                    <option key={w.id} value={w.id}>
+                      {w.name} ({w.totalBeds - w.occupied} free)
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <FieldLabel optional>Bed</FieldLabel>
+                <select className={inputClass} value={bedId} onChange={(e) => setBedId(e.target.value)}>
+                  <option value="">First available bed</option>
+                  {availableForWard.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.wardName} · Bed {b.bedNumber}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <FieldLabel required>Admitting doctor</FieldLabel>
+                <DoctorSearchSelect value={doctorId} onChange={(id) => setDoctorId(id)} />
+              </div>
+              <div>
+                <FieldLabel optional>Primary diagnosis</FieldLabel>
+                <input
+                  className={inputClass}
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  placeholder="Primary diagnosis / reason"
+                />
+              </div>
               {formError && <p className="text-sm text-rose-500">{formError}</p>}
               <PrimaryButton disabled={busy} onClick={admit}>
                 {busy ? "Admitting…" : "Confirm admission"}
@@ -432,40 +457,125 @@ export default function IpdAdmissionsPage() {
               </button>
             </div>
             <div className="space-y-3">
-              <select
-                className={inputClass}
-                value={dischargeDoctorId}
-                onChange={(e) => setDischargeDoctorId(e.target.value)}
-              >
-                <option value="">Discharging doctor</option>
-                {doctors.map((d) => (
-                  <option key={d.id} value={d.id}>{d.name}</option>
+              <div>
+                <FieldLabel required>Discharging doctor</FieldLabel>
+                <DoctorSearchSelect
+                  value={dischargeDoctorId}
+                  onChange={(id) => setDischargeDoctorId(id)}
+                />
+              </div>
+              <div>
+                <FieldLabel optional>Discharge diagnosis</FieldLabel>
+                <input
+                  className={inputClass}
+                  value={dischargeDiagnosis}
+                  onChange={(e) => setDischargeDiagnosis(e.target.value)}
+                />
+              </div>
+              <div>
+                <FieldLabel optional>Summary of treatment</FieldLabel>
+                <textarea
+                  className={`${inputClass} min-h-20 resize-y`}
+                  value={dischargeSummary}
+                  onChange={(e) => setDischargeSummary(e.target.value)}
+                />
+              </div>
+              <div>
+                <FieldLabel optional>Formulary to send to pharmacy</FieldLabel>
+                {dischargeLines.map((line, idx) => (
+                  <div key={idx} className="mb-2 space-y-2 rounded-xl bg-[#f3f7f7] p-3">
+                    <select
+                      className={inputClass}
+                      value={line.medicationId}
+                      onChange={(e) =>
+                        setDischargeLines((rows) =>
+                          rows.map((r, i) => (i === idx ? { ...r, medicationId: e.target.value } : r)),
+                        )
+                      }
+                    >
+                      <option value="">Select medication…</option>
+                      {formulary.map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.medicationName}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        className={inputClass}
+                        placeholder="Dose"
+                        value={line.dosage}
+                        onChange={(e) =>
+                          setDischargeLines((rows) =>
+                            rows.map((r, i) => (i === idx ? { ...r, dosage: e.target.value } : r)),
+                          )
+                        }
+                      />
+                      <input
+                        className={inputClass}
+                        placeholder="How often"
+                        value={line.frequency}
+                        onChange={(e) =>
+                          setDischargeLines((rows) =>
+                            rows.map((r, i) => (i === idx ? { ...r, frequency: e.target.value } : r)),
+                          )
+                        }
+                      />
+                      <input
+                        className={inputClass}
+                        placeholder="Duration"
+                        value={line.duration}
+                        onChange={(e) =>
+                          setDischargeLines((rows) =>
+                            rows.map((r, i) => (i === idx ? { ...r, duration: e.target.value } : r)),
+                          )
+                        }
+                      />
+                      <input
+                        className={inputClass}
+                        type="number"
+                        min={1}
+                        placeholder="Qty"
+                        value={line.quantity}
+                        onChange={(e) =>
+                          setDischargeLines((rows) =>
+                            rows.map((r, i) => (i === idx ? { ...r, quantity: e.target.value } : r)),
+                          )
+                        }
+                      />
+                    </div>
+                  </div>
                 ))}
-              </select>
-              <input
-                className={inputClass}
-                value={dischargeDiagnosis}
-                onChange={(e) => setDischargeDiagnosis(e.target.value)}
-                placeholder="Discharge diagnosis"
-              />
-              <textarea
-                className={`${inputClass} min-h-20 resize-y`}
-                value={dischargeSummary}
-                onChange={(e) => setDischargeSummary(e.target.value)}
-                placeholder="Summary of treatment"
-              />
-              <textarea
-                className={`${inputClass} min-h-16 resize-y`}
-                value={dischargeMeds}
-                onChange={(e) => setDischargeMeds(e.target.value)}
-                placeholder="Discharge medications"
-              />
-              <textarea
-                className={`${inputClass} min-h-16 resize-y`}
-                value={dischargeFollowUp}
-                onChange={(e) => setDischargeFollowUp(e.target.value)}
-                placeholder="Follow-up instructions"
-              />
+                <button
+                  type="button"
+                  className="text-xs font-semibold text-brand-700"
+                  onClick={() =>
+                    setDischargeLines((rows) => [
+                      ...rows,
+                      { medicationId: "", dosage: "", frequency: "TDS", duration: "5 days", quantity: "1" },
+                    ])
+                  }
+                >
+                  + Add medication
+                </button>
+              </div>
+              <div>
+                <FieldLabel optional>Discharge medication notes</FieldLabel>
+                <textarea
+                  className={`${inputClass} min-h-16 resize-y`}
+                  value={dischargeMeds}
+                  onChange={(e) => setDischargeMeds(e.target.value)}
+                  placeholder="Free-text notes kept on the discharge summary"
+                />
+              </div>
+              <div>
+                <FieldLabel optional>Follow-up instructions</FieldLabel>
+                <textarea
+                  className={`${inputClass} min-h-16 resize-y`}
+                  value={dischargeFollowUp}
+                  onChange={(e) => setDischargeFollowUp(e.target.value)}
+                />
+              </div>
               <PrimaryButton disabled={dischargeBusy || !dischargeDoctorId} onClick={discharge}>
                 {dischargeBusy ? "Discharging…" : "Finalize & discharge"}
               </PrimaryButton>
@@ -484,24 +594,29 @@ export default function IpdAdmissionsPage() {
               </button>
             </div>
             <div className="space-y-3">
-              <select
-                className={inputClass}
-                value={transferBedId}
-                onChange={(e) => setTransferBedId(e.target.value)}
-              >
-                <option value="">Select available bed</option>
-                {beds.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.wardName} · Bed {b.bedNumber}
-                  </option>
-                ))}
-              </select>
-              <input
-                className={inputClass}
-                value={transferReason}
-                onChange={(e) => setTransferReason(e.target.value)}
-                placeholder="Transfer reason"
-              />
+              <div>
+                <FieldLabel required>Available bed</FieldLabel>
+                <select
+                  className={inputClass}
+                  value={transferBedId}
+                  onChange={(e) => setTransferBedId(e.target.value)}
+                >
+                  <option value="">Select available bed</option>
+                  {beds.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.wardName} · Bed {b.bedNumber}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <FieldLabel optional>Transfer reason</FieldLabel>
+                <input
+                  className={inputClass}
+                  value={transferReason}
+                  onChange={(e) => setTransferReason(e.target.value)}
+                />
+              </div>
               <PrimaryButton disabled={transferBusy || !transferBedId} onClick={transfer}>
                 {transferBusy ? "Transferring…" : "Confirm transfer"}
               </PrimaryButton>
@@ -523,18 +638,22 @@ export default function IpdAdmissionsPage() {
               <p className="text-sm text-slate-500">
                 Sets admission status to TRANSFERRED, frees the bed, and removes the patient from the active board.
               </p>
-              <input
-                className={inputClass}
-                value={transferOutReason}
-                onChange={(e) => setTransferOutReason(e.target.value)}
-                placeholder="Reason (required)"
-              />
-              <input
-                className={inputClass}
-                value={transferOutDest}
-                onChange={(e) => setTransferOutDest(e.target.value)}
-                placeholder="Destination facility (optional)"
-              />
+              <div>
+                <FieldLabel required>Reason</FieldLabel>
+                <input
+                  className={inputClass}
+                  value={transferOutReason}
+                  onChange={(e) => setTransferOutReason(e.target.value)}
+                />
+              </div>
+              <div>
+                <FieldLabel optional>Destination facility</FieldLabel>
+                <input
+                  className={inputClass}
+                  value={transferOutDest}
+                  onChange={(e) => setTransferOutDest(e.target.value)}
+                />
+              </div>
               <PrimaryButton
                 disabled={transferOutBusy || !transferOutReason.trim()}
                 onClick={transferOut}

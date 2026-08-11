@@ -47,6 +47,8 @@ export default function LabSamplesPage() {
   const [status, setStatus] = useState("");
   const [search, setSearch] = useState("");
 
+  const [busyId, setBusyId] = useState("");
+
   const load = useCallback(async () => {
     try {
       const qs = new URLSearchParams();
@@ -65,6 +67,8 @@ export default function LabSamplesPage() {
   }, [load]);
 
   const advance = async (id: string, next: string) => {
+    setBusyId(`${id}:${next}`);
+    setError("");
     try {
       await api(`/laboratory/samples/${id}/status`, {
         method: "POST",
@@ -73,6 +77,9 @@ export default function LabSamplesPage() {
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Status update failed");
+      await load();
+    } finally {
+      setBusyId("");
     }
   };
 
@@ -123,10 +130,11 @@ export default function LabSamplesPage() {
                     <button
                       key={n}
                       type="button"
-                      className="rounded-full border px-2 py-1 text-[10px]"
+                      disabled={Boolean(busyId)}
+                      className="rounded-full border px-2 py-1 text-[10px] disabled:opacity-40"
                       onClick={() => void advance(s.id, n)}
                     >
-                      → {n}
+                      {busyId === `${s.id}:${n}` ? "…" : `→ ${n}`}
                     </button>
                   ))}
                 </div>

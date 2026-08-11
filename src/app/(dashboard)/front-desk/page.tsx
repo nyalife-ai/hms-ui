@@ -1,12 +1,20 @@
 "use client";
 
 import { CalendarDays, Send, ShieldCheck, Loader2, Smartphone, UserCheck } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { FieldLabel } from "@/components/field-label";
+import { PatientSearchSelect } from "@/components/patient-search-select";
 import { RoleGuard } from "@/components/role-guard";
-import { Badge, Card, CardHeader, PageHeader } from "@/components/ui";
+import { Avatar, Badge, Card, CardHeader, PageHeader } from "@/components/ui";
 import { VisitQueueList } from "@/components/visit-flow";
 import { api } from "@/lib/api";
-import { useAppointments, useInsurers, usePatients, type CatalogAppointment } from "@/lib/catalog";
+import {
+  useAppointments,
+  useInsurers,
+  type CatalogAppointment,
+  type CatalogPatient,
+  type FeeSchedule,
+} from "@/lib/catalog";
 import { useVisits } from "@/lib/visits";
 import type {
   EligibilityBenefit,
@@ -30,22 +38,30 @@ type VerifyState =
   | "ERROR";
 
 export default function FrontDeskPage() {
-  const { visits, checkIn } = useVisits();
-  const { data: patients } = usePatients();
+  const { visits, checkIn, refresh } = useVisits();
   const { data: insurers } = useInsurers();
   const { data: appointments, refresh: refreshAppointments } = useAppointments();
 
   const [firstVisit, setFirstVisit] = useState(false);
   const [existingId, setExistingId] = useState("");
+  const [selectedPatient, setSelectedPatient] = useState<CatalogPatient | null>(null);
   const [name, setName] = useState("");
   const [age, setAge] = useState("");
   const [gender, setGender] = useState<"Male" | "Female">("Female");
+  const [kinName, setKinName] = useState("");
+  const [kinPhone, setKinPhone] = useState("");
+  const [consultFeeEnabled, setConsultFeeEnabled] = useState(true);
+  const [consultFeeAmount, setConsultFeeAmount] = useState<number | null>(null);
   const [phone, setPhone] = useState("");
   const [method, setMethod] = useState<"CASH" | "INSURANCE">("CASH");
   const [providerId, setProviderId] = useState("");
   const [policyNumber, setPolicyNumber] = useState("");
   const [appointmentId, setAppointmentId] = useState("");
+  const [reasonForVisit, setReasonForVisit] = useState("");
+  const [additionalNotes, setAdditionalNotes] = useState("");
   const [apptBusy, setApptBusy] = useState("");
+  const [checkInBusy, setCheckInBusy] = useState(false);
+  const [formError, setFormError] = useState("");
 
   // Verification flow state
   const [verifyState, setVerifyState] = useState<VerifyState>("IDLE");
@@ -61,6 +77,37 @@ export default function FrontDeskPage() {
   const [errorMessage, setErrorMessage] = useState("");
 
   const activeVisits = visits.filter((v) => v.stage !== "COMPLETED");
+  const atFinance = useMemo(
+    () =>
+      visits
+        .filter((v) => v.stage === "AWAITING_PAYMENT")
+        .slice()
+        .sort(
+          (a, b) =>
+            new Date(a.checkedInAt).getTime() - new Date(b.checkedInAt).getTime(),
+        ),
+    [visits],
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const fees = await api<FeeSchedule>("/billing/fees");
+        if (cancelled) return;
+        setConsultFeeEnabled(fees.consultationFeeEnabled !== false);
+        setConsultFeeAmount(
+          Number.isFinite(fees.consult) ? fees.consult : null,
+        );
+      } catch {
+        /* keep defaults */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const provider = insurers.find((p) => p.id === providerId);
   const today = new Date().toISOString().slice(0, 10);
   const checkedInApptIds = useMemo(
@@ -173,99 +220,132 @@ export default function FrontDeskPage() {
 
   const resetForm = () => {
     setExistingId("");
+    setSelectedPatient(null);
     setName("");
     setAge("");
     setGender("Female");
     setPhone("");
+    setKinName("");
+    setKinPhone("");
     setMethod("CASH");
     setProviderId("");
     setPolicyNumber("");
     setAppointmentId("");
+    setReasonForVisit("");
+    setAdditionalNotes("");
+    setFormError("");
     resetVerification();
   };
 
   const submit = async () => {
-    const existing = patients.find((p) => p.id === existingId);
-    let patient:
-      | {
-          patientName: string;
-          mrn: string;
-          age: number;
-          gender: "Male" | "Female";
-          phone: string;
-        }
-      | null = null;
+    setFormError("");
+    setCheckInBusy(true);
+    try {
+      let patient:
+        | {
+            patientName: string;
+            mrn: string;
+            age: number;
+            gender: "Male" | "Female";
+            phone: string;
+          }
+        | null = null;
 
-    if (firstVisit) {
-      if (!name.trim() || !phone.trim()) return;
-      const parts = name.trim().split(/\s+/);
-      const firstName = parts[0] || name.trim();
-      const lastName = parts.slice(1).join(" ") || firstName;
-      try {
-        const created = await api<{
-          id: string;
-          patient_number?: string;
-          patientNumber?: string;
-        }>("/ops/patients", {
-          method: "POST",
-          body: JSON.stringify({
-            firstName,
-            lastName,
+      if (firstVisit) {
+        if (!name.trim() || !phone.trim()) {
+          setFormError("Name and phone are required for a first visit.");
+          return;
+        }
+        const parts = name.trim().split(/\s+/);
+        const firstName = parts[0] || name.trim();
+        const lastName = parts.slice(1).join(" ") || firstName;
+        try {
+          const created = await api<{
+            id: string;
+            patient_number?: string;
+            patientNumber?: string;
+          }>("/ops/patients", {
+            method: "POST",
+            body: JSON.stringify({
+              firstName,
+              lastName,
+              gender,
+              phone,
+              emergencyContactName: kinName.trim() || undefined,
+              emergencyContactPhone: kinPhone.trim() || undefined,
+            }),
+          });
+          const mrn = created.patient_number || created.patientNumber;
+          if (!mrn) throw new Error("Patient created without MRN");
+          patient = {
+            patientName: name.trim(),
+            mrn,
+            age: Number(age) || 0,
             gender,
             phone,
-          }),
-        });
-        const mrn = created.patient_number || created.patientNumber;
-        if (!mrn) throw new Error("Patient created without MRN");
+          };
+        } catch (err) {
+          setFormError(
+            err instanceof Error ? err.message : "Unable to register the patient",
+          );
+          return;
+        }
+      } else if (selectedPatient || existingId) {
+        const existing = selectedPatient;
+        if (!existing) {
+          setFormError("Select a patient to continue.");
+          return;
+        }
         patient = {
-          patientName: name.trim(),
-          mrn,
-          age: Number(age) || 0,
-          gender,
-          phone,
+          patientName: existing.name,
+          mrn: existing.mrn,
+          age: existing.age,
+          gender: existing.gender === "Other" ? "Female" : existing.gender,
+          phone: existing.phone,
         };
-      } catch {
+      }
+
+      if (!patient || !patient.patientName) {
+        setFormError("Select or register a patient first.");
         return;
       }
-    } else if (existing) {
-      patient = {
-        patientName: existing.name,
-        mrn: existing.mrn,
-        age: existing.age,
-        gender: existing.gender === "Other" ? "Female" : existing.gender,
-        phone: existing.phone,
-      };
+
+      await checkIn({
+        ...patient,
+        firstVisit,
+        appointmentId: appointmentId || undefined,
+        reasonForVisit: reasonForVisit.trim() || undefined,
+        additionalNotes: additionalNotes.trim() || undefined,
+        payment:
+          method === "CASH"
+            ? { method }
+            : {
+                method,
+                provider: provider?.name,
+                providerId,
+                policyNumber,
+                status: verifyState === "VERIFIED" ? "APPROVED" : "PENDING",
+                memberName: eligibility?.member?.name,
+                benefitBalance:
+                  selectedBenefit?.balance ?? eligibility?.coverage?.balance,
+                authorizationCode: authCode || undefined,
+                authToken: authToken || undefined,
+                ediAuthGuid: ediAuthGuid || undefined,
+                benefitCode: selectedBenefit?.benefitCode,
+                benefitType: selectedBenefit?.benefitType,
+                schemeName: schemeName || eligibility?.coverage?.scheme,
+                schemeCode: schemeCode || undefined,
+              },
+      });
+      resetForm();
+      void refreshAppointments();
+    } catch (err) {
+      setFormError(
+        err instanceof Error ? err.message : "Unable to check the patient in",
+      );
+    } finally {
+      setCheckInBusy(false);
     }
-
-    if (!patient || !patient.patientName) return;
-
-    await checkIn({
-      ...patient,
-      firstVisit,
-      appointmentId: appointmentId || undefined,
-      payment:
-        method === "CASH"
-          ? { method }
-          : {
-              method,
-              provider: provider?.name,
-              providerId,
-              policyNumber,
-              status: verifyState === "VERIFIED" ? "APPROVED" : "PENDING",
-              memberName: eligibility?.member?.name,
-              benefitBalance:
-                selectedBenefit?.balance ?? eligibility?.coverage?.balance,
-              authorizationCode: authCode || undefined,
-              authToken: authToken || undefined,
-              ediAuthGuid: ediAuthGuid || undefined,
-              benefitCode: selectedBenefit?.benefitCode,
-              benefitType: selectedBenefit?.benefitType,
-              schemeName: schemeName || eligibility?.coverage?.scheme,
-              schemeCode: schemeCode || undefined,
-            },
-    });
-    resetForm();
-    void refreshAppointments();
   };
 
   const checkInAppointment = async (appt: CatalogAppointment) => {
@@ -368,31 +448,49 @@ export default function FrontDeskPage() {
                     placeholder="+254 7…"
                   />
                 </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-600">
+                    Next of kin
+                  </label>
+                  <input
+                    className={`mt-1.5 ${inputClass}`}
+                    value={kinName}
+                    onChange={(e) => setKinName(e.target.value)}
+                    placeholder="Relative name"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-600">Kin phone</label>
+                  <input
+                    className={`mt-1.5 ${inputClass}`}
+                    value={kinPhone}
+                    onChange={(e) => setKinPhone(e.target.value)}
+                    placeholder="+254 7…"
+                  />
+                </div>
               </div>
             ) : (
               <div>
-                <label className="text-xs font-semibold text-slate-600">Patient</label>
-                <select
-                  className={`mt-1.5 ${inputClass}`}
+                <FieldLabel required>Patient</FieldLabel>
+                <PatientSearchSelect
                   value={existingId}
-                  onChange={(e) => setExistingId(e.target.value)}
-                >
-                  <option value="">Select patient…</option>
-                  {patients.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name} · {p.mrn}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(id, patient) => {
+                    setExistingId(id);
+                    setSelectedPatient(patient ?? null);
+                  }}
+                  placeholder="Search by name, phone, or MRN…"
+                  disabled={checkInBusy}
+                />
               </div>
             )}
 
             <div>
-              <label className="text-xs font-semibold text-slate-600">Payment method</label>
+              <FieldLabel required>How will this visit be paid?</FieldLabel>
               <div className="mt-2 grid grid-cols-2 gap-2">
                 {(["CASH", "INSURANCE"] as const).map((m) => (
                   <button
                     key={m}
+                    type="button"
                     onClick={() => {
                       setMethod(m);
                       resetVerification();
@@ -403,10 +501,15 @@ export default function FrontDeskPage() {
                         : "border-slate-200 text-slate-500 hover:border-slate-300"
                     }`}
                   >
-                    {m === "CASH" ? "Cash" : "Insurance"}
+                    {m === "CASH" ? "Cash / M-Pesa" : "Insurance"}
                   </button>
                 ))}
               </div>
+              <p className="mt-2 text-[11px] leading-relaxed text-slate-400">
+                {method === "CASH"
+                  ? "Patient pays at billing (cash or M-Pesa) after clinical care."
+                  : "Visit is billed to the insurer. Confirm eligibility below before sending to triage."}
+              </p>
             </div>
 
             {method === "INSURANCE" && (
@@ -611,17 +714,100 @@ export default function FrontDeskPage() {
               </div>
             )}
 
+            <div>
+              <FieldLabel>Reason for visit</FieldLabel>
+              <input
+                className={`mt-1.5 ${inputClass}`}
+                value={reasonForVisit}
+                onChange={(e) => setReasonForVisit(e.target.value)}
+                placeholder="e.g. Antenatal check, pelvic pain, follow-up…"
+                disabled={checkInBusy}
+              />
+            </div>
+
+            <div>
+              <FieldLabel>Additional notes</FieldLabel>
+              <textarea
+                className={`mt-1.5 min-h-20 resize-y ${inputClass}`}
+                value={additionalNotes}
+                onChange={(e) => setAdditionalNotes(e.target.value)}
+                placeholder="Anything triage or the clinician should know…"
+                disabled={checkInBusy}
+              />
+            </div>
+
+            {formError && (
+              <p className="text-sm text-rose-500">{formError}</p>
+            )}
+
             <button
-              onClick={submit}
-              disabled={!canSubmit || !insuranceReady}
+              type="button"
+              onClick={() => void submit()}
+              disabled={!canSubmit || !insuranceReady || checkInBusy}
               className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand-500 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              <Send className="h-4 w-4" /> Send to Triage
+              {checkInBusy ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+              {checkInBusy ? "Sending…" : "Send to Triage"}
             </button>
           </div>
         </Card>
 
         <div className="space-y-4">
+          <Card className="h-fit">
+            <CardHeader
+              title="Consultation fee"
+              subtitle={
+                consultFeeEnabled
+                  ? `Auto-invoiced on cash check-in${
+                      consultFeeAmount != null
+                        ? ` · KES ${consultFeeAmount.toLocaleString()}`
+                        : ""
+                    }. Shown here until finance records payment.`
+                  : "Consultation fees are turned off system-wide (free consultation day)."
+              }
+            />
+            {!consultFeeEnabled ? (
+              <p className="px-5 pb-5 text-sm text-slate-400">
+                Patients go straight to triage after check-in. An admin can re-enable
+                fees under Settings → General.
+              </p>
+            ) : atFinance.length === 0 ? (
+              <p className="px-5 pb-5 text-sm text-slate-400">
+                No patients waiting for consultation-fee payment.
+              </p>
+            ) : (
+              <ul className="space-y-2 px-5 pb-5">
+                {atFinance.map((v) => (
+                  <li
+                    key={v.id}
+                    className="flex items-center justify-between gap-3 rounded-xl border border-amber-100 bg-amber-50/60 px-3.5 py-3"
+                  >
+                    <div className="flex min-w-0 items-center gap-3">
+                      <Avatar name={v.patientName} size="sm" />
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-slate-800">
+                          {v.patientName}
+                        </p>
+                        <p className="text-[11px] text-slate-500">
+                          {v.billing?.invoiceNumber ?? "Draft invoice"}
+                          {v.billing?.consultFeeAmount != null
+                            ? ` · KES ${Number(v.billing.consultFeeAmount).toLocaleString()}`
+                            : ""}{" "}
+                          · awaiting payment
+                        </p>
+                      </div>
+                    </div>
+                    <Badge tone="amber">At finance</Badge>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
+
           <Card className="h-fit">
             <CardHeader
               title="Today's Appointments"

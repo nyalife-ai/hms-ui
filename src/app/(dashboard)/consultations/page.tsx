@@ -1,99 +1,423 @@
 "use client";
 
-import { FlaskConical, Play, Plus, Send, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { FlaskConical, Play, Plus, Save, Send, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ConsultationClinicalForm } from "@/components/consultation-clinical-form";
 import { RoleGuard } from "@/components/role-guard";
+import { SearchablePicker } from "@/components/searchable-picker";
 import { Avatar, Badge, Card, CardHeader, PageHeader } from "@/components/ui";
 import { PaymentInfo, PipelineStepper, VisitQueueList, VitalsGrid } from "@/components/visit-flow";
-import { useLabTests, useMedications } from "@/lib/catalog";
-import { useVisits, formatTime, type PrescriptionLine } from "@/lib/visits";
+import {
+  useClinicalServices,
+  useLabTests,
+  useMedications,
+} from "@/lib/catalog";
+import {
+  clinicalDraftKey,
+  emptyClinicalRecord,
+  mergeClinicalRecord,
+  type ClinicalRecord,
+} from "@/lib/clinical-record";
+import {
+  toOrderedItem,
+  type OrderedClinicalItem,
+} from "@/lib/clinical-service";
+import { PRESCRIPTION_FREQUENCIES } from "@/lib/prescription-frequency";
+import { useVisits, formatTime, type PrescriptionLine, type Visit } from "@/lib/visits";
 
 const inputClass =
   "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 const DOCTOR_STAGES = ["WAITING_DOCTOR", "IN_CONSULTATION", "LAB_PENDING", "RESULTS_READY"] as const;
+const ACTIVE_CONSULT_STAGES = ["IN_CONSULTATION", "LAB_PENDING", "RESULTS_READY"] as const;
+
+function nextStopsForVisit(visit: {
+  prescriptions?: PrescriptionLine[];
+  pharmacy?: { dispensed?: boolean; prescriptionNumber?: string };
+}) {
+  const needsPharmacy =
+    (visit.prescriptions?.length ?? 0) > 0 && !visit.pharmacy?.dispensed;
+  const stops: string[] = [];
+  if (needsPharmacy) stops.push("Pharmacy");
+  stops.push("Billing");
+  return stops;
+}
+
+function vitalsSummary(visit: Visit): string {
+  const v = visit.vitals;
+  if (!v) return "";
+  return [
+    v.temperature && `${v.temperature} °C`,
+    (v.systolic || v.diastolic) && `${v.systolic}/${v.diastolic} mmHg`,
+    v.pulse && `${v.pulse} bpm`,
+    v.respRate && `RR ${v.respRate}`,
+    v.spo2 && `SpO₂ ${v.spo2}%`,
+    v.weightKg && `${v.weightKg} kg`,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+}
+
+function loadInitialClinical(visit: Visit): {
+  record: ClinicalRecord;
+  draftNotice?: string;
+} {
+  const base = emptyClinicalRecord();
+  if (visit.reasonForVisit && !visit.clinicalRecord?.chiefComplaint) {
+    base.chiefComplaint = visit.reasonForVisit;
+  }
+  if (visit.additionalNotes && !visit.clinicalRecord?.internalNotes) {
+    base.internalNotes = visit.additionalNotes;
+  }
+  if (visit.diagnosis && !visit.clinicalRecord?.impression) {
+    base.impression = visit.diagnosis;
+  }
+  if (visit.gender === "Female") {
+    base.enableReproductiveContext = true;
+  }
+
+  const fromServer = mergeClinicalRecord(base, visit.clinicalRecord ?? null);
+
+  try {
+    const raw = localStorage.getItem(clinicalDraftKey(visit.id));
+    if (raw) {
+      const draft = JSON.parse(raw) as Partial<ClinicalRecord>;
+      return {
+        record: mergeClinicalRecord(fromServer, draft),
+        draftNotice:
+          "Draft restored. Your previous unsaved consultation data has been recovered.",
+      };
+    }
+  } catch {
+    // ignore corrupt drafts
+  }
+
+  return { record: fromServer };
+}
+
+function SelectedList({
+  items,
+  empty,
+  onRemove,
+}: {
+  items: { id: string; label: string; meta?: string }[];
+  empty: string;
+  onRemove: (id: string) => void;
+}) {
+  if (items.length === 0) {
+    return <p className="mt-2 text-xs text-slate-400">{empty}</p>;
+  }
+  return (
+    <ul className="mt-2 space-y-1.5">
+      {items.map((item) => (
+        <li
+          key={item.id}
+          className="flex items-center justify-between gap-2 rounded-xl bg-slate-50 px-3 py-2 text-sm"
+        >
+          <div className="min-w-0">
+            <p className="truncate font-medium text-slate-800">{item.label}</p>
+            {item.meta && (
+              <p className="truncate text-[11px] text-slate-400">{item.meta}</p>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => onRemove(item.id)}
+            className="shrink-0 rounded-lg p-1.5 text-slate-300 hover:bg-white hover:text-rose-500"
+            aria-label={`Remove ${item.label}`}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 export default function ConsultationsPage() {
-  const { visits, startConsultation, orderLabs, completeConsultation } = useVisits();
+  const {
+    visits,
+    startConsultation,
+    saveClinicalRecord,
+    saveClinicalOrders,
+    orderLabs,
+    completeConsultation,
+  } = useVisits();
   const { data: labTests } = useLabTests();
   const { data: medications } = useMedications();
+  const { data: serviceCatalog } = useClinicalServices("service");
+  const { data: surgeryCatalog } = useClinicalServices("surgery");
 
   const queue = visits.filter((v) => (DOCTOR_STAGES as readonly string[]).includes(v.stage));
+  const dispatched = visits.filter((v) => v.stage === "READY_FOR_BILLING");
   const [selectedId, setSelectedId] = useState("");
   const selected = queue.find((v) => v.id === selectedId) ?? queue[0];
 
-  // Lab order form
-  const [checkedTests, setCheckedTests] = useState<string[]>([]);
+  const [selectedLabs, setSelectedLabs] = useState<
+    { name: string; unit: string; range: string }[]
+  >([]);
   const [labNotes, setLabNotes] = useState("");
-
-  // Outcome form
-  const [diagnosis, setDiagnosis] = useState("");
+  const [orderedServices, setOrderedServices] = useState<OrderedClinicalItem[]>([]);
+  const [orderedSurgeries, setOrderedSurgeries] = useState<OrderedClinicalItem[]>([]);
+  const [clinical, setClinical] = useState<ClinicalRecord>(emptyClinicalRecord);
+  const [draftNotice, setDraftNotice] = useState<string | undefined>();
   const [prescriptions, setPrescriptions] = useState<PrescriptionLine[]>([]);
   const [followUpDate, setFollowUpDate] = useState("");
+  const [savingNotes, setSavingNotes] = useState(false);
+  const [saveMsg, setSaveMsg] = useState("");
+  const hydratedVisitId = useRef<string | null>(null);
 
-  const resetForms = () => {
-    setCheckedTests([]);
+  const inConsult =
+    selected &&
+    (ACTIVE_CONSULT_STAGES as readonly string[]).includes(selected.stage);
+  const canDiagnose =
+    selected &&
+    (selected.stage === "IN_CONSULTATION" || selected.stage === "RESULTS_READY");
+  const canOrderLabs = selected?.stage === "IN_CONSULTATION";
+
+  useEffect(() => {
+    if (!selected) {
+      hydratedVisitId.current = null;
+      return;
+    }
+    if (hydratedVisitId.current === selected.id) return;
+    hydratedVisitId.current = selected.id;
+    const { record, draftNotice: notice } = loadInitialClinical(selected);
+    setClinical(record);
+    setDraftNotice(notice);
+    setSelectedLabs([]);
     setLabNotes("");
-    setDiagnosis("");
-    setPrescriptions([]);
-    setFollowUpDate("");
+    setOrderedServices(selected.orderedServices ?? []);
+    setOrderedSurgeries(selected.orderedSurgeries ?? []);
+    setPrescriptions(
+      (selected.prescriptions ?? []).map((p) => ({
+        ...p,
+        frequency: p.frequency || "OD",
+      })),
+    );
+    setFollowUpDate(selected.followUpDate ?? "");
+    setSaveMsg("");
+  }, [selected]);
+
+  useEffect(() => {
+    if (!selected || !inConsult) return;
+    const key = clinicalDraftKey(selected.id);
+    const t = window.setTimeout(() => {
+      try {
+        localStorage.setItem(key, JSON.stringify(clinical));
+      } catch {
+        // quota / private mode
+      }
+    }, 400);
+    return () => window.clearTimeout(t);
+  }, [clinical, selected, inConsult]);
+
+  const diagnosisText = useMemo(
+    () => clinical.impression.trim() || selected?.diagnosis?.trim() || "",
+    [clinical.impression, selected?.diagnosis],
+  );
+
+  const labOptions = useMemo(
+    () =>
+      labTests.map((t) => ({
+        id: t.id || t.name,
+        label: t.name,
+        sublabel: [t.unit, t.range].filter(Boolean).join(" · ") || undefined,
+        group: t.category ?? "Laboratory",
+      })),
+    [labTests],
+  );
+
+  const serviceOptions = useMemo(
+    () =>
+      serviceCatalog.map((s) => ({
+        id: s.id,
+        label: s.name,
+        sublabel: `${s.code} · KES ${Number(s.standardPrice).toLocaleString()}`,
+        group: s.category ?? "Services",
+      })),
+    [serviceCatalog],
+  );
+
+  const surgeryOptions = useMemo(
+    () =>
+      surgeryCatalog.map((s) => ({
+        id: s.id,
+        label: s.name,
+        sublabel: `${s.code} · KES ${Number(s.standardPrice).toLocaleString()}`,
+        group: s.category ?? "Surgery",
+      })),
+    [surgeryCatalog],
+  );
+
+  const medOptions = useMemo(
+    () =>
+      medications.map((m) => ({
+        id: m.id,
+        label: m.name,
+        sublabel: `${m.category}${m.stock != null ? ` · stock ${m.stock}` : ""}`,
+        group: m.category || "Medications",
+      })),
+    [medications],
+  );
+
+  const persistOrders = async () => {
+    if (!selected || !inConsult) return;
+    await saveClinicalOrders(selected.id, {
+      orderedServices,
+      orderedSurgeries,
+    });
   };
 
-  const sendLabOrder = () => {
-    if (!selected || checkedTests.length === 0) return;
-    const tests = labTests
-      .filter((t) => checkedTests.includes(t.name))
-      .map((t) => ({
-        name: t.name,
-        unit: t.unit,
-        range: t.range,
-      }));
-    orderLabs(selected.id, tests, labNotes);
-    resetForms();
+  const sendLabOrder = async () => {
+    if (!selected || selectedLabs.length === 0) return;
+    await persistOrders().catch(() => undefined);
+    await saveClinicalRecord(selected.id, clinical).catch(() => undefined);
+    orderLabs(selected.id, selectedLabs, labNotes);
+    setSelectedLabs([]);
+    setLabNotes("");
   };
 
-  const finish = () => {
-    if (!selected || diagnosis.trim() === "") return;
-    completeConsultation(selected.id, {
-      diagnosis,
+  const persistNotes = async () => {
+    if (!selected || !inConsult) return;
+    setSavingNotes(true);
+    setSaveMsg("");
+    try {
+      await saveClinicalRecord(selected.id, clinical);
+      await persistOrders();
+      try {
+        localStorage.removeItem(clinicalDraftKey(selected.id));
+      } catch {
+        // ignore
+      }
+      setDraftNotice(undefined);
+      setSaveMsg("Clinical notes & orders saved.");
+    } catch {
+      setSaveMsg("Could not save — try again.");
+    } finally {
+      setSavingNotes(false);
+    }
+  };
+
+  const finish = async () => {
+    if (!selected || diagnosisText === "") return;
+    await completeConsultation(selected.id, {
+      diagnosis: diagnosisText,
       prescriptions: prescriptions.filter((p) => p.medication !== ""),
       followUpDate: followUpDate || undefined,
+      clinicalRecord: clinical,
+      orderedServices,
+      orderedSurgeries,
     });
-    resetForms();
+    try {
+      localStorage.removeItem(clinicalDraftKey(selected.id));
+    } catch {
+      // ignore
+    }
     setSelectedId("");
+    hydratedVisitId.current = null;
   };
 
-  const addPrescription = () =>
-    setPrescriptions([...prescriptions, { medication: "", dosage: "", frequency: "", duration: "" }]);
+  const addPrescription = (med?: { id: string; label: string }) => {
+    setPrescriptions([
+      ...prescriptions,
+      {
+        medication: med?.label ?? "",
+        medicationId: med?.id,
+        dosage: "",
+        frequency: "OD",
+        duration: "",
+        quantity: 1,
+      },
+    ]);
+  };
 
   const updatePrescription = (i: number, patch: Partial<PrescriptionLine>) =>
     setPrescriptions(prescriptions.map((p, idx) => (idx === i ? { ...p, ...patch } : p)));
 
-  const canDiagnose = selected && (selected.stage === "IN_CONSULTATION" || selected.stage === "RESULTS_READY");
+  const onClinicalChange = (next: ClinicalRecord) => {
+    setClinical(next);
+    setDraftNotice(undefined);
+  };
 
   return (
     <RoleGuard module="consultations">
       <PageHeader
         title="Consultations"
-        subtitle={`${queue.length} patient${queue.length === 1 ? "" : "s"} in your care today`}
+        subtitle={`${queue.length} in your care · ${dispatched.length} sent onward today`}
       />
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_1.6fr]">
-        {/* Queue */}
-        <Card className="h-fit">
-          <CardHeader title="My Queue" subtitle="Triage complete — vitals attached" />
-          <VisitQueueList
-            visits={queue}
-            selectedId={selected?.id}
-            onSelect={(id) => {
-              setSelectedId(id);
-              resetForms();
-            }}
-            emptyMessage="No patients in the queue. Triaged patients appear here."
-          />
-        </Card>
+        <div className="space-y-4">
+          <Card className="h-fit">
+            <CardHeader title="My Queue" subtitle="Triage complete — vitals attached" />
+            <VisitQueueList
+              visits={queue}
+              selectedId={selected?.id}
+              onSelect={(id) => {
+                setSelectedId(id);
+                hydratedVisitId.current = null;
+              }}
+              emptyMessage="No patients in the queue. Triaged patients appear here."
+            />
+          </Card>
 
-        {/* Consultation detail */}
+          <Card className="h-fit">
+            <CardHeader
+              title="Dispatched today"
+              subtitle="After you complete a consult they leave your queue — next desk is here"
+            />
+            {dispatched.length === 0 ? (
+              <p className="px-5 pb-5 text-sm text-slate-400">
+                No patients waiting at pharmacy or billing yet.
+              </p>
+            ) : (
+              <ul className="divide-y divide-slate-50 px-2 pb-3">
+                {dispatched.map((v) => {
+                  const stops = nextStopsForVisit(v);
+                  return (
+                    <li
+                      key={v.id}
+                      className="flex items-start justify-between gap-3 px-3 py-3"
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-slate-800">
+                          {v.patientName}
+                        </p>
+                        <p className="text-xs text-slate-400">
+                          {v.mrn}
+                          {v.pharmacy?.prescriptionNumber
+                            ? ` · Rx ${v.pharmacy.prescriptionNumber}`
+                            : ""}
+                        </p>
+                        <div className="mt-1.5 flex flex-wrap gap-1.5">
+                          {stops.map((stop) => (
+                            <Badge
+                              key={stop}
+                              tone={stop === "Pharmacy" ? "teal" : "amber"}
+                            >
+                              → {stop}
+                            </Badge>
+                          ))}
+                          {v.pharmacy?.dispensed && (
+                            <Badge tone="green">Pharmacy done</Badge>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex shrink-0 flex-col items-end gap-1 text-[11px] text-slate-400">
+                        <span>Next desk</span>
+                        <span className="font-medium text-slate-600">
+                          {stops.join(" → ")}
+                        </span>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </Card>
+        </div>
+
         {selected ? (
           <div className="space-y-4">
             <Card>
@@ -105,6 +429,22 @@ export default function ConsultationsPage() {
               <div className="space-y-4 px-5 pb-5">
                 <PipelineStepper visit={selected} />
                 <PaymentInfo visit={selected} />
+                {(selected.reasonForVisit || selected.additionalNotes) && (
+                  <div className="rounded-xl border border-brand-100 bg-brand-50/50 px-4 py-3 text-sm">
+                    {selected.reasonForVisit && (
+                      <p>
+                        <span className="font-semibold text-slate-700">Reason for visit: </span>
+                        <span className="text-slate-600">{selected.reasonForVisit}</span>
+                      </p>
+                    )}
+                    {selected.additionalNotes && (
+                      <p className={selected.reasonForVisit ? "mt-1.5" : undefined}>
+                        <span className="font-semibold text-slate-700">Reception notes: </span>
+                        <span className="text-slate-600">{selected.additionalNotes}</span>
+                      </p>
+                    )}
+                  </div>
+                )}
                 <VitalsGrid visit={selected} />
 
                 {selected.stage === "WAITING_DOCTOR" && (
@@ -118,7 +458,39 @@ export default function ConsultationsPage() {
               </div>
             </Card>
 
-            {/* Lab status / results */}
+            {inConsult && (
+              <Card>
+                <CardHeader
+                  title="Record Consultation"
+                  subtitle="Clinical narrative for this visit — saved with the patient record"
+                  action={
+                    <button
+                      type="button"
+                      onClick={() => void persistNotes()}
+                      disabled={savingNotes}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                    >
+                      <Save className="h-3.5 w-3.5" />
+                      {savingNotes ? "Saving…" : "Save notes"}
+                    </button>
+                  }
+                />
+                <div className="px-5 pb-5">
+                  {saveMsg && (
+                    <p className="mb-3 text-xs text-slate-500">{saveMsg}</p>
+                  )}
+                  <ConsultationClinicalForm
+                    value={clinical}
+                    onChange={onClinicalChange}
+                    patientGender={selected.gender}
+                    patientName={selected.patientName}
+                    vitalsSummary={vitalsSummary(selected)}
+                    draftNotice={draftNotice}
+                  />
+                </div>
+              </Card>
+            )}
+
             {selected.stage === "LAB_PENDING" && selected.labOrder && (
               <Card>
                 <CardHeader title="Laboratory — awaiting results" subtitle="The lab technician has this request on their worklist" />
@@ -172,108 +544,230 @@ export default function ConsultationsPage() {
               </Card>
             )}
 
-            {/* Order labs */}
-            {selected.stage === "IN_CONSULTATION" && (
+            {inConsult && (
               <Card>
-                <CardHeader title="Order Lab Tests" subtitle="Sent directly to the lab technician's worklist" />
-                <div className="space-y-4 px-5 pb-5">
-                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                    {labTests.map((t) => (
-                      <label
-                        key={t.name}
-                        className={`flex cursor-pointer items-center gap-2.5 rounded-xl border px-3.5 py-2.5 text-sm transition ${
-                          checkedTests.includes(t.name)
-                            ? "border-brand-400 bg-brand-50 text-brand-700"
-                            : "border-slate-200 text-slate-600 hover:border-slate-300"
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          className="accent-[#4a929b]"
-                          checked={checkedTests.includes(t.name)}
-                          onChange={(e) =>
-                            setCheckedTests(
-                              e.target.checked
-                                ? [...checkedTests, t.name]
-                                : checkedTests.filter((n) => n !== t.name),
-                            )
-                          }
-                        />
-                        {t.name}
-                      </label>
-                    ))}
-                  </div>
-                  <input
-                    className={inputClass}
-                    value={labNotes}
-                    onChange={(e) => setLabNotes(e.target.value)}
-                    placeholder="Clinical notes for the lab (optional)"
-                  />
-                  <button
-                    onClick={sendLabOrder}
-                    disabled={checkedTests.length === 0}
-                    className="inline-flex items-center gap-2 rounded-full bg-brand-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    <FlaskConical className="h-4 w-4" /> Send to Laboratory
-                  </button>
-                </div>
-              </Card>
-            )}
-
-            {/* Diagnosis & prescription */}
-            {canDiagnose && (
-              <Card>
-                <CardHeader title="Diagnosis & Treatment" subtitle="Completes the consultation and sends the visit to billing" />
-                <div className="space-y-4 px-5 pb-5">
+                <CardHeader
+                  title="Additional services & diagnostics"
+                  subtitle="Search to add — selected items are listed below. Labs go to the worklist; services & surgeries bill on completion."
+                />
+                <div className="grid grid-cols-1 gap-5 px-5 pb-5 lg:grid-cols-3">
                   <div>
-                    <label className="text-xs font-semibold text-slate-600">Diagnosis</label>
-                    <textarea
-                      className={`mt-1.5 ${inputClass} min-h-20 resize-y`}
-                      value={diagnosis}
-                      onChange={(e) => setDiagnosis(e.target.value)}
-                      placeholder="Clinical findings and diagnosis…"
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Laboratory tests
+                    </p>
+                    <SearchablePicker
+                      options={labOptions}
+                      placeholder="Add more labs…"
+                      disabled={!canOrderLabs}
+                      excludeIds={selectedLabs.flatMap((t) => {
+                        const match = labTests.find((x) => x.name === t.name);
+                        return match ? [match.id, match.name] : [t.name];
+                      })}
+                      onSelect={(opt) => {
+                        const t = labTests.find(
+                          (x) => x.id === opt.id || x.name === opt.label,
+                        );
+                        if (!t) return;
+                        if (selectedLabs.some((s) => s.name === t.name)) return;
+                        setSelectedLabs([
+                          ...selectedLabs,
+                          { name: t.name, unit: t.unit, range: t.range },
+                        ]);
+                      }}
+                    />
+                    <SelectedList
+                      items={selectedLabs.map((t) => ({
+                        id: t.name,
+                        label: t.name,
+                        meta: [t.unit, t.range].filter(Boolean).join(" · "),
+                      }))}
+                      empty={
+                        canOrderLabs
+                          ? "No lab tests selected."
+                          : "Lab ordering available while in consultation."
+                      }
+                      onRemove={(id) =>
+                        setSelectedLabs(selectedLabs.filter((t) => t.name !== id))
+                      }
+                    />
+                    {canOrderLabs && (
+                      <div className="mt-3 space-y-2">
+                        <input
+                          className={inputClass}
+                          value={labNotes}
+                          onChange={(e) => setLabNotes(e.target.value)}
+                          placeholder="Clinical notes for the lab (optional)"
+                        />
+                        <button
+                          onClick={() => void sendLabOrder()}
+                          disabled={selectedLabs.length === 0}
+                          className="inline-flex items-center gap-2 rounded-full bg-brand-500 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          <FlaskConical className="h-3.5 w-3.5" /> Send to Laboratory
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Services & procedures
+                    </p>
+                    <SearchablePicker
+                      options={serviceOptions}
+                      placeholder="Add a service/procedure…"
+                      excludeIds={orderedServices.map((s) => s.id)}
+                      onSelect={(opt) => {
+                        const s = serviceCatalog.find((x) => x.id === opt.id);
+                        if (!s) return;
+                        if (orderedServices.some((x) => x.id === s.id)) return;
+                        setOrderedServices([...orderedServices, toOrderedItem(s)]);
+                      }}
+                      emptyMessage="No services in catalog — add under Laboratory → Services & Procedures"
+                    />
+                    <SelectedList
+                      items={orderedServices.map((s) => ({
+                        id: s.id,
+                        label: s.name,
+                        meta: `${s.category ?? s.code} · KES ${Number(s.unitPrice).toLocaleString()}`,
+                      }))}
+                      empty="No services selected."
+                      onRemove={(id) =>
+                        setOrderedServices(orderedServices.filter((s) => s.id !== id))
+                      }
                     />
                   </div>
 
                   <div>
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs font-semibold text-slate-600">Prescription</label>
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Surgeries
+                    </p>
+                    <SearchablePicker
+                      options={surgeryOptions}
+                      placeholder="Add a surgery…"
+                      excludeIds={orderedSurgeries.map((s) => s.id)}
+                      onSelect={(opt) => {
+                        const s = surgeryCatalog.find((x) => x.id === opt.id);
+                        if (!s) return;
+                        if (orderedSurgeries.some((x) => x.id === s.id)) return;
+                        setOrderedSurgeries([...orderedSurgeries, toOrderedItem(s)]);
+                      }}
+                      emptyMessage="No surgeries in catalog — use category Surgery under Laboratory → Services"
+                    />
+                    <SelectedList
+                      items={orderedSurgeries.map((s) => ({
+                        id: s.id,
+                        label: s.name,
+                        meta: `KES ${Number(s.unitPrice).toLocaleString()}`,
+                      }))}
+                      empty="No surgeries selected."
+                      onRemove={(id) =>
+                        setOrderedSurgeries(orderedSurgeries.filter((s) => s.id !== id))
+                      }
+                    />
+                  </div>
+                </div>
+                <p className="px-5 pb-5 text-[11px] text-slate-400">
+                  Selected services and surgeries are billed on the patient invoice when you complete the consultation.
+                </p>
+              </Card>
+            )}
+
+            {canDiagnose && (
+              <Card>
+                <CardHeader
+                  title="Prescription & complete"
+                  subtitle="Search medications · choose frequency (OD / BD / TDS / QDS / PRN / STAT)"
+                />
+                <div className="space-y-4 px-5 pb-5">
+                  <div className="rounded-xl bg-slate-50 px-3.5 py-2.5 text-sm text-slate-600">
+                    <p className="text-xs font-semibold text-slate-500">Diagnosis for completion</p>
+                    <p className="mt-1 whitespace-pre-wrap">
+                      {diagnosisText || "Add an impression / diagnosis in the clinical form above."}
+                    </p>
+                  </div>
+
+                  <div>
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                      <label className="text-xs font-semibold text-slate-600">Prescriptions</label>
                       <button
-                        onClick={addPrescription}
+                        type="button"
+                        onClick={() => addPrescription()}
                         className="inline-flex items-center gap-1 text-xs font-medium text-brand-600 hover:text-brand-700"
                       >
-                        <Plus className="h-3.5 w-3.5" /> Add medication
+                        <Plus className="h-3.5 w-3.5" /> Blank row
                       </button>
                     </div>
+                    <SearchablePicker
+                      options={medOptions}
+                      placeholder="Search medications…"
+                      onSelect={(opt) => addPrescription({ id: opt.id, label: opt.label })}
+                    />
                     {prescriptions.length === 0 && (
                       <p className="mt-2 text-xs text-slate-400">No medication added — optional.</p>
                     )}
                     <div className="mt-2 space-y-2">
                       {prescriptions.map((p, i) => (
-                        <div key={i} className="grid grid-cols-1 gap-2 rounded-xl bg-[#f3f7f7] p-3 sm:grid-cols-[1.5fr_1fr_1fr_1fr_auto]">
+                        <div
+                          key={i}
+                          className="grid grid-cols-1 gap-2 rounded-xl bg-[#f3f7f7] p-3 sm:grid-cols-[1.4fr_1fr_1.1fr_1fr_0.7fr_auto]"
+                        >
+                          <input
+                            className={inputClass}
+                            value={p.medication}
+                            onChange={(e) =>
+                              updatePrescription(i, {
+                                medication: e.target.value,
+                                medicationId: undefined,
+                              })
+                            }
+                            placeholder="Medication"
+                            aria-label="Medication"
+                          />
+                          <input
+                            className={inputClass}
+                            value={p.dosage}
+                            onChange={(e) => updatePrescription(i, { dosage: e.target.value })}
+                            placeholder="Dose e.g. 1 tab"
+                            aria-label="Dose"
+                          />
                           <select
                             className={inputClass}
-                            value={p.medicationId || p.medication}
-                            onChange={(e) => {
-                              const med = medications.find(
-                                (m) => m.id === e.target.value || m.name === e.target.value,
-                              );
-                              updatePrescription(i, {
-                                medication: med?.name || e.target.value,
-                                medicationId: med?.id,
-                              });
-                            }}
+                            value={p.frequency || "OD"}
+                            onChange={(e) =>
+                              updatePrescription(i, { frequency: e.target.value })
+                            }
+                            aria-label="Frequency"
                           >
-                            <option value="">Medication…</option>
-                            {medications.map((m) => (
-                              <option key={m.id} value={m.id}>{m.name}</option>
+                            {PRESCRIPTION_FREQUENCIES.map((f) => (
+                              <option key={f.value} value={f.value}>
+                                {f.label}
+                              </option>
                             ))}
                           </select>
-                          <input className={inputClass} value={p.dosage} onChange={(e) => updatePrescription(i, { dosage: e.target.value })} placeholder="Dosage" />
-                          <input className={inputClass} value={p.frequency} onChange={(e) => updatePrescription(i, { frequency: e.target.value })} placeholder="Frequency" />
-                          <input className={inputClass} value={p.duration} onChange={(e) => updatePrescription(i, { duration: e.target.value })} placeholder="Duration" />
+                          <input
+                            className={inputClass}
+                            value={p.duration}
+                            onChange={(e) => updatePrescription(i, { duration: e.target.value })}
+                            placeholder="Duration e.g. 5 days"
+                            aria-label="Duration"
+                          />
+                          <input
+                            className={inputClass}
+                            type="number"
+                            min={1}
+                            value={p.quantity ?? 1}
+                            onChange={(e) =>
+                              updatePrescription(i, { quantity: Math.max(1, Number(e.target.value) || 1) })
+                            }
+                            placeholder="Qty"
+                            aria-label="Quantity to dispense"
+                          />
                           <button
-                            onClick={() => setPrescriptions(prescriptions.filter((_, idx) => idx !== i))}
+                            type="button"
+                            onClick={() =>
+                              setPrescriptions(prescriptions.filter((_, idx) => idx !== i))
+                            }
                             className="self-center rounded-lg p-2 text-slate-300 hover:bg-white hover:text-rose-500"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -294,12 +788,18 @@ export default function ConsultationsPage() {
                   </div>
 
                   <button
-                    onClick={finish}
-                    disabled={diagnosis.trim() === ""}
+                    onClick={() => void finish()}
+                    disabled={diagnosisText === ""}
                     className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand-500 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-40"
                   >
-                    <Send className="h-4 w-4" /> Complete & Send to Billing
+                    <Send className="h-4 w-4" />{" "}
+                    {prescriptions.some((p) => p.medication)
+                      ? "Complete — send to Pharmacy & Billing"
+                      : "Complete & Send to Billing"}
                   </button>
+                  <p className="text-center text-[11px] text-slate-400">
+                    Labs already sent stay on the lab desk. Services, surgeries, and meds bill on completion.
+                  </p>
                 </div>
               </Card>
             )}

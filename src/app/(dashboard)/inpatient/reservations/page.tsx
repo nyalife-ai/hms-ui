@@ -2,6 +2,9 @@
 
 import { Plus, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { DoctorSearchSelect } from "@/components/doctor-search-select";
+import { FieldLabel } from "@/components/field-label";
+import { PatientSearchSelect } from "@/components/patient-search-select";
 import { RoleGuard } from "@/components/role-guard";
 import {
   Badge,
@@ -12,7 +15,8 @@ import {
   Table,
 } from "@/components/ui";
 import { api } from "@/lib/api";
-import { useDoctors, usePatients, type IpdBed } from "@/lib/catalog";
+import type { IpdBed } from "@/lib/catalog";
+import { unwrapPage } from "@/lib/pagination";
 
 const inputClass =
   "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
@@ -32,8 +36,6 @@ type Reservation = {
 };
 
 export default function IpdReservationsPage() {
-  const { data: patients } = usePatients();
-  const { data: doctors } = useDoctors();
   const [rows, setRows] = useState<Reservation[]>([]);
   const [beds, setBeds] = useState<IpdBed[]>([]);
   const [error, setError] = useState("");
@@ -50,11 +52,11 @@ export default function IpdReservationsPage() {
   const load = useCallback(async () => {
     try {
       const [r, b] = await Promise.all([
-        api<Reservation[]>("/ipd/reservations?status=RESERVED"),
-        api<IpdBed[]>("/ipd/beds?available=true"),
+        api("/ipd/reservations?status=RESERVED"),
+        api("/ipd/beds?available=true"),
       ]);
-      setRows(r);
-      setBeds(b);
+      setRows(unwrapPage<Reservation>(r).items);
+      setBeds(unwrapPage<IpdBed>(b).items);
       setError("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load reservations");
@@ -197,34 +199,39 @@ export default function IpdReservationsPage() {
               </button>
             </div>
             <div className="space-y-3">
-              <select className={inputClass} value={patientId} onChange={(e) => setPatientId(e.target.value)}>
-                <option value="">Select patient</option>
-                {patients.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select>
-              <select className={inputClass} value={bedId} onChange={(e) => setBedId(e.target.value)}>
-                <option value="">Available bed</option>
-                {beds.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.wardName} · Bed {b.bedNumber}
-                  </option>
-                ))}
-              </select>
-              <label className="block text-xs text-slate-400">Expected admission</label>
-              <input
-                className={inputClass}
-                type="date"
-                value={expected}
-                onChange={(e) => setExpected(e.target.value)}
-              />
-              <label className="block text-xs text-slate-400">Expires</label>
-              <input
-                className={inputClass}
-                type="datetime-local"
-                value={expires}
-                onChange={(e) => setExpires(e.target.value)}
-              />
+              <div>
+                <FieldLabel required>Patient</FieldLabel>
+                <PatientSearchSelect value={patientId} onChange={(id) => setPatientId(id)} />
+              </div>
+              <div>
+                <FieldLabel required>Available bed</FieldLabel>
+                <select className={inputClass} value={bedId} onChange={(e) => setBedId(e.target.value)}>
+                  <option value="">Select bed</option>
+                  {beds.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.wardName} · Bed {b.bedNumber}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <FieldLabel required>Expected admission</FieldLabel>
+                <input
+                  className={inputClass}
+                  type="date"
+                  value={expected}
+                  onChange={(e) => setExpected(e.target.value)}
+                />
+              </div>
+              <div>
+                <FieldLabel required>Expires</FieldLabel>
+                <input
+                  className={inputClass}
+                  type="datetime-local"
+                  value={expires}
+                  onChange={(e) => setExpires(e.target.value)}
+                />
+              </div>
               <PrimaryButton disabled={busy} onClick={reserve}>
                 {busy ? "Saving…" : "Confirm reservation"}
               </PrimaryButton>
@@ -243,18 +250,18 @@ export default function IpdReservationsPage() {
               </button>
             </div>
             <div className="space-y-3">
-              <select className={inputClass} value={doctorId} onChange={(e) => setDoctorId(e.target.value)}>
-                <option value="">Admitting doctor</option>
-                {doctors.map((d) => (
-                  <option key={d.id} value={d.id}>{d.name}</option>
-                ))}
-              </select>
-              <input
-                className={inputClass}
-                value={diagnosis}
-                onChange={(e) => setDiagnosis(e.target.value)}
-                placeholder="Primary diagnosis"
-              />
+              <div>
+                <FieldLabel required>Admitting doctor</FieldLabel>
+                <DoctorSearchSelect value={doctorId} onChange={(id) => setDoctorId(id)} />
+              </div>
+              <div>
+                <FieldLabel optional>Primary diagnosis</FieldLabel>
+                <input
+                  className={inputClass}
+                  value={diagnosis}
+                  onChange={(e) => setDiagnosis(e.target.value)}
+                />
+              </div>
               <PrimaryButton disabled={busy || !doctorId} onClick={convert}>
                 {busy ? "Converting…" : "Admit from reservation"}
               </PrimaryButton>

@@ -2,6 +2,8 @@
 
 import { Plus, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { FieldLabel } from "@/components/field-label";
+import { PaginationBar } from "@/components/pagination-bar";
 import { RoleGuard } from "@/components/role-guard";
 import {
   Badge,
@@ -12,6 +14,8 @@ import {
   Table,
 } from "@/components/ui";
 import { api } from "@/lib/api";
+import { buildListQuery, toPageMeta, unwrapPage } from "@/lib/pagination";
+import { useDebouncedValue } from "@/lib/use-debounced-value";
 
 const inputClass =
   "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
@@ -35,9 +39,14 @@ type TestType = {
   parameters?: Param[];
 };
 
+const PAGE_SIZE = 50;
+
 export default function LabTestTypesPage() {
   const [rows, setRows] = useState<TestType[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [paramOpen, setParamOpen] = useState<TestType | null>(null);
   const [busy, setBusy] = useState(false);
@@ -47,19 +56,28 @@ export default function LabTestTypesPage() {
   const [paramName, setParamName] = useState("");
   const [unit, setUnit] = useState("");
   const [range, setRange] = useState("");
-  const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const search = useDebouncedValue(searchInput, 400);
 
   const load = useCallback(async () => {
+    setLoading(true);
     try {
-      const data = await api<{ items: TestType[] }>(
-        `/laboratory/test-types?active=true${search ? `&search=${encodeURIComponent(search)}` : ""}`,
-      );
+      const qs = buildListQuery({
+        active: true,
+        search: search || undefined,
+        take: PAGE_SIZE,
+        skip: (page - 1) * PAGE_SIZE,
+      });
+      const data = unwrapPage<TestType>(await api(`/laboratory/test-types?${qs}`));
       setRows(data.items);
+      setTotal(data.total);
       setError("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load");
+    } finally {
+      setLoading(false);
     }
-  }, [search]);
+  }, [search, page]);
 
   useEffect(() => {
     void load();
@@ -122,11 +140,13 @@ export default function LabTestTypesPage() {
     }
   };
 
+  const meta = toPageMeta({ total, page, limit: PAGE_SIZE });
+
   return (
     <RoleGuard module="laboratory">
       <PageHeader
         title="Test Types"
-        subtitle="Panels and their parameters"
+        subtitle={loading ? "Loading…" : `${total.toLocaleString()} panels and parameters`}
         action={
           <PrimaryButton onClick={() => setOpen(true)}>
             <Plus className="h-4 w-4" /> Add test type
@@ -138,12 +158,15 @@ export default function LabTestTypesPage() {
         <input
           className={inputClass}
           placeholder="Search test types…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          value={searchInput}
+          onChange={(e) => {
+            setSearchInput(e.target.value);
+            setPage(1);
+          }}
         />
       </div>
       <Card>
-        <CardHeader title="Active formulary" subtitle={`${rows.length} types`} />
+        <CardHeader title="Active formulary" subtitle={`${total.toLocaleString()} types`} />
         <Table headers={["Test", "Category", "Price", "Parameters", "Status", ""]}>
           {rows.map((t) => (
             <tr key={t.id} className="hover:bg-slate-50/60">
@@ -168,9 +191,7 @@ export default function LabTestTypesPage() {
             </tr>
           ))}
         </Table>
-        {rows.length === 0 && (
-          <p className="px-5 pb-5 text-sm text-slate-400">No test types yet.</p>
-        )}
+        <PaginationBar meta={meta} onPageChange={setPage} disabled={loading} />
       </Card>
 
       {open && (
@@ -182,9 +203,18 @@ export default function LabTestTypesPage() {
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <input className={inputClass} placeholder="Test name" value={name} onChange={(e) => setName(e.target.value)} />
-            <input className={inputClass} placeholder="Category" value={category} onChange={(e) => setCategory(e.target.value)} />
-            <input className={inputClass} type="number" min={0} value={price} onChange={(e) => setPrice(e.target.value)} />
+            <div>
+              <FieldLabel required>Test name</FieldLabel>
+              <input className={inputClass} value={name} onChange={(e) => setName(e.target.value)} />
+            </div>
+            <div>
+              <FieldLabel optional>Category</FieldLabel>
+              <input className={inputClass} value={category} onChange={(e) => setCategory(e.target.value)} />
+            </div>
+            <div>
+              <FieldLabel optional>Price</FieldLabel>
+              <input className={inputClass} type="number" min={0} value={price} onChange={(e) => setPrice(e.target.value)} />
+            </div>
             <PrimaryButton disabled={busy} onClick={create}>
               {busy ? "Saving…" : "Create"}
             </PrimaryButton>
@@ -218,10 +248,19 @@ export default function LabTestTypesPage() {
                 <li className="text-slate-400">No parameters yet.</li>
               )}
             </ul>
-            <input className={inputClass} placeholder="Parameter name" value={paramName} onChange={(e) => setParamName(e.target.value)} />
+            <div>
+              <FieldLabel required>Parameter name</FieldLabel>
+              <input className={inputClass} value={paramName} onChange={(e) => setParamName(e.target.value)} />
+            </div>
             <div className="grid grid-cols-2 gap-2">
-              <input className={inputClass} placeholder="Unit" value={unit} onChange={(e) => setUnit(e.target.value)} />
-              <input className={inputClass} placeholder="Reference range" value={range} onChange={(e) => setRange(e.target.value)} />
+              <div>
+                <FieldLabel optional>Unit</FieldLabel>
+                <input className={inputClass} value={unit} onChange={(e) => setUnit(e.target.value)} />
+              </div>
+              <div>
+                <FieldLabel optional>Reference range</FieldLabel>
+                <input className={inputClass} value={range} onChange={(e) => setRange(e.target.value)} />
+              </div>
             </div>
             <PrimaryButton disabled={busy} onClick={addParam}>
               {busy ? "Saving…" : "Add parameter"}

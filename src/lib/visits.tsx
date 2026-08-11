@@ -11,9 +11,12 @@ import {
 import { api } from "./api";
 import { useAuth } from "./auth";
 import type { BadgeTone } from "@/components/ui";
+import type { ClinicalRecord } from "./clinical-record";
+import type { OrderedClinicalItem } from "./clinical-service";
 
 export type VisitStage =
   | "CHECKED_IN"
+  | "AWAITING_PAYMENT"
   | "WAITING_DOCTOR"
   | "IN_CONSULTATION"
   | "LAB_PENDING"
@@ -22,8 +25,11 @@ export type VisitStage =
   | "CLAIM_SUBMITTED"
   | "COMPLETED";
 
+export type ConsultFeeStatus = "PENDING" | "PAID" | "WAIVED";
+
 export const STAGE_META: Record<VisitStage, { label: string; tone: BadgeTone; step: number }> = {
   CHECKED_IN: { label: "Waiting for Triage", tone: "blue", step: 1 },
+  AWAITING_PAYMENT: { label: "Pay at Finance", tone: "amber", step: 1 },
   WAITING_DOCTOR: { label: "Waiting for Doctor", tone: "amber", step: 2 },
   IN_CONSULTATION: { label: "In Consultation", tone: "teal", step: 3 },
   LAB_PENDING: { label: "At Laboratory", tone: "amber", step: 4 },
@@ -69,6 +75,7 @@ export interface PrescriptionLine {
   dosage: string;
   frequency: string;
   duration: string;
+  quantity?: number;
 }
 
 export interface Visit {
@@ -80,6 +87,8 @@ export interface Visit {
   phone: string;
   firstVisit: boolean;
   appointmentId?: string;
+  reasonForVisit?: string;
+  additionalNotes?: string;
   payment: {
     method: "CASH" | "INSURANCE";
     provider?: string;
@@ -110,20 +119,30 @@ export interface Visit {
   diagnosis?: string;
   prescriptions?: PrescriptionLine[];
   followUpDate?: string;
+  clinicalRecord?: ClinicalRecord;
+  orderedServices?: OrderedClinicalItem[];
+  orderedSurgeries?: OrderedClinicalItem[];
   billing?: {
     total: number;
     mode: "CASH" | "CLAIM";
     claimId?: string;
     claimStatus?: "SUBMITTED" | "ACCEPTED" | "REJECTED";
+    invoiceId?: string;
     invoiceNumber?: string;
     receiptId?: string;
     receiptNumber?: string;
     mpesaReceipt?: string;
     paymentChannel?: "CASH" | "MPESA" | "INSURANCE";
+    consultFeeStatus?: ConsultFeeStatus;
+    consultFeeAmount?: number;
+    consultFeePaidAt?: string;
   };
   pharmacy?: {
     dispensed?: boolean;
     dispensedAt?: string;
+    prescriptionId?: string;
+    prescriptionNumber?: string;
+    sentAt?: string;
   };
 }
 
@@ -133,14 +152,36 @@ interface VisitContextValue {
   refresh: () => Promise<void>;
   checkIn: (visit: Omit<Visit, "id" | "stage" | "checkedInAt">) => Promise<void>;
   recordTriage: (visitId: string, vitals: Vitals, doctorName: string, nurseName: string) => Promise<void>;
+  chargeConsultFee: (visitId: string) => Promise<void>;
+  waiveConsultFee: (visitId: string) => Promise<void>;
+  collectConsultFee: (
+    visitId: string,
+    mode: "CASH" | "MPESA",
+    opts?: { transactionReference?: string; mpesaReceipt?: string },
+  ) => Promise<void>;
   startConsultation: (visitId: string) => Promise<void>;
+  saveClinicalRecord: (visitId: string, clinicalRecord: ClinicalRecord) => Promise<void>;
+  saveClinicalOrders: (
+    visitId: string,
+    orders: {
+      orderedServices?: OrderedClinicalItem[];
+      orderedSurgeries?: OrderedClinicalItem[];
+    },
+  ) => Promise<void>;
   orderLabs: (visitId: string, tests: LabTestOrder[], notes: string) => Promise<void>;
   submitLabResults: (visitId: string, tests: LabTestOrder[], comments: string) => Promise<void>;
   completeConsultation: (
     visitId: string,
-    outcome: { diagnosis: string; prescriptions: PrescriptionLine[]; followUpDate?: string },
+    outcome: {
+      diagnosis: string;
+      prescriptions: PrescriptionLine[];
+      followUpDate?: string;
+      clinicalRecord?: ClinicalRecord;
+      orderedServices?: OrderedClinicalItem[];
+      orderedSurgeries?: OrderedClinicalItem[];
+    },
   ) => Promise<void>;
-  finalizeBilling: (visitId: string, total: number, claimId?: string) => Promise<void>;
+  finalizeBilling: (visitId: string, total: number, claimId?: string) => Promise<Visit>;
   updateClaimStatus: (visitId: string, status: "SUBMITTED" | "ACCEPTED" | "REJECTED") => Promise<void>;
   syncClaim: (visitId: string, providerId: string) => Promise<{
     status?: "SUBMITTED" | "ACCEPTED" | "REJECTED";
@@ -204,8 +245,41 @@ export function VisitProvider({ children }: { children: ReactNode }) {
       });
       await refresh();
     },
+    chargeConsultFee: async (visitId) => {
+      await api(`/visits/${visitId}/charge-consult-fee`, { method: "POST" });
+      await refresh();
+    },
+    waiveConsultFee: async (visitId) => {
+      await api(`/visits/${visitId}/waive-consult-fee`, { method: "POST" });
+      await refresh();
+    },
+    collectConsultFee: async (visitId, mode, opts) => {
+      await api(`/visits/${visitId}/collect-consult-fee`, {
+        method: "POST",
+        body: JSON.stringify({
+          mode,
+          transactionReference: opts?.transactionReference,
+          mpesaReceipt: opts?.mpesaReceipt,
+        }),
+      });
+      await refresh();
+    },
     startConsultation: async (visitId) => {
       await api(`/visits/${visitId}/start-consultation`, { method: "POST" });
+      await refresh();
+    },
+    saveClinicalRecord: async (visitId, clinicalRecord) => {
+      await api(`/visits/${visitId}/clinical-notes`, {
+        method: "POST",
+        body: JSON.stringify({ clinicalRecord }),
+      });
+      await refresh();
+    },
+    saveClinicalOrders: async (visitId, orders) => {
+      await api(`/visits/${visitId}/clinical-orders`, {
+        method: "POST",
+        body: JSON.stringify(orders),
+      });
       await refresh();
     },
     orderLabs: async (visitId, tests, notes) => {
@@ -230,11 +304,12 @@ export function VisitProvider({ children }: { children: ReactNode }) {
       await refresh();
     },
     finalizeBilling: async (visitId, total, claimId) => {
-      await api(`/visits/${visitId}/billing`, {
+      const visit = await api<Visit>(`/visits/${visitId}/billing`, {
         method: "POST",
         body: JSON.stringify({ total, claimId }),
       });
       await refresh();
+      return visit;
     },
     updateClaimStatus: async (visitId, status) => {
       await api(`/visits/${visitId}/claim-status`, {

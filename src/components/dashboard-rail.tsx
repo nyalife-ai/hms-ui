@@ -3,6 +3,8 @@
 import { ChevronLeft, ChevronRight, FileText } from "lucide-react";
 import { useState } from "react";
 import { useAppointments, useDoctors, useDashboardSummary } from "@/lib/catalog";
+import { useAuth } from "@/lib/auth";
+import { canAccess } from "@/lib/roles";
 import { Avatar, Badge, Card, CardHeader } from "./ui";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -167,7 +169,10 @@ export function DoctorsScheduleCard() {
 }
 
 export function RecentActivityCard() {
+  const { user } = useAuth();
   const { data: summary } = useDashboardSummary();
+  const showInvoices =
+    user && canAccess(user.role, "billing-ledger", user.permissions);
   const activity = [
     ...(summary?.recentAppointments ?? []).slice(0, 3).map((a) => ({
       id: `appt-${a.id}`,
@@ -175,12 +180,16 @@ export function RecentActivityCard() {
       meta: `${a.doctor} · ${a.status}`,
       time: a.time,
     })),
-    {
-      id: "inv",
-      title: `${summary?.invoicesOpen ?? 0} open invoices`,
-      meta: "Billing queue",
-      time: "now",
-    },
+    ...(showInvoices
+      ? [
+          {
+            id: "inv",
+            title: `${summary?.invoicesOpen ?? 0} open invoices`,
+            meta: "Billing queue",
+            time: "now",
+          },
+        ]
+      : []),
     {
       id: "vis",
       title: `${summary?.activeVisits ?? 0} active visits`,

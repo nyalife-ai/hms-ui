@@ -2,6 +2,8 @@
 
 import { Plus, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { FieldLabel } from "@/components/field-label";
+import { PaginationBar } from "@/components/pagination-bar";
 import { RoleGuard } from "@/components/role-guard";
 import {
   Badge,
@@ -13,6 +15,8 @@ import {
 } from "@/components/ui";
 import { api } from "@/lib/api";
 import { useDepartments } from "@/lib/catalog";
+import { buildListQuery, toPageMeta, unwrapPage } from "@/lib/pagination";
+import { useDebouncedValue } from "@/lib/use-debounced-value";
 
 const inputClass =
   "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
@@ -45,7 +49,13 @@ type IpdWard = {
 export default function IpdWardsPage() {
   const { data: departments } = useDepartments();
   const [wards, setWards] = useState<IpdWard[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(50);
+  const [searchInput, setSearchInput] = useState("");
+  const search = useDebouncedValue(searchInput, 400);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [name, setName] = useState("");
@@ -55,14 +65,25 @@ export default function IpdWardsPage() {
   const [capacity, setCapacity] = useState("0");
 
   const load = useCallback(async () => {
+    setLoading(true);
     try {
-      const rows = await api<IpdWard[]>("/ipd/wards?active=true");
-      setWards(rows);
+      const qs = buildListQuery({
+        active: true,
+        page,
+        limit: 50,
+        search: search || undefined,
+      });
+      const res = unwrapPage<IpdWard>(await api(`/ipd/wards?${qs}`));
+      setWards(res.items);
+      setTotal(res.total);
+      setLimit(res.limit);
       setError("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load wards");
+    } finally {
+      setLoading(false);
     }
-  }, []);
+  }, [page, search]);
 
   useEffect(() => {
     void load();
@@ -106,11 +127,13 @@ export default function IpdWardsPage() {
     }
   };
 
+  const meta = toPageMeta({ total, page, limit });
+
   return (
     <RoleGuard module="inpatient">
       <PageHeader
         title="IPD Wards"
-        subtitle="Create wards and monitor occupancy from the API"
+        subtitle={loading ? "Loading…" : `${total.toLocaleString()} wards`}
         action={
           <PrimaryButton onClick={() => setOpen(true)}>
             <Plus className="h-4 w-4" /> Add ward
@@ -118,9 +141,20 @@ export default function IpdWardsPage() {
         }
       />
       {error && <p className="mb-4 text-sm text-rose-500">{error}</p>}
+      <div className="mb-4">
+        <input
+          className={inputClass}
+          placeholder="Search wards…"
+          value={searchInput}
+          onChange={(e) => {
+            setSearchInput(e.target.value);
+            setPage(1);
+          }}
+        />
+      </div>
 
       <Card>
-        <CardHeader title="Wards" subtitle={`${wards.length} active`} />
+        <CardHeader title="Wards" subtitle={`${total.toLocaleString()} total`} />
         <Table
           headers={[
             "Name",
@@ -158,9 +192,7 @@ export default function IpdWardsPage() {
             </tr>
           ))}
         </Table>
-        {wards.length === 0 && (
-          <p className="px-5 py-8 text-center text-sm text-slate-400">No wards yet</p>
-        )}
+        <PaginationBar meta={meta} onPageChange={setPage} disabled={loading} />
       </Card>
 
       {open && (
@@ -173,47 +205,55 @@ export default function IpdWardsPage() {
               </button>
             </div>
             <div className="space-y-3">
-              <input
-                className={inputClass}
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Ward name"
-              />
-              <select
-                className={inputClass}
-                value={wardType}
-                onChange={(e) => setWardType(e.target.value as (typeof WARD_TYPES)[number])}
-              >
-                {WARD_TYPES.map((t) => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
-              </select>
-              <select
-                className={inputClass}
-                value={departmentId}
-                onChange={(e) => setDepartmentId(e.target.value)}
-              >
-                <option value="">Department (optional)</option>
-                {departments.map((d) => (
-                  <option key={d.id} value={d.id}>{d.name}</option>
-                ))}
-              </select>
-              <input
-                className={inputClass}
-                type="number"
-                min={0}
-                value={dailyRate}
-                onChange={(e) => setDailyRate(e.target.value)}
-                placeholder="Daily rate"
-              />
-              <input
-                className={inputClass}
-                type="number"
-                min={0}
-                value={capacity}
-                onChange={(e) => setCapacity(e.target.value)}
-                placeholder="Capacity"
-              />
+              <div>
+                <FieldLabel required>Ward name</FieldLabel>
+                <input className={inputClass} value={name} onChange={(e) => setName(e.target.value)} />
+              </div>
+              <div>
+                <FieldLabel required>Type</FieldLabel>
+                <select
+                  className={inputClass}
+                  value={wardType}
+                  onChange={(e) => setWardType(e.target.value as (typeof WARD_TYPES)[number])}
+                >
+                  {WARD_TYPES.map((t) => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <FieldLabel optional>Department</FieldLabel>
+                <select
+                  className={inputClass}
+                  value={departmentId}
+                  onChange={(e) => setDepartmentId(e.target.value)}
+                >
+                  <option value="">Select department</option>
+                  {departments.map((d) => (
+                    <option key={d.id} value={d.id}>{d.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <FieldLabel optional>Daily rate</FieldLabel>
+                <input
+                  className={inputClass}
+                  type="number"
+                  min={0}
+                  value={dailyRate}
+                  onChange={(e) => setDailyRate(e.target.value)}
+                />
+              </div>
+              <div>
+                <FieldLabel optional>Capacity</FieldLabel>
+                <input
+                  className={inputClass}
+                  type="number"
+                  min={0}
+                  value={capacity}
+                  onChange={(e) => setCapacity(e.target.value)}
+                />
+              </div>
               <PrimaryButton disabled={busy} onClick={create}>
                 {busy ? "Saving…" : "Create ward"}
               </PrimaryButton>

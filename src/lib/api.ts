@@ -94,7 +94,15 @@ export async function api<T>(
     headers,
   });
 
-  if (res.status === 401 && retry && !path.startsWith("/auth/login") && !path.startsWith("/auth/refresh")) {
+  const skipRefresh =
+    path.startsWith("/auth/login") ||
+    path.startsWith("/auth/verify-login-otp") ||
+    path.startsWith("/auth/refresh") ||
+    path.startsWith("/auth/forgot-password") ||
+    path.startsWith("/auth/verify-reset-otp") ||
+    path.startsWith("/auth/reset-password") ||
+    path.startsWith("/auth/register");
+  if (res.status === 401 && retry && !skipRefresh) {
     if (!refreshPromise) {
       refreshPromise = tryRefresh().finally(() => {
         refreshPromise = null;

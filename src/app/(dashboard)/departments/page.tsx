@@ -2,25 +2,33 @@
 
 import { Building2, Search, Stethoscope, UsersRound } from "lucide-react";
 import { useMemo, useState } from "react";
+import { PaginationBar } from "@/components/pagination-bar";
 import { RoleGuard } from "@/components/role-guard";
 import { Card, CardHeader, PageHeader } from "@/components/ui";
 import { DeptStaffChart } from "@/components/charts";
-import { useDepartments } from "@/lib/catalog";
+import { usePaginatedCatalog, type CatalogDepartment } from "@/lib/catalog";
+import { toPageMeta } from "@/lib/pagination";
+import { useDebouncedValue } from "@/lib/use-debounced-value";
 
 export default function DepartmentsPage() {
-  const { data: departments, loading, error } = useDepartments();
-  const [query, setQuery] = useState("");
-
-  const filtered = useMemo(
-    () =>
-      departments.filter((d) =>
-        d.name.toLowerCase().includes(query.toLowerCase()),
-      ),
-    [departments, query],
+  const [page, setPage] = useState(1);
+  const [searchInput, setSearchInput] = useState("");
+  const search = useDebouncedValue(searchInput, 400);
+  const params = useMemo(
+    () => ({
+      page,
+      limit: 50,
+      search: search || undefined,
+    }),
+    [page, search],
   );
+  const { items: departments, total, limit, loading, error } =
+    usePaginatedCatalog<CatalogDepartment>("/catalog/departments", params);
+
   const totalStaff = departments.reduce((sum, d) => sum + d.staff, 0);
   const avg =
     departments.length > 0 ? Math.round(totalStaff / departments.length) : 0;
+  const meta = toPageMeta({ total, page, limit });
 
   return (
     <RoleGuard module="departments">
@@ -29,7 +37,7 @@ export default function DepartmentsPage() {
         subtitle={
           loading
             ? "Loading departments…"
-            : "Clinical and support units across the hospital"
+            : `${total.toLocaleString()} clinical and support units`
         }
       />
 
@@ -40,14 +48,14 @@ export default function DepartmentsPage() {
           {[
             {
               label: "Total Departments",
-              value: String(departments.length),
-              note: `with ${totalStaff} staff in total`,
+              value: String(total),
+              note: `${totalStaff} staff on this page`,
               icon: Building2,
             },
             {
               label: "Total Specialties",
               value: String(departments.length),
-              note: "active clinical units",
+              note: "shown on this page",
               icon: Stethoscope,
             },
             {
@@ -72,7 +80,7 @@ export default function DepartmentsPage() {
         <Card>
           <CardHeader
             title="Staff Breakdown by Departments"
-            subtitle={`Total All Staff ${totalStaff}`}
+            subtitle={`Staff on page ${totalStaff}`}
             action={
               <div className="flex items-center gap-3 text-[11px] text-slate-400">
                 <span className="flex items-center gap-1">
@@ -100,15 +108,18 @@ export default function DepartmentsPage() {
         <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
         <input
           type="search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          value={searchInput}
+          onChange={(e) => {
+            setSearchInput(e.target.value);
+            setPage(1);
+          }}
           placeholder="Search Departments"
           className="w-full rounded-full border border-slate-200 bg-white py-2.5 pl-11 pr-4 text-sm text-slate-700 placeholder:text-slate-400 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20"
         />
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {filtered.map((dept) => (
+        {departments.map((dept) => (
           <Card key={dept.id} className="overflow-hidden">
             <div className="flex h-32 items-center justify-center bg-brand-100">
               <Building2 className="h-10 w-10 text-brand-500/70" />
@@ -129,6 +140,9 @@ export default function DepartmentsPage() {
             </div>
           </Card>
         ))}
+      </div>
+      <div className="mt-4 rounded-2xl border border-slate-100 bg-white">
+        <PaginationBar meta={meta} onPageChange={setPage} disabled={loading} />
       </div>
     </RoleGuard>
   );

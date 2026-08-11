@@ -130,14 +130,14 @@ export function OutlineButton({ children, onClick }: { children: ReactNode; onCl
 
 export function Table({ headers, children }: { headers: string[]; children: ReactNode }) {
   return (
-    <div className="-mx-1 overflow-x-auto px-1 pb-3 sm:mx-0 sm:px-3">
+    <div className="overflow-x-auto">
       <table className="w-full min-w-[640px] border-separate border-spacing-0 text-left text-sm">
         <thead>
           <tr>
             {headers.map((h, i) => (
               <th
                 key={h}
-                className={`sticky top-0 bg-brand-50 px-4 py-3 text-xs font-medium text-brand-700/70 ${i === 0 ? "rounded-l-xl" : ""} ${i === headers.length - 1 ? "rounded-r-xl" : ""}`}
+                className={`sticky top-0 bg-brand-50 px-4 py-2.5 text-xs font-medium text-brand-700/70 ${i === 0 ? "rounded-l-xl" : ""} ${i === headers.length - 1 ? "rounded-r-xl" : ""}`}
               >
                 {h}
               </th>
@@ -153,7 +153,23 @@ export function Table({ headers, children }: { headers: string[]; children: Reac
 }
 
 /** Standard row cell padding for use inside <Table>. */
-export const cell = "px-4 py-3.5 whitespace-nowrap";
+export const cell = "px-4 py-2.5 whitespace-nowrap";
+
+/** Shimmer placeholder matching StatCard layout. */
+export function StatCardSkeleton() {
+  return (
+    <Card className="flex flex-col p-2.5">
+      <div className="flex items-start justify-between px-2.5 pt-2.5">
+        <div className="space-y-2">
+          <div className="h-4 w-24 animate-pulse rounded bg-slate-100" />
+          <div className="h-8 w-16 animate-pulse rounded bg-slate-100" />
+        </div>
+        <div className="h-9 w-9 animate-pulse rounded-lg bg-slate-100" />
+      </div>
+      <div className="mt-3 h-8 animate-pulse rounded-xl bg-slate-50" />
+    </Card>
+  );
+}
 
 export function Avatar({ name, size = "md" }: { name: string; size?: "sm" | "md" | "lg" }) {
   const initials = name

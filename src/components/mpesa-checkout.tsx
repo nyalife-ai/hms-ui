@@ -145,7 +145,7 @@ export function MpesaCheckoutModal({
               className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand-500 py-2.5 text-sm font-semibold text-white hover:bg-brand-600 disabled:opacity-50"
             >
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Smartphone className="h-4 w-4" />}
-              Send STK Push
+              Send M-Pesa payment request
             </button>
           </div>
         ) : (

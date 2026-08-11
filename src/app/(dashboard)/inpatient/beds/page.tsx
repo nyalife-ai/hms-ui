@@ -2,6 +2,8 @@
 
 import { Plus, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { FieldLabel } from "@/components/field-label";
+import { PaginationBar } from "@/components/pagination-bar";
 import { RoleGuard } from "@/components/role-guard";
 import {
   Badge,
@@ -12,6 +14,7 @@ import {
   Table,
 } from "@/components/ui";
 import { api } from "@/lib/api";
+import { buildListQuery, toPageMeta, unwrapPage } from "@/lib/pagination";
 
 const inputClass =
   "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
@@ -30,30 +33,43 @@ const STATUSES = ["AVAILABLE", "OCCUPIED", "RESERVED", "MAINTENANCE"] as const;
 export default function IpdBedsPage() {
   const [wards, setWards] = useState<IpdWard[]>([]);
   const [beds, setBeds] = useState<IpdBed[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(50);
   const [wardFilter, setWardFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [wardId, setWardId] = useState("");
   const [bedNumbers, setBedNumbers] = useState("");
 
   const load = useCallback(async () => {
+    setLoading(true);
     try {
-      const qs = new URLSearchParams();
-      if (wardFilter) qs.set("wardId", wardFilter);
-      if (statusFilter) qs.set("status", statusFilter);
+      const qs = buildListQuery({
+        wardId: wardFilter || undefined,
+        status: statusFilter || undefined,
+        page,
+        limit: 50,
+      });
       const [w, b] = await Promise.all([
-        api<IpdWard[]>("/ipd/wards?active=true"),
-        api<IpdBed[]>(`/ipd/beds${qs.toString() ? `?${qs}` : ""}`),
+        api("/ipd/wards?active=true&limit=100"),
+        api(`/ipd/beds?${qs}`),
       ]);
-      setWards(w.map((x) => ({ id: x.id, name: x.name })));
-      setBeds(b);
+      setWards(unwrapPage<IpdWard>(w).items.map((x) => ({ id: x.id, name: x.name })));
+      const bedPage = unwrapPage<IpdBed>(b);
+      setBeds(bedPage.items);
+      setTotal(bedPage.total);
+      setLimit(bedPage.limit);
       setError("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load beds");
+    } finally {
+      setLoading(false);
     }
-  }, [wardFilter, statusFilter]);
+  }, [wardFilter, statusFilter, page]);
 
   useEffect(() => {
     void load();
@@ -103,11 +119,13 @@ export default function IpdBedsPage() {
     }
   };
 
+  const meta = toPageMeta({ total, page, limit });
+
   return (
     <RoleGuard module="inpatient">
       <PageHeader
         title="IPD Beds"
-        subtitle="Bed inventory and status from the API"
+        subtitle={loading ? "Loading…" : `${total.toLocaleString()} beds`}
         action={
           <PrimaryButton onClick={() => setOpen(true)}>
             <Plus className="h-4 w-4" /> Add bed(s)
@@ -120,7 +138,10 @@ export default function IpdBedsPage() {
         <select
           className={`${inputClass} max-w-xs`}
           value={wardFilter}
-          onChange={(e) => setWardFilter(e.target.value)}
+          onChange={(e) => {
+            setWardFilter(e.target.value);
+            setPage(1);
+          }}
         >
           <option value="">All wards</option>
           {wards.map((w) => (
@@ -130,7 +151,10 @@ export default function IpdBedsPage() {
         <select
           className={`${inputClass} max-w-xs`}
           value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
+          onChange={(e) => {
+            setStatusFilter(e.target.value);
+            setPage(1);
+          }}
         >
           <option value="">All statuses</option>
           {STATUSES.map((s) => (
@@ -140,7 +164,7 @@ export default function IpdBedsPage() {
       </div>
 
       <Card>
-        <CardHeader title="Beds" subtitle={`${beds.length} shown`} />
+        <CardHeader title="Beds" subtitle={`${total.toLocaleString()} total`} />
         <Table headers={["Ward", "Bed", "Status", "Actions"]}>
           {beds.map((b) => (
             <tr key={b.id} className="hover:bg-slate-50/60">
@@ -186,9 +210,7 @@ export default function IpdBedsPage() {
             </tr>
           ))}
         </Table>
-        {beds.length === 0 && (
-          <p className="px-5 py-8 text-center text-sm text-slate-400">No beds match filters</p>
-        )}
+        <PaginationBar meta={meta} onPageChange={setPage} disabled={loading} />
       </Card>
 
       {open && (
@@ -201,18 +223,24 @@ export default function IpdBedsPage() {
               </button>
             </div>
             <div className="space-y-3">
-              <select className={inputClass} value={wardId} onChange={(e) => setWardId(e.target.value)}>
-                <option value="">Select ward</option>
-                {wards.map((w) => (
-                  <option key={w.id} value={w.id}>{w.name}</option>
-                ))}
-              </select>
-              <textarea
-                className={`${inputClass} min-h-24 resize-y`}
-                value={bedNumbers}
-                onChange={(e) => setBedNumbers(e.target.value)}
-                placeholder="Bed numbers (comma or newline separated), e.g. A1, A2, A3"
-              />
+              <div>
+                <FieldLabel required>Ward</FieldLabel>
+                <select className={inputClass} value={wardId} onChange={(e) => setWardId(e.target.value)}>
+                  <option value="">Select ward</option>
+                  {wards.map((w) => (
+                    <option key={w.id} value={w.id}>{w.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <FieldLabel required>Bed numbers</FieldLabel>
+                <textarea
+                  className={`${inputClass} min-h-24 resize-y`}
+                  value={bedNumbers}
+                  onChange={(e) => setBedNumbers(e.target.value)}
+                  placeholder="Comma or newline separated, e.g. A1, A2, A3"
+                />
+              </div>
               <PrimaryButton disabled={busy} onClick={create}>
                 {busy ? "Creating…" : "Create"}
               </PrimaryButton>
