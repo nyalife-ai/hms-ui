@@ -48,7 +48,20 @@ export const PIPELINE_STEPS = [
   "Billing",
   "Insurer",
   "Done",
-];
+] as const;
+
+export const PIPELINE_TAB_IDS = [
+  "reception",
+  "triage",
+  "doctor",
+  "laboratory",
+  "diagnosis",
+  "billing",
+  "insurer",
+  "done",
+] as const;
+
+export type PipelineTabId = (typeof PIPELINE_TAB_IDS)[number];
 
 export type InsuranceStatus = "PENDING" | "APPROVED" | "REJECTED";
 
@@ -110,6 +123,7 @@ export interface Visit {
   vitals?: Vitals;
   nurseName?: string;
   doctorName?: string;
+  doctorStaffId?: string;
   labOrder?: {
     tests: LabTestOrder[];
     notes?: string;
@@ -151,7 +165,13 @@ interface VisitContextValue {
   loading: boolean;
   refresh: () => Promise<void>;
   checkIn: (visit: Omit<Visit, "id" | "stage" | "checkedInAt">) => Promise<void>;
-  recordTriage: (visitId: string, vitals: Vitals, doctorName: string, nurseName: string) => Promise<void>;
+  recordTriage: (
+    visitId: string,
+    vitals: Vitals,
+    doctorName: string,
+    nurseName: string,
+    doctorStaffId?: string,
+  ) => Promise<void>;
   chargeConsultFee: (visitId: string) => Promise<void>;
   waiveConsultFee: (visitId: string) => Promise<void>;
   collectConsultFee: (
@@ -160,6 +180,10 @@ interface VisitContextValue {
     opts?: { transactionReference?: string; mpesaReceipt?: string },
   ) => Promise<void>;
   startConsultation: (visitId: string) => Promise<void>;
+  updateReception: (
+    visitId: string,
+    patch: { reasonForVisit?: string; additionalNotes?: string },
+  ) => Promise<void>;
   saveClinicalRecord: (visitId: string, clinicalRecord: ClinicalRecord) => Promise<void>;
   saveClinicalOrders: (
     visitId: string,
@@ -238,10 +262,15 @@ export function VisitProvider({ children }: { children: ReactNode }) {
       });
       await refresh();
     },
-    recordTriage: async (visitId, vitals, doctorName, nurseName) => {
+    recordTriage: async (visitId, vitals, doctorName, nurseName, doctorStaffId) => {
       await api(`/visits/${visitId}/triage`, {
         method: "POST",
-        body: JSON.stringify({ vitals, doctorName, nurseName }),
+        body: JSON.stringify({
+          vitals,
+          doctorName,
+          nurseName,
+          doctorStaffId: doctorStaffId || undefined,
+        }),
       });
       await refresh();
     },
@@ -266,6 +295,13 @@ export function VisitProvider({ children }: { children: ReactNode }) {
     },
     startConsultation: async (visitId) => {
       await api(`/visits/${visitId}/start-consultation`, { method: "POST" });
+      await refresh();
+    },
+    updateReception: async (visitId, patch) => {
+      await api(`/visits/${visitId}/reception`, {
+        method: "PATCH",
+        body: JSON.stringify(patch),
+      });
       await refresh();
     },
     saveClinicalRecord: async (visitId, clinicalRecord) => {

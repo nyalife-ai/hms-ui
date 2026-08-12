@@ -1,8 +1,12 @@
 "use client";
 
 import { FlaskConical, Play, Plus, Save, Send, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ConsultationClinicalForm } from "@/components/consultation-clinical-form";
+import { ConsultationQuickViewModal } from "@/components/consultation-quick-view-modal";
+import { ConsultationRowActions } from "@/components/consultation-row-actions";
 import { RoleGuard } from "@/components/role-guard";
 import { SearchablePicker } from "@/components/searchable-picker";
 import { Avatar, Badge, Card, CardHeader, PageHeader } from "@/components/ui";
@@ -12,6 +16,10 @@ import {
   useLabTests,
   useMedications,
 } from "@/lib/catalog";
+import {
+  relatedLabsHref,
+  relatedPrescriptionsHref,
+} from "@/lib/clinical-links";
 import {
   clinicalDraftKey,
   emptyClinicalRecord,
@@ -23,7 +31,13 @@ import {
   type OrderedClinicalItem,
 } from "@/lib/clinical-service";
 import { PRESCRIPTION_FREQUENCIES } from "@/lib/prescription-frequency";
-import { useVisits, formatTime, type PrescriptionLine, type Visit } from "@/lib/visits";
+import {
+  PIPELINE_TAB_IDS,
+  useVisits,
+  formatTime,
+  type PrescriptionLine,
+  type Visit,
+} from "@/lib/visits";
 
 const inputClass =
   "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
@@ -135,6 +149,7 @@ function SelectedList({
 }
 
 export default function ConsultationsPage() {
+  const router = useRouter();
   const {
     visits,
     startConsultation,
@@ -152,6 +167,7 @@ export default function ConsultationsPage() {
   const dispatched = visits.filter((v) => v.stage === "READY_FOR_BILLING");
   const [selectedId, setSelectedId] = useState("");
   const selected = queue.find((v) => v.id === selectedId) ?? queue[0];
+  const [quickView, setQuickView] = useState<Visit | null>(null);
 
   const [selectedLabs, setSelectedLabs] = useState<
     { name: string; unit: string; range: string }[]
@@ -359,6 +375,30 @@ export default function ConsultationsPage() {
                 hydratedVisitId.current = null;
               }}
               emptyMessage="No patients in the queue. Triaged patients appear here."
+              trailing={(v) => (
+                <ConsultationRowActions
+                  onQuickView={() => setQuickView(v)}
+                  onEditRecord={() => router.push(`/consultations/${v.id}`)}
+                  onRelatedLabs={() =>
+                    router.push(
+                      relatedLabsHref({
+                        visitId: v.id,
+                        appointmentId: v.appointmentId,
+                        patientName: v.patientName,
+                      }),
+                    )
+                  }
+                  onRelatedPrescriptions={() =>
+                    router.push(
+                      relatedPrescriptionsHref({
+                        visitId: v.id,
+                        appointmentId: v.appointmentId,
+                        patientName: v.patientName,
+                      }),
+                    )
+                  }
+                />
+              )}
             />
           </Card>
 
@@ -404,11 +444,35 @@ export default function ConsultationsPage() {
                           )}
                         </div>
                       </div>
-                      <div className="flex shrink-0 flex-col items-end gap-1 text-[11px] text-slate-400">
-                        <span>Next desk</span>
-                        <span className="font-medium text-slate-600">
-                          {stops.join(" → ")}
-                        </span>
+                      <div className="flex shrink-0 items-start gap-1">
+                        <div className="flex flex-col items-end gap-1 text-[11px] text-slate-400">
+                          <span>Next desk</span>
+                          <span className="font-medium text-slate-600">
+                            {stops.join(" → ")}
+                          </span>
+                        </div>
+                        <ConsultationRowActions
+                          onQuickView={() => setQuickView(v)}
+                          onEditRecord={() => router.push(`/consultations/${v.id}`)}
+                          onRelatedLabs={() =>
+                            router.push(
+                              relatedLabsHref({
+                                visitId: v.id,
+                                appointmentId: v.appointmentId,
+                                patientName: v.patientName,
+                              }),
+                            )
+                          }
+                          onRelatedPrescriptions={() =>
+                            router.push(
+                              relatedPrescriptionsHref({
+                                visitId: v.id,
+                                appointmentId: v.appointmentId,
+                                patientName: v.patientName,
+                              }),
+                            )
+                          }
+                        />
                       </div>
                     </li>
                   );
@@ -424,10 +488,27 @@ export default function ConsultationsPage() {
               <CardHeader
                 title={selected.patientName}
                 subtitle={`${selected.mrn} · ${selected.age} yrs · ${selected.gender} · Triaged by ${selected.nurseName ?? "—"}`}
-                action={<Avatar name={selected.patientName} />}
+                action={
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href={`/consultations/${selected.id}`}
+                      className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-brand-300"
+                    >
+                      Journey
+                    </Link>
+                    <Avatar name={selected.patientName} />
+                  </div>
+                }
               />
               <div className="space-y-4 px-5 pb-5">
-                <PipelineStepper visit={selected} />
+                <PipelineStepper
+                  visit={selected}
+                  onStepClick={(step) =>
+                    router.push(
+                      `/consultations/${selected.id}?tab=${PIPELINE_TAB_IDS[step - 1]}`,
+                    )
+                  }
+                />
                 <PaymentInfo visit={selected} />
                 {(selected.reasonForVisit || selected.additionalNotes) && (
                   <div className="rounded-xl border border-brand-100 bg-brand-50/50 px-4 py-3 text-sm">
@@ -810,6 +891,12 @@ export default function ConsultationsPage() {
           </Card>
         )}
       </div>
+      {quickView && (
+        <ConsultationQuickViewModal
+          visit={quickView}
+          onClose={() => setQuickView(null)}
+        />
+      )}
     </RoleGuard>
   );
 }

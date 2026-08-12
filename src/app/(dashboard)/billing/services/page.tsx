@@ -1,6 +1,6 @@
 "use client";
 
-import { Pencil, Plus, X } from "lucide-react";
+import { CheckCircle2, ListChecks, PauseCircle, Pencil, Plus, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { FieldLabel } from "@/components/field-label";
 import { PaginationBar } from "@/components/pagination-bar";
@@ -12,6 +12,7 @@ import {
   CardHeader,
   PageHeader,
   PrimaryButton,
+  StatCard,
   Table,
 } from "@/components/ui";
 import { api } from "@/lib/api";
@@ -71,6 +72,11 @@ export default function BillingServicesPage() {
   const [formError, setFormError] = useState("");
   const [form, setForm] = useState(emptyForm);
   const [triageFeeCode, setTriageFeeCode] = useState<string | null>(null);
+  const [kpi, setKpi] = useState<{
+    total: number;
+    active: number;
+    inactive: number;
+  } | null>(null);
 
   const loadFees = useCallback(async () => {
     try {
@@ -93,10 +99,16 @@ export default function BillingServicesPage() {
         limit: 50,
         search: search || undefined,
       });
-      const res = unwrapPage<ServiceRow>(await api(`/billing/services?${qs}`));
+      const [res, summary] = await Promise.all([
+        unwrapPage<ServiceRow>(await api(`/billing/services?${qs}`)),
+        api<{ total: number; active: number; inactive: number }>(
+          "/billing/services/summary",
+        ).catch(() => null),
+      ]);
       setRows(res.items);
       setTotal(res.total);
       setLimit(res.limit);
+      if (summary) setKpi(summary);
       setError("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to load services");
@@ -232,6 +244,26 @@ export default function BillingServicesPage() {
       />
       {error && <p className="mb-4 text-sm text-rose-500">{error}</p>}
       {notice && <p className="mb-4 text-sm text-emerald-600">{notice}</p>}
+      <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <StatCard
+          label="Total"
+          value={kpi ? String(kpi.total) : "…"}
+          deltaLabel="fee schedule rows"
+          icon={ListChecks}
+        />
+        <StatCard
+          label="Active"
+          value={kpi ? String(kpi.active) : "…"}
+          deltaLabel="billable now"
+          icon={CheckCircle2}
+        />
+        <StatCard
+          label="Inactive"
+          value={kpi ? String(kpi.inactive) : "…"}
+          deltaLabel="hidden from new invoices"
+          icon={PauseCircle}
+        />
+      </div>
       {triageFeeCode && (
         <p className="mb-4 rounded-xl bg-brand-50 px-4 py-3 text-sm text-brand-800">
           Triage consultation fee currently uses service code{" "}

@@ -63,7 +63,6 @@ export default function LabTestTypesPage() {
     setLoading(true);
     try {
       const qs = buildListQuery({
-        active: true,
         search: search || undefined,
         take: PAGE_SIZE,
         skip: (page - 1) * PAGE_SIZE,
@@ -180,13 +179,27 @@ export default function LabTestTypesPage() {
                 </Badge>
               </td>
               <td className="px-5 py-3.5">
-                <button
-                  type="button"
-                  className="rounded-full border px-3 py-1 text-xs"
-                  onClick={() => void openDetail(t.id)}
-                >
-                  Parameters
-                </button>
+                <div className="flex flex-wrap gap-1.5">
+                  <button
+                    type="button"
+                    className="rounded-full border px-3 py-1 text-xs"
+                    onClick={() => void openDetail(t.id)}
+                  >
+                    Parameters
+                  </button>
+                  <button
+                    type="button"
+                    className="rounded-full border px-3 py-1 text-xs"
+                    onClick={() =>
+                      void api(
+                        `/laboratory/test-types/${t.id}/${t.isActive ? "deactivate" : "activate"}`,
+                        { method: "POST" },
+                      ).then(() => load())
+                    }
+                  >
+                    {t.isActive ? "Deactivate" : "Activate"}
+                  </button>
+                </div>
               </td>
             </tr>
           ))}

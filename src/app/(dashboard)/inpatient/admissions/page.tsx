@@ -25,6 +25,8 @@ const inputClass =
 
 export default function IpdAdmissionsPage() {
   const { user } = useAuth();
+  const pickDoctor = user?.role === "ADMIN" || user?.role === "SUPER_ADMIN" || user?.role === "RECEPTIONIST";
+  const selfDoctorId = user?.role === "DOCTOR" ? user.staffProfileId || "" : "";
   const { data: wards, loading, error, refresh } = useWards();
   const totalBeds = wards.reduce((sum, w) => sum + w.totalBeds, 0);
   const occupied = wards.reduce((sum, w) => sum + w.occupied, 0);
@@ -124,7 +126,7 @@ export default function IpdAdmissionsPage() {
         body: JSON.stringify({
           patientId,
           bedId: chosenBed,
-          admittingDoctorId: doctorId,
+          admittingDoctorId: pickDoctor ? doctorId : selfDoctorId || doctorId,
           primaryDiagnosis: reason || undefined,
         }),
       });
@@ -143,7 +145,11 @@ export default function IpdAdmissionsPage() {
   };
 
   const discharge = async () => {
-    if (!dischargeId || !dischargeDoctorId) return;
+    if (!dischargeId) return;
+    const dischargingDoctorId = pickDoctor
+      ? dischargeDoctorId
+      : selfDoctorId || dischargeDoctorId;
+    if (!dischargingDoctorId) return;
     setDischargeBusy(true);
     try {
       const prescriptionLines = dischargeLines
@@ -158,7 +164,7 @@ export default function IpdAdmissionsPage() {
       await api(`/ipd/admissions/${dischargeId}/discharge`, {
         method: "POST",
         body: JSON.stringify({
-          dischargingDoctorId: dischargeDoctorId,
+          dischargingDoctorId,
           diagnosis: dischargeDiagnosis || undefined,
           summary: dischargeSummary || undefined,
           medications: dischargeMeds || undefined,
@@ -426,8 +432,14 @@ export default function IpdAdmissionsPage() {
                 </select>
               </div>
               <div>
-                <FieldLabel required>Admitting doctor</FieldLabel>
-                <DoctorSearchSelect value={doctorId} onChange={(id) => setDoctorId(id)} />
+                <FieldLabel required={pickDoctor}>Admitting doctor</FieldLabel>
+                {pickDoctor ? (
+                  <DoctorSearchSelect value={doctorId} onChange={(id) => setDoctorId(id)} />
+                ) : (
+                  <p className="rounded-xl bg-slate-50 px-3.5 py-2.5 text-sm text-slate-700">
+                    {user?.name || "You"} — assigned as admitting doctor
+                  </p>
+                )}
               </div>
               <div>
                 <FieldLabel optional>Primary diagnosis</FieldLabel>
@@ -458,11 +470,17 @@ export default function IpdAdmissionsPage() {
             </div>
             <div className="space-y-3">
               <div>
-                <FieldLabel required>Discharging doctor</FieldLabel>
-                <DoctorSearchSelect
-                  value={dischargeDoctorId}
-                  onChange={(id) => setDischargeDoctorId(id)}
-                />
+                <FieldLabel required={pickDoctor}>Discharging doctor</FieldLabel>
+                {pickDoctor ? (
+                  <DoctorSearchSelect
+                    value={dischargeDoctorId}
+                    onChange={(id) => setDischargeDoctorId(id)}
+                  />
+                ) : (
+                  <p className="rounded-xl bg-slate-50 px-3.5 py-2.5 text-sm text-slate-700">
+                    {user?.name || "You"} — assigned as discharging doctor
+                  </p>
+                )}
               </div>
               <div>
                 <FieldLabel optional>Discharge diagnosis</FieldLabel>

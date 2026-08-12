@@ -1,6 +1,6 @@
 "use client";
 
-import { Ban, CheckCircle2, Plus, Printer, Wallet, X } from "lucide-react";
+import { Ban, CheckCircle2, FileText, Plus, Printer, Wallet, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { FieldLabel } from "@/components/field-label";
 import { InvoicePrintModal } from "@/components/invoice-print-modal";
@@ -16,6 +16,7 @@ import {
   CardHeader,
   PageHeader,
   PrimaryButton,
+  StatCard,
   Table,
   type BadgeTone,
 } from "@/components/ui";
@@ -87,6 +88,14 @@ export default function BillingInvoicesPage() {
   const [actionBusy, setActionBusy] = useState("");
   const [payInvoice, setPayInvoice] = useState<InvoiceHit | null>(null);
   const [printInvoiceId, setPrintInvoiceId] = useState("");
+  const [kpi, setKpi] = useState<{
+    total: number;
+    draft: number;
+    issued: number;
+    partiallyPaid: number;
+    paid: number;
+    outstandingKes: string;
+  } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -97,10 +106,21 @@ export default function BillingInvoicesPage() {
         search: search || undefined,
         status: statusFilter || undefined,
       });
-      const res = unwrapPage<InvoiceRow>(await api(`/billing/invoices?${qs}`));
+      const [res, summary] = await Promise.all([
+        unwrapPage<InvoiceRow>(await api(`/billing/invoices?${qs}`)),
+        api<{
+          total: number;
+          draft: number;
+          issued: number;
+          partiallyPaid: number;
+          paid: number;
+          outstandingKes: string;
+        }>("/billing/invoices/summary").catch(() => null),
+      ]);
       setRows(res.items);
       setTotal(res.total);
       setLimit(res.limit);
+      if (summary) setKpi(summary);
       setError("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to load invoices");
@@ -211,6 +231,32 @@ export default function BillingInvoicesPage() {
       {notice && (
         <p className="mb-4 rounded-xl bg-brand-50 px-4 py-3 text-sm text-brand-800">{notice}</p>
       )}
+      <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard
+          label="Draft"
+          value={kpi ? String(kpi.draft) : "…"}
+          deltaLabel="not yet issued"
+          icon={FileText}
+        />
+        <StatCard
+          label="Issued"
+          value={kpi ? String(kpi.issued) : "…"}
+          deltaLabel="awaiting payment"
+          icon={Wallet}
+        />
+        <StatCard
+          label="Partially paid"
+          value={kpi ? String(kpi.partiallyPaid) : "…"}
+          deltaLabel="open balance"
+          icon={Printer}
+        />
+        <StatCard
+          label="Outstanding"
+          value={kpi ? formatKes(kpi.outstandingKes) : "…"}
+          deltaLabel="KES on issued invoices"
+          icon={CheckCircle2}
+        />
+      </div>
       <div className="mb-4 flex flex-wrap gap-3">
         <input
           className={`min-w-[220px] flex-1 ${inputClass}`}

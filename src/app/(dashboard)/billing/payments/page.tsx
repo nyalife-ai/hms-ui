@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus } from "lucide-react";
+import { Banknote, Clock, Plus, Wallet } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { PaginationBar } from "@/components/pagination-bar";
 import { RecordInvoicePaymentModal } from "@/components/record-invoice-payment-modal";
@@ -12,6 +12,7 @@ import {
   CardHeader,
   PageHeader,
   PrimaryButton,
+  StatCard,
   Table,
   type BadgeTone,
 } from "@/components/ui";
@@ -70,6 +71,12 @@ export default function BillingPaymentsPage() {
   const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const [kpi, setKpi] = useState<{
+    total: number;
+    completedTodayKes: string;
+    pending: number;
+    unallocatedKes: string;
+  } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -79,11 +86,19 @@ export default function BillingPaymentsPage() {
         limit: 50,
         search: search || undefined,
       });
-      const payments = await api(`/billing/payments?${qs}`);
-      const res = unwrapPage<PaymentRow>(payments);
+      const [res, summary] = await Promise.all([
+        unwrapPage<PaymentRow>(await api(`/billing/payments?${qs}`)),
+        api<{
+          total: number;
+          completedTodayKes: string;
+          pending: number;
+          unallocatedKes: string;
+        }>("/billing/payments/summary").catch(() => null),
+      ]);
       setRows(res.items);
       setTotal(res.total);
       setLimit(res.limit);
+      if (summary) setKpi(summary);
       setError("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to load payments");
@@ -118,6 +133,32 @@ export default function BillingPaymentsPage() {
       {notice && (
         <p className="mb-4 rounded-xl bg-brand-50 px-4 py-3 text-sm text-brand-800">{notice}</p>
       )}
+      <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard
+          label="Total"
+          value={kpi ? String(kpi.total) : "…"}
+          deltaLabel="all receipts"
+          icon={Wallet}
+        />
+        <StatCard
+          label="Collected today"
+          value={kpi ? formatKes(kpi.completedTodayKes) : "…"}
+          deltaLabel="KES completed"
+          icon={Banknote}
+        />
+        <StatCard
+          label="Pending"
+          value={kpi ? String(kpi.pending) : "…"}
+          deltaLabel="not completed"
+          icon={Clock}
+        />
+        <StatCard
+          label="Unallocated"
+          value={kpi ? formatKes(kpi.unallocatedKes) : "…"}
+          deltaLabel="KES not applied"
+          icon={Plus}
+        />
+      </div>
       <div className="mb-4">
         <input
           className={inputClass}

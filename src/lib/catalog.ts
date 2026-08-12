@@ -304,6 +304,7 @@ export type AppointmentSummary = {
 
 export type AppointmentDetail = {
   id: string;
+  visitId?: string | null;
   appointmentNumber: string;
   date: string;
   time: string;

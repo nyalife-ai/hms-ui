@@ -4,6 +4,7 @@ import {
   ChevronLeft,
   Clock3,
   FilePlus2,
+  FlaskConical,
   Info,
   Pill,
   Stethoscope,
@@ -14,6 +15,11 @@ import { useEffect, useState } from "react";
 import { Badge, type BadgeTone } from "@/components/ui";
 import { api } from "@/lib/api";
 import type { AppointmentDetail } from "@/lib/catalog";
+import {
+  consultationJourneyHref,
+  relatedLabsHref,
+  relatedPrescriptionsHref,
+} from "@/lib/clinical-links";
 
 const STATUS_TONES: Record<string, BadgeTone> = {
   Scheduled: "blue",
@@ -23,7 +29,7 @@ const STATUS_TONES: Record<string, BadgeTone> = {
   Cancelled: "red",
 };
 
-type Tab = "details" | "notes" | "prescriptions";
+type Tab = "details" | "notes" | "labs" | "prescriptions";
 
 export function AppointmentQuickViewModal({
   appointmentId,
@@ -81,6 +87,7 @@ export function AppointmentQuickViewModal({
               [
                 { id: "details", label: "Visit Details", icon: Info },
                 { id: "notes", label: "Clinical Notes", icon: Stethoscope },
+                { id: "labs", label: "Labs", icon: FlaskConical },
                 { id: "prescriptions", label: "Prescriptions", icon: Pill },
               ] as const
             ).map((item) => {
@@ -196,7 +203,11 @@ export function AppointmentQuickViewModal({
               )}
 
               <Link
-                href={`/appointments/${detail.id}`}
+                href={
+                  detail.visitId
+                    ? consultationJourneyHref(detail.visitId)
+                    : `/appointments/${detail.id}`
+                }
                 className="inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-800 hover:border-brand-300 hover:text-brand-700"
               >
                 View Full Records
@@ -258,6 +269,47 @@ export function AppointmentQuickViewModal({
             </div>
           )}
 
+          {detail && !loading && tab === "labs" && (
+            <div className="pr-6">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                Laboratory
+              </p>
+              {detail.labRequests.length === 0 ? (
+                <div className="mt-4 flex min-h-48 flex-col items-center justify-center rounded-xl border border-slate-200 bg-slate-50 px-6 text-center">
+                  <FlaskConical className="mb-3 h-10 w-10 text-slate-300" />
+                  <p className="text-sm font-semibold text-slate-700">
+                    No lab requests for this visit.
+                  </p>
+                </div>
+              ) : (
+                <ul className="mt-4 divide-y divide-slate-100 rounded-xl border border-slate-100">
+                  {detail.labRequests.map((lab) => (
+                    <li
+                      key={lab.id}
+                      className="flex items-start justify-between gap-3 px-4 py-3 text-sm"
+                    >
+                      <div>
+                        <p className="font-semibold text-slate-800">{lab.test}</p>
+                        <p className="text-xs text-slate-400">{lab.requestNumber}</p>
+                      </div>
+                      <Badge tone={STATUS_TONES[lab.status] ?? "amber"}>{lab.status}</Badge>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <Link
+                href={relatedLabsHref({
+                  visitId: detail.visitId ?? undefined,
+                  appointmentId: detail.id,
+                  patientName: detail.patient.name,
+                })}
+                className="mt-4 inline-flex text-sm font-semibold text-brand-700 hover:underline"
+              >
+                See related labs →
+              </Link>
+            </div>
+          )}
+
           {detail && !loading && tab === "prescriptions" && (
             <div className="pr-6">
               <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
@@ -289,6 +341,16 @@ export function AppointmentQuickViewModal({
                   ))}
                 </ul>
               )}
+              <Link
+                href={relatedPrescriptionsHref({
+                  visitId: detail.visitId ?? undefined,
+                  appointmentId: detail.id,
+                  patientName: detail.patient.name,
+                })}
+                className="mt-4 inline-flex text-sm font-semibold text-brand-700 hover:underline"
+              >
+                See prescriptions →
+              </Link>
             </div>
           )}
         </div>

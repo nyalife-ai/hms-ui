@@ -41,7 +41,11 @@ import {
 import { toPageMeta, unwrapPage } from "@/lib/pagination";
 import { FRONT_DESK_ROLES, canAccess } from "@/lib/roles";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
-import { useVisits } from "@/lib/visits";
+import { useVisits, type Visit } from "@/lib/visits";
+import {
+  relatedLabsHref,
+  relatedPrescriptionsHref,
+} from "@/lib/clinical-links";
 
 const STATUS_TONES: Record<string, BadgeTone> = {
   Scheduled: "blue",
@@ -134,8 +138,10 @@ export default function AppointmentsPage() {
       status: statusFilter || undefined,
       from: selectedDate || undefined,
       to: selectedDate || undefined,
+      doctorId:
+        user?.role === "DOCTOR" ? user.staffProfileId || undefined : undefined,
     }),
-    [page, search, statusFilter, selectedDate],
+    [page, search, statusFilter, selectedDate, user?.role, user?.staffProfileId],
   );
 
   const {
@@ -175,6 +181,9 @@ export default function AppointmentsPage() {
       });
       if (search) qs.set("search", search);
       if (statusFilter) qs.set("status", statusFilter);
+      if (user?.role === "DOCTOR" && user.staffProfileId) {
+        qs.set("doctorId", user.staffProfileId);
+      }
       const res = unwrapPage<CatalogAppointment>(
         await api(`/catalog/appointments?${qs.toString()}`),
       );
@@ -184,7 +193,14 @@ export default function AppointmentsPage() {
     } finally {
       setCalendarLoading(false);
     }
-  }, [calendarRange.from, calendarRange.to, search, statusFilter]);
+  }, [
+    calendarRange.from,
+    calendarRange.to,
+    search,
+    statusFilter,
+    user?.role,
+    user?.staffProfileId,
+  ]);
 
   useEffect(() => {
     if (view === "calendar") void loadCalendar();
@@ -229,6 +245,21 @@ export default function AppointmentsPage() {
   const refreshAll = async () => {
     await Promise.all([refresh(), refreshSummary(), view === "calendar" ? loadCalendar() : Promise.resolve()]);
   };
+
+  const openJourney = async (appointment: CatalogAppointment) => {
+    try {
+      const rows = await api<Visit[]>(`/visits?appointmentId=${appointment.id}`);
+      const visit = rows[0];
+      router.push(visit ? `/consultations/${visit.id}` : `/appointments/${appointment.id}`);
+    } catch {
+      router.push(`/appointments/${appointment.id}`);
+    }
+  };
+
+  const relatedFor = (appointment: CatalogAppointment) => ({
+    appointmentId: appointment.id,
+    patientName: appointment.patient,
+  });
 
   const submit = async () => {
     if (!patientId || !doctorId) {
@@ -572,7 +603,11 @@ export default function AppointmentsPage() {
                     )}
                     <AppointmentRowActions
                       onQuickView={() => setQuickViewId(a.id)}
-                      onDetailedView={() => router.push(`/appointments/${a.id}`)}
+                      onDetailedView={() => void openJourney(a)}
+                      onRelatedLabs={() => router.push(relatedLabsHref(relatedFor(a)))}
+                      onRelatedPrescriptions={() =>
+                        router.push(relatedPrescriptionsHref(relatedFor(a)))
+                      }
                     />
                   </div>
                 </td>
@@ -832,7 +867,11 @@ export default function AppointmentsPage() {
                       )}
                       <AppointmentRowActions
                         onQuickView={() => setQuickViewId(a.id)}
-                        onDetailedView={() => router.push(`/appointments/${a.id}`)}
+                        onDetailedView={() => void openJourney(a)}
+                        onRelatedLabs={() => router.push(relatedLabsHref(relatedFor(a)))}
+                        onRelatedPrescriptions={() =>
+                          router.push(relatedPrescriptionsHref(relatedFor(a)))
+                        }
                       />
                     </div>
                   </li>

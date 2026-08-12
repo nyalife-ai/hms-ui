@@ -2,11 +2,11 @@
 
 import { Loader2, RefreshCw, Send } from "lucide-react";
 import { useMemo, useState } from "react";
+import { DoctorSearchSelect } from "@/components/doctor-search-select";
 import { RoleGuard } from "@/components/role-guard";
 import { Avatar, Badge, Card, CardHeader, PageHeader } from "@/components/ui";
 import { PaymentInfo, PipelineStepper, VisitQueueList } from "@/components/visit-flow";
 import { useAuth } from "@/lib/auth";
-import { useDoctors } from "@/lib/catalog";
 import { useVisits, type Visit, type Vitals } from "@/lib/visits";
 
 const inputClass =
@@ -44,7 +44,6 @@ function fifo(visits: Visit[]) {
 export default function TriagePage() {
   const { user } = useAuth();
   const { visits, loading, refresh, recordTriage } = useVisits();
-  const { data: doctors } = useDoctors();
 
   const queue = useMemo(
     () => fifo(visits.filter((v) => v.stage === "CHECKED_IN")),
@@ -57,14 +56,15 @@ export default function TriagePage() {
 
   const [selectedId, setSelectedId] = useState<string>("");
   const [vitals, setVitals] = useState<Vitals>(EMPTY_VITALS);
+  const [doctorStaffId, setDoctorStaffId] = useState("");
   const [doctorName, setDoctorName] = useState("");
   const [submitBusy, setSubmitBusy] = useState(false);
   const [refreshBusy, setRefreshBusy] = useState(false);
   const [error, setError] = useState("");
 
   const selected = queue.find((v) => v.id === selectedId) ?? queue[0];
-  const availableDoctors = doctors.filter((d) => d.available);
   const vitalsComplete = VITAL_FIELDS.every((f) => vitals[f.key].trim() !== "");
+  const doctorReady = Boolean(doctorStaffId && doctorName);
 
   const onRefresh = async () => {
     setRefreshBusy(true);
@@ -77,12 +77,19 @@ export default function TriagePage() {
   };
 
   const submit = async () => {
-    if (!selected || !vitalsComplete || !doctorName || !user) return;
+    if (!selected || !vitalsComplete || !doctorReady || !user) return;
     setSubmitBusy(true);
     setError("");
     try {
-      await recordTriage(selected.id, vitals, doctorName, user.name);
+      await recordTriage(
+        selected.id,
+        vitals,
+        doctorName,
+        user.name,
+        doctorStaffId,
+      );
       setVitals(EMPTY_VITALS);
+      setDoctorStaffId("");
       setDoctorName("");
       setSelectedId("");
     } catch (err) {
@@ -208,26 +215,24 @@ export default function TriagePage() {
 
               <div>
                 <label className="text-xs font-semibold text-slate-600">
-                  Assign to available doctor
+                  Assign to doctor
                 </label>
-                <select
-                  className={`mt-1.5 ${inputClass}`}
-                  value={doctorName}
-                  onChange={(e) => setDoctorName(e.target.value)}
-                >
-                  <option value="">Select a doctor in session…</option>
-                  {availableDoctors.map((d) => (
-                    <option key={d.id} value={d.name}>
-                      {d.name} — {d.specialty}
-                    </option>
-                  ))}
-                </select>
+                <div className="mt-1.5">
+                  <DoctorSearchSelect
+                    value={doctorStaffId}
+                    onChange={(id, doctor) => {
+                      setDoctorStaffId(id);
+                      setDoctorName(doctor?.name ?? "");
+                    }}
+                    placeholder="Search doctor by name or specialty…"
+                  />
+                </div>
               </div>
 
               <button
                 type="button"
                 onClick={() => void submit()}
-                disabled={!vitalsComplete || !doctorName || submitBusy}
+                disabled={!vitalsComplete || !doctorReady || submitBusy}
                 className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand-500 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {submitBusy ? (

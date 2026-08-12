@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, X } from "lucide-react";
+import { BookOpen, Landmark, Plus, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { FieldLabel } from "@/components/field-label";
 import { PaginationBar } from "@/components/pagination-bar";
@@ -11,6 +11,7 @@ import {
   CardHeader,
   PageHeader,
   PrimaryButton,
+  StatCard,
   Table,
 } from "@/components/ui";
 import { api } from "@/lib/api";
@@ -71,6 +72,11 @@ export default function BillingAccountsPage() {
   const [description, setDescription] = useState("");
   const [isPostable, setIsPostable] = useState(true);
   const [parentOptions, setParentOptions] = useState<AccountRow[]>([]);
+  const [kpi, setKpi] = useState<{
+    total: number;
+    activePostable: number;
+    byType: Record<string, number>;
+  } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -81,10 +87,18 @@ export default function BillingAccountsPage() {
         search: search || undefined,
         accountType: typeFilter || undefined,
       });
-      const res = unwrapPage<AccountRow>(await api(`/billing/accounts?${qs}`));
+      const [res, summary] = await Promise.all([
+        unwrapPage<AccountRow>(await api(`/billing/accounts?${qs}`)),
+        api<{
+          total: number;
+          activePostable: number;
+          byType: Record<string, number>;
+        }>("/billing/accounts/summary").catch(() => null),
+      ]);
       setRows(res.items);
       setTotal(res.total);
       setLimit(res.limit);
+      if (summary) setKpi(summary);
       setError("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to load accounts");
@@ -160,6 +174,26 @@ export default function BillingAccountsPage() {
         }
       />
       {error && <p className="mb-4 text-sm text-rose-500">{error}</p>}
+      <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <StatCard
+          label="Total"
+          value={kpi ? String(kpi.total) : "…"}
+          deltaLabel="chart accounts"
+          icon={Landmark}
+        />
+        <StatCard
+          label="Postable"
+          value={kpi ? String(kpi.activePostable) : "…"}
+          deltaLabel="active & postable"
+          icon={BookOpen}
+        />
+        <StatCard
+          label="Revenue"
+          value={kpi ? String(kpi.byType.REVENUE ?? 0) : "…"}
+          deltaLabel="revenue leaves"
+          icon={Plus}
+        />
+      </div>
       <div className="mb-4 flex flex-wrap gap-3">
         <input
           className={`min-w-[220px] flex-1 ${inputClass}`}

@@ -2,6 +2,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   LayoutDashboard,
   Users,
+  CalendarClock,
   CalendarDays,
   BedDouble,
   Pill,
@@ -52,6 +53,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: "Front Desk", href: "/front-desk", icon: ConciergeBell, module: "front-desk" },
       { label: "Triage", href: "/triage", icon: Activity, module: "triage" },
       { label: "Consultations", href: "/consultations", icon: ClipboardPlus, module: "consultations" },
+      { label: "Follow-ups", href: "/follow-ups", icon: CalendarClock, module: "follow-ups" },
     ],
   },
   {

@@ -1,13 +1,13 @@
 "use client";
 
-import { Plus, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { ChevronDown, Plus, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { DoctorSearchSelect } from "@/components/doctor-search-select";
 import { FieldLabel } from "@/components/field-label";
 import { PaginationBar } from "@/components/pagination-bar";
 import { PatientSearchSelect } from "@/components/patient-search-select";
 import { RoleGuard } from "@/components/role-guard";
-import { Avatar, Badge, Card, PageHeader, PrimaryButton, Table, type BadgeTone } from "@/components/ui";
+import { Avatar, Badge, Card, CardHeader, PageHeader, PrimaryButton, Table, type BadgeTone } from "@/components/ui";
 import { api } from "@/lib/api";
 import {
   usePaginatedCatalog,
@@ -51,6 +51,37 @@ export default function RadiologyPage() {
   const [scanTypeId, setScanTypeId] = useState("");
   const [doctorId, setDoctorId] = useState("");
   const [indication, setIndication] = useState("");
+  const [section, setSection] = useState<"requests" | "types" | "report">("requests");
+  const [scanTypeRows, setScanTypeRows] = useState<
+    Array<{
+      id: string;
+      scanType: string;
+      category: string | null;
+      standardPrice: number;
+      contrastRequired: boolean;
+      isActive: boolean;
+    }>
+  >([]);
+  const [newScanName, setNewScanName] = useState("");
+  const [newScanCat, setNewScanCat] = useState("Ultrasound");
+  const [newScanPrice, setNewScanPrice] = useState("0");
+  const [detailId, setDetailId] = useState("");
+  const [detail, setDetail] = useState<{
+    id: string;
+    requestNumber: string;
+    scan: string;
+    patientName: string;
+    findings: { findings_text?: string | null; status?: string } | null;
+    report: {
+      final_impression?: string | null;
+      conclusion?: string | null;
+      recommendations?: string | null;
+    } | null;
+    images: Array<{ id: string; filePath: string; modality: string | null }>;
+  } | null>(null);
+  const [findingsText, setFindingsText] = useState("");
+  const [impression, setImpression] = useState("");
+  const [imagePath, setImagePath] = useState("");
 
   const submit = async () => {
     if (!patientId || !scanTypeId) {
@@ -97,7 +128,129 @@ export default function RadiologyPage() {
     }
   };
 
+  const loadScanTypes = useCallback(async () => {
+    try {
+      const rows = await api<typeof scanTypeRows>("/imaging/scan-types");
+      setScanTypeRows(Array.isArray(rows) ? rows : []);
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "Could not load scan types");
+    }
+  }, []);
+
+  const loadDetail = useCallback(async (id: string) => {
+    if (!id) {
+      setDetail(null);
+      return;
+    }
+    try {
+      const d = await api<NonNullable<typeof detail>>(`/imaging/requests/${id}`);
+      setDetail(d);
+      setFindingsText(d.findings?.findings_text || "");
+      setImpression(d.report?.final_impression || "");
+      setFormError("");
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "Could not load request");
+    }
+  }, []);
+
+  useEffect(() => {
+    if (section === "types") void loadScanTypes();
+  }, [section, loadScanTypes]);
+
+  useEffect(() => {
+    if (section === "report" && detailId) void loadDetail(detailId);
+  }, [section, detailId, loadDetail]);
+
+  const openReport = (id: string) => {
+    setDetailId(id);
+    setSection("report");
+  };
+
+  const createScanType = async () => {
+    if (!newScanName.trim()) return;
+    setBusy(true);
+    try {
+      await api("/imaging/scan-types", {
+        method: "POST",
+        body: JSON.stringify({
+          scanType: newScanName.trim(),
+          category: newScanCat,
+          standardPrice: Number(newScanPrice) || 0,
+        }),
+      });
+      setNewScanName("");
+      await loadScanTypes();
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "Could not create scan type");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const saveFindings = async () => {
+    if (!detailId) return;
+    setBusy(true);
+    try {
+      await api(`/imaging/requests/${detailId}/findings`, {
+        method: "POST",
+        body: JSON.stringify({ findingsText, status: "DRAFT" }),
+      });
+      await loadDetail(detailId);
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "Could not save findings");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const saveReport = async () => {
+    if (!detailId) return;
+    setBusy(true);
+    try {
+      await api(`/imaging/requests/${detailId}/report`, {
+        method: "POST",
+        body: JSON.stringify({ finalImpression: impression }),
+      });
+      await loadDetail(detailId);
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "Could not save report");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const addImage = async () => {
+    if (!detailId || !imagePath.trim()) return;
+    setBusy(true);
+    try {
+      await api(`/imaging/requests/${detailId}/images`, {
+        method: "POST",
+        body: JSON.stringify({ filePath: imagePath.trim(), modality: "CR" }),
+      });
+      setImagePath("");
+      await loadDetail(detailId);
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "Could not attach image");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const meta = toPageMeta({ total, page, limit });
+  const accordionBtn = (id: typeof section, label: string) => (
+    <button
+      type="button"
+      onClick={() => setSection(id)}
+      className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold ${
+        section === id
+          ? "bg-brand-50 text-brand-800"
+          : "border border-slate-200 text-slate-600 hover:border-brand-300"
+      }`}
+    >
+      {label}
+      <ChevronDown className={`h-3.5 w-3.5 transition ${section === id ? "rotate-180" : ""}`} />
+    </button>
+  );
 
   return (
     <RoleGuard module="radiology">
@@ -106,7 +259,7 @@ export default function RadiologyPage() {
         subtitle={
           loading
             ? "Loading…"
-            : `${total.toLocaleString()} imaging requests — start, complete, or cancel`
+            : `${total.toLocaleString()} imaging requests — scan types, findings, reports, images`
         }
         action={
           <PrimaryButton onClick={() => setOpen(true)}>
@@ -114,6 +267,13 @@ export default function RadiologyPage() {
           </PrimaryButton>
         }
       />
+      <div className="mb-4 flex flex-wrap gap-2">
+        {accordionBtn("requests", "Requests")}
+        {accordionBtn("types", "Scan types")}
+        {accordionBtn("report", "Findings / report / images")}
+      </div>
+      {section === "requests" && (
+      <>
       <div className="mb-4">
         <input
           className={inputClass}
@@ -175,9 +335,22 @@ export default function RadiologyPage() {
                       >
                         Cancel
                       </button>
+                      <button
+                        type="button"
+                        onClick={() => openReport(r.id)}
+                        className="rounded-full border border-slate-200 px-2.5 py-1 text-[11px] font-medium text-slate-600 hover:border-brand-300"
+                      >
+                        Report
+                      </button>
                     </div>
                   ) : (
-                    <span className="text-xs text-slate-300">—</span>
+                    <button
+                      type="button"
+                      onClick={() => openReport(r.id)}
+                      className="rounded-full border border-slate-200 px-2.5 py-1 text-[11px] font-medium text-slate-600 hover:border-brand-300"
+                    >
+                      Report
+                    </button>
                   )}
                 </td>
               </tr>
@@ -186,6 +359,132 @@ export default function RadiologyPage() {
         </Table>
         <PaginationBar meta={meta} onPageChange={setPage} disabled={loading} />
       </Card>
+      </>
+      )}
+
+      {section === "types" && (
+        <Card className="mt-5">
+          <CardHeader title="Scan types" subtitle="Catalog used when requesting imaging" />
+          <div className="grid gap-3 px-5 pb-4 md:grid-cols-3">
+            <div>
+              <FieldLabel required>Name</FieldLabel>
+              <input
+                className={inputClass}
+                value={newScanName}
+                onChange={(e) => setNewScanName(e.target.value)}
+                placeholder="Chest X-ray"
+              />
+            </div>
+            <div>
+              <FieldLabel>Category</FieldLabel>
+              <input
+                className={inputClass}
+                value={newScanCat}
+                onChange={(e) => setNewScanCat(e.target.value)}
+              />
+            </div>
+            <div>
+              <FieldLabel>Price</FieldLabel>
+              <input
+                className={inputClass}
+                value={newScanPrice}
+                onChange={(e) => setNewScanPrice(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="px-5 pb-4">
+            <PrimaryButton disabled={busy} onClick={() => void createScanType()}>
+              Add scan type
+            </PrimaryButton>
+          </div>
+          <Table headers={["Scan", "Category", "Price", "Contrast", "Status"]}>
+            {scanTypeRows.map((s) => (
+              <tr key={s.id} className="hover:bg-slate-50/60">
+                <td className="px-5 py-3.5 font-medium text-slate-800">{s.scanType}</td>
+                <td className="px-5 py-3.5 text-slate-500">{s.category || "—"}</td>
+                <td className="px-5 py-3.5 text-slate-500">{s.standardPrice}</td>
+                <td className="px-5 py-3.5 text-slate-500">{s.contrastRequired ? "Yes" : "No"}</td>
+                <td className="px-5 py-3.5">
+                  <Badge tone={s.isActive ? "green" : "slate"}>
+                    {s.isActive ? "Active" : "Inactive"}
+                  </Badge>
+                </td>
+              </tr>
+            ))}
+          </Table>
+        </Card>
+      )}
+
+      {section === "report" && (
+        <Card className="mt-5 p-5">
+          <CardHeader
+            title={detail ? `${detail.requestNumber} · ${detail.scan}` : "Findings, report & images"}
+            subtitle={detail ? detail.patientName : "Open a request from the queue, or pick one below"}
+          />
+          {!detailId && scans[0] && (
+            <button
+              type="button"
+              className="mb-4 text-sm text-brand-700 hover:underline"
+              onClick={() => openReport(scans[0].id)}
+            >
+              Open latest request
+            </button>
+          )}
+          {detail && (
+            <div className="space-y-4">
+              <div>
+                <FieldLabel>Findings</FieldLabel>
+                <textarea
+                  className={inputClass}
+                  rows={4}
+                  value={findingsText}
+                  onChange={(e) => setFindingsText(e.target.value)}
+                />
+                <div className="mt-2">
+                  <PrimaryButton disabled={busy} onClick={() => void saveFindings()}>
+                    Save findings
+                  </PrimaryButton>
+                </div>
+              </div>
+              <div>
+                <FieldLabel>Final impression</FieldLabel>
+                <textarea
+                  className={inputClass}
+                  rows={3}
+                  value={impression}
+                  onChange={(e) => setImpression(e.target.value)}
+                />
+                <div className="mt-2">
+                  <PrimaryButton disabled={busy} onClick={() => void saveReport()}>
+                    Save report
+                  </PrimaryButton>
+                </div>
+              </div>
+              <div>
+                <FieldLabel>Image path / PACS URI</FieldLabel>
+                <div className="flex gap-2">
+                  <input
+                    className={inputClass}
+                    value={imagePath}
+                    onChange={(e) => setImagePath(e.target.value)}
+                    placeholder="/pacs/study/…"
+                  />
+                  <PrimaryButton disabled={busy} onClick={() => void addImage()}>
+                    Attach
+                  </PrimaryButton>
+                </div>
+                <ul className="mt-3 space-y-1 text-sm text-slate-600">
+                  {detail.images.map((img) => (
+                    <li key={img.id}>
+                      {img.modality || "IMG"} · {img.filePath}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+        </Card>
+      )}
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">

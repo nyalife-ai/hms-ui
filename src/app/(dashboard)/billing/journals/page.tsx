@@ -1,6 +1,6 @@
 "use client";
 
-import { Eye, RotateCcw, Send } from "lucide-react";
+import { Eye, FileText, RotateCcw, Send } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { PaginationBar } from "@/components/pagination-bar";
 import { RoleGuard } from "@/components/role-guard";
@@ -10,6 +10,7 @@ import {
   Card,
   CardHeader,
   PageHeader,
+  StatCard,
   Table,
   type BadgeTone,
 } from "@/components/ui";
@@ -85,6 +86,12 @@ export default function BillingJournalsPage() {
   const [detail, setDetail] = useState<JournalDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [actionBusy, setActionBusy] = useState("");
+  const [kpi, setKpi] = useState<{
+    total: number;
+    draft: number;
+    posted: number;
+    reversed: number;
+  } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -95,10 +102,19 @@ export default function BillingJournalsPage() {
         search: search || undefined,
         status: statusFilter || undefined,
       });
-      const res = unwrapPage<JournalRow>(await api(`/billing/journals?${qs}`));
+      const [res, summary] = await Promise.all([
+        unwrapPage<JournalRow>(await api(`/billing/journals?${qs}`)),
+        api<{
+          total: number;
+          draft: number;
+          posted: number;
+          reversed: number;
+        }>("/billing/journals/summary").catch(() => null),
+      ]);
       setRows(res.items);
       setTotal(res.total);
       setLimit(res.limit);
+      if (summary) setKpi(summary);
       setError("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to load journals");
@@ -161,6 +177,32 @@ export default function BillingJournalsPage() {
         subtitle={loading ? "Loading…" : `${total.toLocaleString()} journal entries`}
       />
       {error && <p className="mb-4 text-sm text-rose-500">{error}</p>}
+      <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard
+          label="Total"
+          value={kpi ? String(kpi.total) : "…"}
+          deltaLabel="journal entries"
+          icon={FileText}
+        />
+        <StatCard
+          label="Draft"
+          value={kpi ? String(kpi.draft) : "…"}
+          deltaLabel="not posted"
+          icon={Eye}
+        />
+        <StatCard
+          label="Posted"
+          value={kpi ? String(kpi.posted) : "…"}
+          deltaLabel="on the ledger"
+          icon={Send}
+        />
+        <StatCard
+          label="Reversed"
+          value={kpi ? String(kpi.reversed) : "…"}
+          deltaLabel="correcting entries"
+          icon={RotateCcw}
+        />
+      </div>
       <div className="mb-4 flex flex-wrap gap-3">
         <input
           className={`min-w-[220px] flex-1 ${inputClass}`}

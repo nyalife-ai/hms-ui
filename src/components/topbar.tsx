@@ -22,6 +22,7 @@ const SEARCH_ROUTES: Array<{ label: string; href: string; keywords: string }> = 
   { label: "Appointments", href: "/appointments", keywords: "schedule booking" },
   { label: "Triage", href: "/triage", keywords: "vitals nurse" },
   { label: "Consultations", href: "/consultations", keywords: "doctor diagnosis" },
+  { label: "Follow-ups", href: "/follow-ups", keywords: "review schedule" },
   { label: "Laboratory", href: "/laboratory", keywords: "lab results" },
   { label: "Pharmacy", href: "/pharmacy", keywords: "medications stock" },
   { label: "Billing", href: "/billing", keywords: "invoice mpesa claim" },

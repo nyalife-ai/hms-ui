@@ -199,12 +199,16 @@ const WORKSPACE: Partial<Record<Role, { title: string; subtitle: string; links: 
 
 function reportHref(source: string, role: Role): string {
   if (source === "Billing") {
-    return role === "ACCOUNTANT" || role === "RECEPTIONIST" || role === "ADMIN"
-      ? "/billing"
+    return role === "ACCOUNTANT" ||
+      role === "RECEPTIONIST" ||
+      role === "ADMIN" ||
+      role === "SUPER_ADMIN"
+      ? "/billing/invoices"
       : "/dashboard";
   }
   if (source === "Scheduling") {
     return role === "ADMIN" ||
+      role === "SUPER_ADMIN" ||
       role === "DOCTOR" ||
       role === "NURSE" ||
       role === "RECEPTIONIST"
@@ -215,7 +219,7 @@ function reportHref(source: string, role: Role): string {
     if (role === "RECEPTIONIST") return "/front-desk";
     if (role === "DOCTOR") return "/consultations";
     if (role === "NURSE") return "/triage";
-    if (role === "ADMIN") return "/appointments";
+    if (role === "ADMIN" || role === "SUPER_ADMIN") return "/appointments";
     return "/dashboard";
   }
   return "/dashboard";

@@ -14,6 +14,7 @@ import {
   type BadgeTone,
 } from "@/components/ui";
 import { api } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
 import { fetchHospitalSettings } from "@/lib/hospital";
 import { openLabReportPdf, printLabReportPdf } from "@/lib/lab-report-pdf";
 import type { LabRequestDetail } from "@/lib/lab-types";
@@ -50,10 +51,14 @@ function formatWhen(iso: string | null | undefined) {
 export default function LabResultDetailPage() {
   const params = useParams<{ id: string }>();
   const id = params?.id;
+  const { user } = useAuth();
+  const canCorrect = user?.role === "ADMIN" || user?.role === "SUPER_ADMIN";
   const [detail, setDetail] = useState<LabRequestDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [correctingId, setCorrectingId] = useState("");
+  const [correctValue, setCorrectValue] = useState("");
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -110,6 +115,24 @@ export default function LabResultDetailPage() {
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Verify failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const correct = async (resultId: string) => {
+    if (!detail || !correctValue.trim()) return;
+    setBusy(true);
+    try {
+      await api(`/laboratory/requests/${detail.id}/results/${resultId}/correct`, {
+        method: "POST",
+        body: JSON.stringify({ resultValue: correctValue.trim() }),
+      });
+      setCorrectingId("");
+      setCorrectValue("");
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Correction failed");
     } finally {
       setBusy(false);
     }
@@ -251,6 +274,38 @@ export default function LabResultDetailPage() {
                         >
                           Verify
                         </button>
+                      )}
+                      {canCorrect && (
+                        correctingId === r.id ? (
+                          <span className="inline-flex items-center gap-1">
+                            <input
+                              className="w-20 rounded-lg border border-slate-200 px-2 py-1 text-xs"
+                              value={correctValue}
+                              onChange={(e) => setCorrectValue(e.target.value)}
+                              placeholder="New value"
+                            />
+                            <button
+                              type="button"
+                              disabled={busy}
+                              className="rounded-full bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-800"
+                              onClick={() => void correct(r.id)}
+                            >
+                              Save
+                            </button>
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            disabled={busy}
+                            className="rounded-full border border-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-600"
+                            onClick={() => {
+                              setCorrectingId(r.id);
+                              setCorrectValue(r.resultValue || "");
+                            }}
+                          >
+                            Correct
+                          </button>
+                        )
                       )}
                       {r.performedAt && <span>Entered {formatWhen(r.performedAt)}</span>}
                     </div>

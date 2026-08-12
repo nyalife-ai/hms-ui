@@ -1,5 +1,6 @@
 "use client";
 
+import { CheckCircle2, ClipboardList, FileWarning, Send } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { FieldLabel } from "@/components/field-label";
 import { PaginationBar } from "@/components/pagination-bar";
@@ -11,6 +12,7 @@ import {
   CardHeader,
   PageHeader,
   PrimaryButton,
+  StatCard,
   Table,
   type BadgeTone,
 } from "@/components/ui";
@@ -81,6 +83,13 @@ export default function BillingClaimsPage() {
   const [amountApproved, setAmountApproved] = useState("");
   const [denialReason, setDenialReason] = useState("");
   const [formError, setFormError] = useState("");
+  const [kpi, setKpi] = useState<{
+    total: number;
+    draft: number;
+    inFlight: number;
+    approved: number;
+    denied: number;
+  } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -91,10 +100,20 @@ export default function BillingClaimsPage() {
         search: search || undefined,
         status: statusFilter || undefined,
       });
-      const res = unwrapPage<ClaimRow>(await api(`/billing/claims?${qs}`));
+      const [res, summary] = await Promise.all([
+        unwrapPage<ClaimRow>(await api(`/billing/claims?${qs}`)),
+        api<{
+          total: number;
+          draft: number;
+          inFlight: number;
+          approved: number;
+          denied: number;
+        }>("/billing/claims/summary").catch(() => null),
+      ]);
       setRows(res.items);
       setTotal(res.total);
       setLimit(res.limit);
+      if (summary) setKpi(summary);
       setError("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to load claims");
@@ -157,6 +176,32 @@ export default function BillingClaimsPage() {
         subtitle={loading ? "Loading…" : `${total.toLocaleString()} insurance claims`}
       />
       {error && <p className="mb-4 text-sm text-rose-500">{error}</p>}
+      <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard
+          label="Draft"
+          value={kpi ? String(kpi.draft) : "…"}
+          deltaLabel="not submitted"
+          icon={ClipboardList}
+        />
+        <StatCard
+          label="In flight"
+          value={kpi ? String(kpi.inFlight) : "…"}
+          deltaLabel="submitted / under review"
+          icon={Send}
+        />
+        <StatCard
+          label="Approved"
+          value={kpi ? String(kpi.approved) : "…"}
+          deltaLabel="payer accepted"
+          icon={CheckCircle2}
+        />
+        <StatCard
+          label="Denied"
+          value={kpi ? String(kpi.denied) : "…"}
+          deltaLabel="rejected by payer"
+          icon={FileWarning}
+        />
+      </div>
       <div className="mb-4 flex flex-wrap gap-3">
         <input
           className={`min-w-[220px] flex-1 ${inputClass}`}

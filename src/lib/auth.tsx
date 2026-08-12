@@ -26,6 +26,8 @@ export interface SessionUser {
   position: string;
   permissions: string[];
   twoFactorEnabled?: boolean;
+  /** Linked staff profile id — used to scope doctor queues/calendars. */
+  staffProfileId?: string | null;
 }
 
 interface AuthResponse {
@@ -68,6 +70,7 @@ function normalizeUser(user: SessionUser): SessionUser {
     ...user,
     permissions: user.permissions ?? [],
     twoFactorEnabled: Boolean(user.twoFactorEnabled),
+    staffProfileId: user.staffProfileId ?? null,
   };
 }
 

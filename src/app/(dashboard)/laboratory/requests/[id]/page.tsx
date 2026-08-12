@@ -212,7 +212,7 @@ export default function LabRequestDetailPage() {
     "Laboratory";
 
   return (
-    <RoleGuard module="laboratory">
+    <RoleGuard modules={["laboratory", "consultations", "appointments"]}>
       <div className="mb-2 text-[11px] font-medium uppercase tracking-wide text-slate-400">
         Home / Laboratory / Requests / {detail?.requestNumber ?? "…"}
       </div>

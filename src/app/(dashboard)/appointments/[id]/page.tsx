@@ -16,6 +16,11 @@ import {
 } from "@/components/ui";
 import { api } from "@/lib/api";
 import type { AppointmentDetail } from "@/lib/catalog";
+import {
+  consultationJourneyHref,
+  relatedLabsHref,
+  relatedPrescriptionsHref,
+} from "@/lib/clinical-links";
 
 const STATUS_TONES: Record<string, BadgeTone> = {
   Scheduled: "blue",
@@ -85,12 +90,42 @@ export default function AppointmentDetailPage() {
               : "Appointment detail"
         }
         action={
-          <Link
-            href="/appointments"
-            className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-brand-300"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" /> Back to appointments
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            {detail?.visitId && (
+              <Link
+                href={consultationJourneyHref(detail.visitId)}
+                className="inline-flex items-center gap-1.5 rounded-full bg-brand-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-600"
+              >
+                Patient journey
+              </Link>
+            )}
+            <Link
+              href={relatedLabsHref({
+                visitId: detail?.visitId ?? undefined,
+                appointmentId: detail?.id ?? id,
+                patientName: detail?.patient.name,
+              })}
+              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-brand-300"
+            >
+              Labs
+            </Link>
+            <Link
+              href={relatedPrescriptionsHref({
+                visitId: detail?.visitId ?? undefined,
+                appointmentId: detail?.id ?? id,
+                patientName: detail?.patient.name,
+              })}
+              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-brand-300"
+            >
+              Prescriptions
+            </Link>
+            <Link
+              href="/appointments"
+              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-brand-300"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" /> Back
+            </Link>
+          </div>
         }
       />
 

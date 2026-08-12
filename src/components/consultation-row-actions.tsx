@@ -3,17 +3,17 @@
 import { Eye, FileText, FlaskConical, MoreVertical, Pill } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-/** Kebab menu for Quick / Detailed / related labs & prescriptions. */
-export function AppointmentRowActions({
+/** Kebab for consultation / visit rows — matches the clinical action menu. */
+export function ConsultationRowActions({
   onQuickView,
-  onDetailedView,
+  onEditRecord,
   onRelatedLabs,
   onRelatedPrescriptions,
 }: {
   onQuickView: () => void;
-  onDetailedView: () => void;
-  onRelatedLabs?: () => void;
-  onRelatedPrescriptions?: () => void;
+  onEditRecord: () => void;
+  onRelatedLabs: () => void;
+  onRelatedPrescriptions: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -38,10 +38,13 @@ export function AppointmentRowActions({
     <div className="relative inline-flex" ref={rootRef}>
       <button
         type="button"
-        aria-label="More appointment actions"
+        aria-label="More consultation actions"
         aria-haspopup="menu"
         aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen((v) => !v);
+        }}
         className="inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
       >
         <MoreVertical className="h-4 w-4" />
@@ -71,7 +74,7 @@ export function AppointmentRowActions({
             className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-xs font-medium text-slate-700 hover:bg-slate-50"
             onClick={() => {
               setOpen(false);
-              onDetailedView();
+              onEditRecord();
             }}
           >
             <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
@@ -79,38 +82,34 @@ export function AppointmentRowActions({
             </span>
             Edit Record
           </button>
-          {onRelatedLabs && (
-            <button
-              type="button"
-              role="menuitem"
-              className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-xs font-medium text-slate-700 hover:bg-slate-50"
-              onClick={() => {
-                setOpen(false);
-                onRelatedLabs();
-              }}
-            >
-              <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-violet-50 text-violet-600">
-                <FlaskConical className="h-3.5 w-3.5" />
-              </span>
-              See Related Labs
-            </button>
-          )}
-          {onRelatedPrescriptions && (
-            <button
-              type="button"
-              role="menuitem"
-              className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-xs font-medium text-slate-700 hover:bg-slate-50"
-              onClick={() => {
-                setOpen(false);
-                onRelatedPrescriptions();
-              }}
-            >
-              <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
-                <Pill className="h-3.5 w-3.5" />
-              </span>
-              See Prescriptions
-            </button>
-          )}
+          <button
+            type="button"
+            role="menuitem"
+            className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-xs font-medium text-slate-700 hover:bg-slate-50"
+            onClick={() => {
+              setOpen(false);
+              onRelatedLabs();
+            }}
+          >
+            <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-violet-50 text-violet-600">
+              <FlaskConical className="h-3.5 w-3.5" />
+            </span>
+            See Related Labs
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-xs font-medium text-slate-700 hover:bg-slate-50"
+            onClick={() => {
+              setOpen(false);
+              onRelatedPrescriptions();
+            }}
+          >
+            <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+              <Pill className="h-3.5 w-3.5" />
+            </span>
+            See Prescriptions
+          </button>
         </div>
       )}
     </div>

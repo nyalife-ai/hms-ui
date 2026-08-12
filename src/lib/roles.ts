@@ -45,9 +45,10 @@ export const MODULE_ACCESS: Record<string, Role[]> = {
   dashboard: ALL_ROLES,
   "front-desk": ["SUPER_ADMIN", "RECEPTIONIST"],
   triage: ["SUPER_ADMIN", "NURSE"],
-  consultations: ["SUPER_ADMIN", "DOCTOR"],
+  consultations: ["SUPER_ADMIN", "ADMIN", "DOCTOR"],
   patients: ["SUPER_ADMIN", "ADMIN", "DOCTOR", "NURSE", "RECEPTIONIST"],
   appointments: ["SUPER_ADMIN", "ADMIN", "DOCTOR", "NURSE", "RECEPTIONIST"],
+  "follow-ups": ["SUPER_ADMIN", "ADMIN", "DOCTOR", "RECEPTIONIST"],
   doctors: ["SUPER_ADMIN", "RECEPTIONIST"],
   departments: ["SUPER_ADMIN", "ADMIN"],
   inpatient: ["SUPER_ADMIN", "DOCTOR", "NURSE"],
@@ -88,4 +89,17 @@ export function canAccess(
   return (
     permissions.includes("*") || permissions.includes(`module:${module}`)
   );
+}
+
+export function canAccessAny(
+  role: Role,
+  modules: Array<keyof typeof MODULE_ACCESS>,
+  permissions?: string[],
+): boolean {
+  return modules.some((module) => canAccess(role, module, permissions));
+}
+
+/** Oversight roles may view and edit any OPD stage. */
+export function isOversightRole(role: Role): boolean {
+  return role === "SUPER_ADMIN" || role === "ADMIN";
 }
