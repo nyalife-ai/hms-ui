@@ -715,23 +715,26 @@ export default function FrontDeskPage() {
             )}
 
             <div>
-              <FieldLabel>Reason for visit</FieldLabel>
+              <FieldLabel>Presenting context (administrative)</FieldLabel>
+              <p className="mt-1 text-[11px] text-slate-400">
+                Clinical reason for visit and chief complaint are captured at Triage.
+              </p>
               <input
                 className={`mt-1.5 ${inputClass}`}
                 value={reasonForVisit}
                 onChange={(e) => setReasonForVisit(e.target.value)}
-                placeholder="e.g. Antenatal check, pelvic pain, follow-up…"
+                placeholder="e.g. Walk-in, referral, scheduled follow-up…"
                 disabled={checkInBusy}
               />
             </div>
 
             <div>
-              <FieldLabel>Additional notes</FieldLabel>
+              <FieldLabel>Reception notes (administrative)</FieldLabel>
               <textarea
                 className={`mt-1.5 min-h-20 resize-y ${inputClass}`}
                 value={additionalNotes}
                 onChange={(e) => setAdditionalNotes(e.target.value)}
-                placeholder="Anything triage or the clinician should know…"
+                placeholder="Administrative notes for triage / front desk (not a clinical assessment)…"
                 disabled={checkInBusy}
               />
             </div>

@@ -3,6 +3,7 @@
 import { Check, ShieldCheck, Banknote } from "lucide-react";
 import type { ReactNode } from "react";
 import { Avatar, Badge } from "./ui";
+import { priorityTone } from "@/lib/triage";
 import { STAGE_META, PIPELINE_STEPS, formatTime, type Visit } from "@/lib/visits";
 
 export function PipelineStepper({
@@ -82,9 +83,29 @@ export function VisitQueueList({
           >
             <Avatar name={v.patientName} size="sm" />
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-slate-800">{v.patientName}</p>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <p className="truncate text-sm font-semibold text-slate-800">
+                  {v.patientName}
+                </p>
+                {(v.triagePriority || v.triage?.priority) &&
+                  (v.triagePriority || v.triage?.priority) !== "NORMAL" && (
+                    <Badge tone={priorityTone(v.triagePriority || v.triage?.priority)}>
+                      {v.triagePriority || v.triage?.priority}
+                    </Badge>
+                  )}
+              </div>
               <p className="text-[11px] text-slate-400">
-                {v.mrn} · in at {formatTime(v.checkedInAt)}
+                {v.mrn} · {v.age} yrs · {v.gender}
+              </p>
+              {(v.triage?.chiefComplaint || v.reasonForVisit) && (
+                <p className="mt-0.5 truncate text-[11px] text-slate-500">
+                  {v.triage?.chiefComplaint || v.reasonForVisit}
+                </p>
+              )}
+              <p className="text-[10px] text-slate-400">
+                {v.triageCompletedAt || v.triage?.completedAt
+                  ? `Triaged ${formatTime(v.triageCompletedAt || v.triage!.completedAt)}`
+                  : `In at ${formatTime(v.checkedInAt)}`}
               </p>
             </div>
             <Badge tone={STAGE_META[v.stage].tone}>{STAGE_META[v.stage].label}</Badge>
@@ -106,6 +127,24 @@ export function VitalsGrid({ visit }: { visit: Visit }) {
     { label: "Resp. Rate", value: `${v.respRate} /min` },
     { label: "SpO₂", value: `${v.spo2} %` },
     { label: "Weight", value: `${v.weightKg} kg` },
+    ...(v.heightCm ? [{ label: "Height", value: `${v.heightCm} cm` }] : []),
+    ...(v.bmi ? [{ label: "BMI", value: `${v.bmi} kg/m²` }] : []),
+    ...(v.painScore
+      ? [
+          {
+            label: "Pain",
+            value: `${v.painScore}/10${v.painLocation ? ` · ${v.painLocation}` : ""}`,
+          },
+        ]
+      : []),
+    ...(v.bloodGlucose
+      ? [
+          {
+            label: "Glucose",
+            value: `${v.bloodGlucose}${v.bloodGlucoseContext ? ` (${v.bloodGlucoseContext})` : ""}`,
+          },
+        ]
+      : []),
   ];
   return (
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">

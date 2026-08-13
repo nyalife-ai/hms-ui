@@ -9,6 +9,7 @@ import { ConsultationQuickViewModal } from "@/components/consultation-quick-view
 import { ConsultationRowActions } from "@/components/consultation-row-actions";
 import { RoleGuard } from "@/components/role-guard";
 import { SearchablePicker } from "@/components/searchable-picker";
+import { TriageSummary } from "@/components/triage-summary";
 import { Avatar, Badge, Card, CardHeader, PageHeader } from "@/components/ui";
 import { PaymentInfo, PipelineStepper, VisitQueueList, VitalsGrid } from "@/components/visit-flow";
 import {
@@ -31,6 +32,7 @@ import {
   type OrderedClinicalItem,
 } from "@/lib/clinical-service";
 import { PRESCRIPTION_FREQUENCIES } from "@/lib/prescription-frequency";
+import { priorityTone } from "@/lib/triage";
 import {
   PIPELINE_TAB_IDS,
   useVisits,
@@ -77,11 +79,41 @@ function loadInitialClinical(visit: Visit): {
   draftNotice?: string;
 } {
   const base = emptyClinicalRecord();
-  if (visit.reasonForVisit && !visit.clinicalRecord?.chiefComplaint) {
+  const triageComplaint = visit.triage?.chiefComplaint?.trim();
+  const triageReason = visit.triage?.reasonForVisit?.trim();
+  if (triageComplaint && !visit.clinicalRecord?.chiefComplaint) {
+    base.chiefComplaint = triageComplaint;
+  } else if (
+    !triageComplaint &&
+    visit.reasonForVisit &&
+    !visit.clinicalRecord?.chiefComplaint
+  ) {
     base.chiefComplaint = visit.reasonForVisit;
   }
-  if (visit.additionalNotes && !visit.clinicalRecord?.internalNotes) {
-    base.internalNotes = visit.additionalNotes;
+  if (visit.triage?.priority && !visit.clinicalRecord?.priority) {
+    base.priority = visit.triage.priority;
+  }
+  // Reception admin notes stay separate; do not dump into doctor internal notes.
+  if (visit.triage?.notes && !visit.clinicalRecord?.historyPresentIllness) {
+    const symptomLines = (visit.triage.symptoms || [])
+      .map((s) => {
+        const bits = [
+          s.symptom,
+          s.severity?.toLowerCase(),
+          s.durationValue
+            ? `${s.durationValue} ${(s.durationUnit || "DAYS").toLowerCase()}`
+            : null,
+        ].filter(Boolean);
+        return bits.join(" — ");
+      })
+      .filter(Boolean);
+    base.historyPresentIllness = [
+      triageReason ? `Reason for visit: ${triageReason}` : null,
+      symptomLines.length ? `Reported symptoms:\n- ${symptomLines.join("\n- ")}` : null,
+      visit.triage.notes ? `Triage notes: ${visit.triage.notes}` : null,
+    ]
+      .filter(Boolean)
+      .join("\n\n");
   }
   if (visit.diagnosis && !visit.clinicalRecord?.impression) {
     base.impression = visit.diagnosis;
@@ -366,7 +398,10 @@ export default function ConsultationsPage() {
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_1.6fr]">
         <div className="space-y-4">
           <Card className="h-fit">
-            <CardHeader title="My Queue" subtitle="Triage complete — vitals attached" />
+            <CardHeader
+              title="My Queue"
+              subtitle="Urgency first · oldest triage next within each level"
+            />
             <VisitQueueList
               visits={queue}
               selectedId={selected?.id}
@@ -510,23 +545,24 @@ export default function ConsultationsPage() {
                   }
                 />
                 <PaymentInfo visit={selected} />
-                {(selected.reasonForVisit || selected.additionalNotes) && (
-                  <div className="rounded-xl border border-brand-100 bg-brand-50/50 px-4 py-3 text-sm">
-                    {selected.reasonForVisit && (
-                      <p>
-                        <span className="font-semibold text-slate-700">Reason for visit: </span>
-                        <span className="text-slate-600">{selected.reasonForVisit}</span>
-                      </p>
-                    )}
-                    {selected.additionalNotes && (
-                      <p className={selected.reasonForVisit ? "mt-1.5" : undefined}>
-                        <span className="font-semibold text-slate-700">Reception notes: </span>
-                        <span className="text-slate-600">{selected.additionalNotes}</span>
-                      </p>
+                {(selected.triagePriority || selected.triage?.priority) && (
+                  <div className="flex items-center gap-2">
+                    <Badge
+                      tone={priorityTone(
+                        selected.triagePriority || selected.triage?.priority,
+                      )}
+                    >
+                      {selected.triagePriority || selected.triage?.priority}
+                    </Badge>
+                    {selected.triage?.priorityReason && (
+                      <span className="text-xs text-slate-500">
+                        {selected.triage.priorityReason}
+                      </span>
                     )}
                   </div>
                 )}
-                <VitalsGrid visit={selected} />
+                <TriageSummary visit={selected} />
+                {!selected.triage && <VitalsGrid visit={selected} />}
 
                 {selected.stage === "WAITING_DOCTOR" && (
                   <button

@@ -43,18 +43,18 @@ export const FRONT_DESK_ROLES: Role[] = ["SUPER_ADMIN", "ADMIN", "RECEPTIONIST"]
  */
 export const MODULE_ACCESS: Record<string, Role[]> = {
   dashboard: ALL_ROLES,
-  "front-desk": ["SUPER_ADMIN", "RECEPTIONIST"],
-  triage: ["SUPER_ADMIN", "NURSE"],
+  "front-desk": ["SUPER_ADMIN", "ADMIN", "RECEPTIONIST"],
+  triage: ["SUPER_ADMIN", "ADMIN", "NURSE"],
   consultations: ["SUPER_ADMIN", "ADMIN", "DOCTOR"],
   patients: ["SUPER_ADMIN", "ADMIN", "DOCTOR", "NURSE", "RECEPTIONIST"],
   appointments: ["SUPER_ADMIN", "ADMIN", "DOCTOR", "NURSE", "RECEPTIONIST"],
   "follow-ups": ["SUPER_ADMIN", "ADMIN", "DOCTOR", "RECEPTIONIST"],
-  doctors: ["SUPER_ADMIN", "RECEPTIONIST"],
+  doctors: ["SUPER_ADMIN", "ADMIN", "RECEPTIONIST"],
   departments: ["SUPER_ADMIN", "ADMIN"],
-  inpatient: ["SUPER_ADMIN", "DOCTOR", "NURSE"],
-  pharmacy: ["SUPER_ADMIN", "PHARMACIST"],
-  laboratory: ["SUPER_ADMIN", "LAB_TECHNICIAN"],
-  radiology: ["SUPER_ADMIN", "RADIOLOGIST"],
+  inpatient: ["SUPER_ADMIN", "ADMIN", "DOCTOR", "NURSE"],
+  pharmacy: ["SUPER_ADMIN", "ADMIN", "PHARMACIST"],
+  laboratory: ["SUPER_ADMIN", "ADMIN", "LAB_TECHNICIAN"],
+  radiology: ["SUPER_ADMIN", "ADMIN", "RADIOLOGIST"],
   /** Cash desk / invoices / payments / claims */
   billing: ["SUPER_ADMIN", "ADMIN", "RECEPTIONIST", "ACCOUNTANT"],
   /** Chart of accounts, journals, tax, periods, service catalog config */

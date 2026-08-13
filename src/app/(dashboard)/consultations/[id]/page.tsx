@@ -337,13 +337,31 @@ function JourneyInner() {
                       disabled={busy || !doctorStaffId}
                       onClick={() =>
                         void run(() =>
-                          recordTriage(
-                            visit.id,
+                          recordTriage(visit.id, {
                             vitals,
                             doctorName,
-                            user?.name || "Nurse",
+                            nurseName: user?.name || "Nurse",
                             doctorStaffId,
-                          ),
+                            reasonForVisit:
+                              visit.triage?.reasonForVisit ||
+                              visit.reasonForVisit ||
+                              "General check-up",
+                            chiefComplaint:
+                              visit.triage?.chiefComplaint ||
+                              visit.reasonForVisit ||
+                              "Triage update",
+                            priority: visit.triage?.priority || "NORMAL",
+                            priorityReason: visit.triage?.priorityReason,
+                            notes: visit.triage?.notes,
+                            symptoms: visit.triage?.symptoms,
+                            relevantHistory: visit.triage?.relevantHistory,
+                            assessment: visit.triage?.assessment,
+                            contextsEnabled: visit.triage?.contextsEnabled,
+                            antenatal: visit.triage?.antenatal,
+                            gynaecological: visit.triage?.gynaecological,
+                            paediatric: visit.triage?.paediatric,
+                            chronic: visit.triage?.chronic,
+                          }),
                         )
                       }
                       className="inline-flex items-center gap-1.5 rounded-full bg-brand-500 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"

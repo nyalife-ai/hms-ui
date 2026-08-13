@@ -73,6 +73,17 @@ export interface Vitals {
   respRate: string;
   spo2: string;
   weightKg: string;
+  heightCm?: string;
+  bmi?: string;
+  painScore?: string;
+  painLocation?: string;
+  bloodGlucose?: string;
+  bloodGlucoseContext?: "RANDOM" | "FASTING" | "OTHER" | "UNKNOWN";
+  headCircumferenceCm?: string;
+  muacCm?: string;
+  temperatureMethod?: string;
+  recordedAt?: string;
+  recordedBy?: string;
 }
 
 export interface LabTestOrder {
@@ -124,6 +135,10 @@ export interface Visit {
   nurseName?: string;
   doctorName?: string;
   doctorStaffId?: string;
+  /** Structured clinical triage intake (authoritative after triage) */
+  triage?: import("./triage").TriageRecord;
+  triagePriority?: import("./triage").TriagePriority;
+  triageCompletedAt?: string;
   labOrder?: {
     tests: LabTestOrder[];
     notes?: string;
@@ -167,10 +182,7 @@ interface VisitContextValue {
   checkIn: (visit: Omit<Visit, "id" | "stage" | "checkedInAt">) => Promise<void>;
   recordTriage: (
     visitId: string,
-    vitals: Vitals,
-    doctorName: string,
-    nurseName: string,
-    doctorStaffId?: string,
+    payload: import("./triage").TriageSubmitPayload,
   ) => Promise<void>;
   chargeConsultFee: (visitId: string) => Promise<void>;
   waiveConsultFee: (visitId: string) => Promise<void>;
@@ -262,15 +274,10 @@ export function VisitProvider({ children }: { children: ReactNode }) {
       });
       await refresh();
     },
-    recordTriage: async (visitId, vitals, doctorName, nurseName, doctorStaffId) => {
+    recordTriage: async (visitId, payload) => {
       await api(`/visits/${visitId}/triage`, {
         method: "POST",
-        body: JSON.stringify({
-          vitals,
-          doctorName,
-          nurseName,
-          doctorStaffId: doctorStaffId || undefined,
-        }),
+        body: JSON.stringify(payload),
       });
       await refresh();
     },
