@@ -21,9 +21,21 @@ import {
   PrimaryButton,
   StatCard,
   StatCardSkeleton,
+  type BadgeTone,
 } from "@/components/ui";
 import { api } from "@/lib/api";
-import { useVisits } from "@/lib/visits";
+
+type OutpatientQueueItem = {
+  visitId: string;
+  mrn: string;
+  patientName: string;
+  testCount: number;
+  requestId: string | null;
+  requestNumber: string | null;
+  requestStatus: string | null;
+  released: boolean;
+  badge: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "RELEASED";
+};
 
 type LabOverview = {
   activeTestTypes: number;
@@ -35,10 +47,24 @@ type LabOverview = {
   resultsAwaitingVerification: number;
   criticalUnverified: number;
   todaysCompleted: number;
+  outpatientQueue?: OutpatientQueueItem[];
+};
+
+const BADGE_TONE: Record<OutpatientQueueItem["badge"], BadgeTone> = {
+  PENDING: "amber",
+  IN_PROGRESS: "teal",
+  COMPLETED: "blue",
+  RELEASED: "green",
+};
+
+const BADGE_LABEL: Record<OutpatientQueueItem["badge"], string> = {
+  PENDING: "Pending",
+  IN_PROGRESS: "In progress",
+  COMPLETED: "Completed — send to doctor",
+  RELEASED: "Released",
 };
 
 export default function LaboratoryOverviewPage() {
-  const { visits } = useVisits();
   const [data, setData] = useState<LabOverview | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -59,7 +85,7 @@ export default function LaboratoryOverviewPage() {
     void load();
   }, [load]);
 
-  const visitQueue = visits.filter((v) => v.stage === "LAB_PENDING");
+  const visitQueue = data?.outpatientQueue ?? [];
 
   const stats = data
     ? [
@@ -143,17 +169,25 @@ export default function LaboratoryOverviewPage() {
           />
           <ul className="space-y-3 px-5 pb-5">
             {visitQueue.map((v) => (
-              <li key={v.id} className="flex flex-wrap items-center gap-3 rounded-2xl bg-[#f3f7f7] p-4">
+              <li
+                key={v.visitId}
+                className="flex flex-wrap items-center gap-3 rounded-2xl bg-[#f3f7f7] p-4"
+              >
                 <Avatar name={v.patientName} />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold text-slate-800">{v.patientName}</p>
                   <p className="text-[11px] text-slate-400">
-                    {v.mrn} · {(v.labOrder?.tests.length ?? 0)} test(s)
+                    {v.mrn} · {v.testCount} test(s)
+                    {v.requestNumber ? ` · ${v.requestNumber}` : ""}
                   </p>
                 </div>
-                <Badge tone="amber">Pending</Badge>
+                <Badge tone={BADGE_TONE[v.badge]}>{BADGE_LABEL[v.badge]}</Badge>
                 <Link
-                  href={`/laboratory/requests?search=${encodeURIComponent(v.mrn)}`}
+                  href={
+                    v.requestId
+                      ? `/laboratory/requests/${v.requestId}`
+                      : `/laboratory/requests?search=${encodeURIComponent(v.mrn)}`
+                  }
                   className="rounded-full bg-brand-500 px-3 py-1.5 text-xs font-semibold text-white"
                 >
                   Open request
