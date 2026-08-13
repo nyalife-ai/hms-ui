@@ -14,6 +14,7 @@ import {
   relatedLabsHref,
   relatedPrescriptionsHref,
 } from "@/lib/clinical-links";
+import type { VisitLabReport } from "@/lib/lab-types";
 import { isOversightRole, type Role } from "@/lib/roles";
 import {
   PIPELINE_TAB_IDS,
@@ -74,6 +75,7 @@ function JourneyInner() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
+  const [labReport, setLabReport] = useState<VisitLabReport | null>(null);
 
   const visit = visits.find((v) => v.id === id) ?? remote;
 
@@ -126,6 +128,27 @@ function JourneyInner() {
     setDoctorName(visit.doctorName ?? "");
     setDiagnosis(visit.diagnosis ?? visit.clinicalRecord?.impression ?? "");
   }, [visit?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!visit?.id) {
+      setLabReport(null);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const report = await api<VisitLabReport>(
+          `/laboratory/visit-report?visitId=${encodeURIComponent(visit.id)}`,
+        );
+        if (!cancelled) setLabReport(report);
+      } catch {
+        if (!cancelled) setLabReport(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [visit?.id, visit?.stage]);
 
   const setTab = (next: PipelineTabId) => {
     const qs = new URLSearchParams(searchParams.toString());
@@ -418,22 +441,71 @@ function JourneyInner() {
 
           {tab === "laboratory" && (
             <Card>
-              <CardHeader title="Laboratory" subtitle="Orders and results for this visit" />
+              <CardHeader title="Laboratory" subtitle="Orders and released results for this visit" />
               <div className="space-y-4 px-5 pb-5">
-                {!visit.labOrder?.tests?.length ? (
+                {!visit.labOrder?.tests?.length && !(labReport?.lines.length) ? (
                   <p className="text-sm text-slate-400">No laboratory tests ordered yet.</p>
-                ) : (
+                ) : null}
+                {visit.labOrder?.tests?.length ? (
                   <ul className="divide-y divide-slate-100 rounded-xl border border-slate-100">
-                    {visit.labOrder.tests.map((t) => (
-                      <li key={t.name} className="flex items-center justify-between px-4 py-3 text-sm">
-                        <div>
-                          <p className="font-medium text-slate-800">{t.name}</p>
-                          <p className="text-xs text-slate-400">{t.range}</p>
-                        </div>
-                        <Badge tone={t.result ? "green" : "amber"}>{t.result || "Pending"}</Badge>
-                      </li>
-                    ))}
+                    {visit.labOrder.tests.map((t) => {
+                      const match = labReport?.lines.find(
+                        (l) =>
+                          l.testName?.toLowerCase() === t.name.toLowerCase() ||
+                          l.parameterName?.toLowerCase() === t.name.toLowerCase(),
+                      );
+                      return (
+                        <li
+                          key={t.name}
+                          className="flex items-center justify-between px-4 py-3 text-sm"
+                        >
+                          <div>
+                            <p className="font-medium text-slate-800">{t.name}</p>
+                            <p className="text-xs text-slate-400">{t.range}</p>
+                          </div>
+                          <Badge tone={match?.resultValue ? "green" : "amber"}>
+                            {match?.resultValue
+                              ? `${match.resultValue}${match.unitOfMeasurement ? ` ${match.unitOfMeasurement}` : ""}`
+                              : labReport?.released
+                                ? "Released"
+                                : "Pending"}
+                          </Badge>
+                        </li>
+                      );
+                    })}
                   </ul>
+                ) : null}
+                {labReport?.released && labReport.lines.length > 0 && (
+                  <div>
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                      Released results
+                    </p>
+                    <table className="w-full text-left text-sm">
+                      <thead>
+                        <tr className="text-xs text-slate-400">
+                          <th className="pb-2 font-medium">Parameter</th>
+                          <th className="pb-2 font-medium">Result</th>
+                          <th className="pb-2 font-medium">Reference</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {labReport.lines.map((l) => (
+                          <tr key={l.id} className="border-t border-slate-50">
+                            <td className="py-2 font-medium text-slate-800">
+                              {l.parameterName ?? l.testName ?? "—"}
+                            </td>
+                            <td className="py-2 font-semibold text-brand-700">
+                              {l.resultValue ?? "—"}
+                              {l.unitOfMeasurement ? ` ${l.unitOfMeasurement}` : ""}
+                            </td>
+                            <td className="py-2 text-slate-400">
+                              {l.normalReferenceRange ?? "—"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 )}
                 {visit.labOrder?.notes && (
                   <p className="text-xs text-slate-400">Notes: {visit.labOrder.notes}</p>

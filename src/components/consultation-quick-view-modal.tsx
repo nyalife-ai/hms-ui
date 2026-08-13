@@ -10,14 +10,16 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui";
 import { PaymentInfo, VitalsGrid } from "@/components/visit-flow";
+import { api } from "@/lib/api";
 import {
   consultationJourneyHref,
   relatedLabsHref,
   relatedPrescriptionsHref,
 } from "@/lib/clinical-links";
+import type { VisitLabReport } from "@/lib/lab-types";
 import { STAGE_META, type Visit } from "@/lib/visits";
 
 type Tab = "details" | "clinical" | "labs" | "prescriptions";
@@ -30,8 +32,26 @@ export function ConsultationQuickViewModal({
   onClose: () => void;
 }) {
   const [tab, setTab] = useState<Tab>("details");
+  const [labReport, setLabReport] = useState<VisitLabReport | null>(null);
   const firstName = visit.patientName.split(" ")[0] || "Visit";
   const clinical = visit.clinicalRecord;
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const report = await api<VisitLabReport>(
+          `/laboratory/visit-report?visitId=${encodeURIComponent(visit.id)}`,
+        );
+        if (!cancelled) setLabReport(report);
+      } catch {
+        if (!cancelled) setLabReport(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [visit.id]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4 backdrop-blur-[1px]">
@@ -183,7 +203,7 @@ export function ConsultationQuickViewModal({
               <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
                 Laboratory
               </p>
-              {!visit.labOrder?.tests?.length ? (
+              {!visit.labOrder?.tests?.length && !(labReport?.lines.length) ? (
                 <div className="mt-4 flex min-h-48 flex-col items-center justify-center rounded-xl border border-slate-200 bg-slate-50 px-6 text-center">
                   <FlaskConical className="mb-3 h-10 w-10 text-slate-300" />
                   <p className="text-sm font-semibold text-slate-700">
@@ -192,14 +212,32 @@ export function ConsultationQuickViewModal({
                 </div>
               ) : (
                 <ul className="mt-4 divide-y divide-slate-100 rounded-xl border border-slate-100">
-                  {visit.labOrder.tests.map((t) => (
-                    <li key={t.name} className="flex items-start justify-between gap-3 px-4 py-3 text-sm">
+                  {(labReport?.released && labReport.lines.length
+                    ? labReport.lines.map((l) => ({
+                        key: l.id,
+                        name: l.parameterName ?? l.testName ?? "—",
+                        range: l.normalReferenceRange ?? "",
+                        result: l.resultValue
+                          ? `${l.resultValue}${l.unitOfMeasurement ? ` ${l.unitOfMeasurement}` : ""}`
+                          : null,
+                      }))
+                    : (visit.labOrder?.tests ?? []).map((t) => ({
+                        key: t.name,
+                        name: t.name,
+                        range: t.range,
+                        result: null as string | null,
+                      }))
+                  ).map((row) => (
+                    <li
+                      key={row.key}
+                      className="flex items-start justify-between gap-3 px-4 py-3 text-sm"
+                    >
                       <div>
-                        <p className="font-semibold text-slate-800">{t.name}</p>
-                        <p className="text-xs text-slate-400">{t.range}</p>
+                        <p className="font-semibold text-slate-800">{row.name}</p>
+                        <p className="text-xs text-slate-400">{row.range}</p>
                       </div>
-                      <Badge tone={t.result ? "green" : "amber"}>
-                        {t.result || "Pending"}
+                      <Badge tone={row.result ? "green" : "amber"}>
+                        {row.result || (labReport?.released ? "Released" : "Pending")}
                       </Badge>
                     </li>
                   ))}

@@ -6,6 +6,7 @@ import {
   Link2,
   Printer,
   Save,
+  Send,
 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -84,6 +85,8 @@ export default function LabRequestDetailPage() {
   const [conclusion, setConclusion] = useState("");
   const [evidenceName, setEvidenceName] = useState("");
   const [clinicalNotes, setClinicalNotes] = useState("");
+  const [sampleType, setSampleType] = useState("BLOOD");
+  const [sampleNotes, setSampleNotes] = useState("");
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -119,15 +122,25 @@ export default function LabRequestDetailPage() {
 
   const registerSample = async () => {
     if (!detail) return;
+    const type = sampleType.trim();
+    if (!type) {
+      setError("Sample type is required");
+      return;
+    }
     setBusy(true);
     try {
       await api(`/laboratory/requests/${detail.id}/samples`, {
         method: "POST",
-        body: JSON.stringify({ sampleType: "BLOOD" }),
+        body: JSON.stringify({
+          sampleType: type,
+          ...(sampleNotes.trim() ? { notes: sampleNotes.trim() } : {}),
+        }),
       });
+      setSampleNotes("");
+      setError("");
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Sample failed");
+      setError(err instanceof Error ? err.message : "Sample registration failed");
     } finally {
       setBusy(false);
     }
@@ -188,6 +201,22 @@ export default function LabRequestDetailPage() {
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Verify failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const releaseToDoctor = async () => {
+    if (!detail) return;
+    setBusy(true);
+    try {
+      await api(`/laboratory/requests/${detail.id}/release-to-doctor`, {
+        method: "POST",
+      });
+      setError("");
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Release to doctor failed");
     } finally {
       setBusy(false);
     }
@@ -394,20 +423,44 @@ export default function LabRequestDetailPage() {
                   ? `${detail.samples.length} registered`
                   : "No samples yet"
               }
-              action={
-                detail.status !== "COMPLETED" && detail.status !== "CANCELLED" ? (
-                  <button
-                    type="button"
-                    disabled={busy}
-                    className="text-xs font-semibold text-brand-700"
-                    onClick={() => void registerSample()}
-                  >
-                    Register sample
-                  </button>
-                ) : undefined
-              }
             />
             <div className="px-5 pb-5">
+              {detail.status !== "COMPLETED" && detail.status !== "CANCELLED" && (
+                <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-[1fr_1fr_auto]">
+                  <div>
+                    <FieldLabel>Specimen type</FieldLabel>
+                    <select
+                      className={inputClass}
+                      value={sampleType}
+                      onChange={(e) => setSampleType(e.target.value)}
+                      disabled={busy}
+                    >
+                      {["BLOOD", "URINE", "SWAB", "STOOL", "SPUTUM", "CSF", "OTHER"].map(
+                        (t) => (
+                          <option key={t} value={t}>
+                            {t}
+                          </option>
+                        ),
+                      )}
+                    </select>
+                  </div>
+                  <div>
+                    <FieldLabel>Notes (optional)</FieldLabel>
+                    <input
+                      className={inputClass}
+                      placeholder="Collection notes…"
+                      value={sampleNotes}
+                      onChange={(e) => setSampleNotes(e.target.value)}
+                      disabled={busy}
+                    />
+                  </div>
+                  <div className="flex items-end">
+                    <PrimaryButton disabled={busy} onClick={() => void registerSample()}>
+                      {busy ? "Working…" : "Register sample"}
+                    </PrimaryButton>
+                  </div>
+                </div>
+              )}
               {detail.samples.length === 0 ? (
                 <p className="text-sm text-slate-400">No samples yet.</p>
               ) : (
@@ -600,6 +653,30 @@ export default function LabRequestDetailPage() {
                     </li>
                   ))}
                 </ul>
+              )}
+              {detail.status === "COMPLETED" && (
+                <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-slate-100 pt-4">
+                  {detail.releasedToDoctor ? (
+                    <Badge tone="green">
+                      Sent to doctor
+                      {detail.releasedToDoctorAt
+                        ? ` · ${formatWhen(detail.releasedToDoctorAt)}`
+                        : ""}
+                    </Badge>
+                  ) : (
+                    <PrimaryButton
+                      disabled={busy || !detail.allVerified}
+                      onClick={() => void releaseToDoctor()}
+                    >
+                      <Send className="h-4 w-4" />{" "}
+                      {busy ? "Sending…" : "Send to Doctor"}
+                    </PrimaryButton>
+                  )}
+                  <p className="text-xs text-slate-400">
+                    Completing verification marks the test done. Send to Doctor
+                    makes results available on the consultation Lab Report.
+                  </p>
+                </div>
               )}
             </div>
           </Card>

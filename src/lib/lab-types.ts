@@ -58,6 +58,7 @@ export type LabRequestDetail = {
   requestedBy: string;
   requestedByName: string | null;
   consultationId: string | null;
+  visitId?: string | null;
   priority: string;
   requestDate: string;
   status: string;
@@ -65,6 +66,9 @@ export type LabRequestDetail = {
   observations: string | null;
   conclusion: string | null;
   evidenceName: string | null;
+  releasedToDoctorAt?: string | null;
+  releasedToDoctorBy?: string | null;
+  releasedToDoctor?: boolean;
   categories: string[];
   createdAt: string;
   updatedAt: string;
@@ -83,6 +87,35 @@ export type LabRequestDetail = {
     testName: string;
     testTypeId: string;
   }>;
+};
+
+/** Doctor Consultation Lab Report — released LIS lines for a visit */
+export type VisitLabReport = {
+  visitId: string;
+  released: boolean;
+  releasedAt: string | null;
+  requestCount: number;
+  releasedRequestCount: number;
+  requests: Array<{
+    id: string;
+    requestNumber: string | null;
+    status: string;
+    observations: string | null;
+    conclusion: string | null;
+    releasedToDoctorAt?: string | null;
+    resultCount: number;
+    verifiedCount: number;
+    criticalCount: number;
+  }>;
+  lines: Array<
+    LabResultLine & {
+      requestId: string;
+      requestNumber: string | null;
+      requestStatus: string;
+    }
+  >;
+  observations: string | null;
+  conclusion: string | null;
 };
 
 export type LabResultBundle = {

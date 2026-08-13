@@ -31,6 +31,8 @@ import {
   toOrderedItem,
   type OrderedClinicalItem,
 } from "@/lib/clinical-service";
+import { api } from "@/lib/api";
+import type { VisitLabReport } from "@/lib/lab-types";
 import { PRESCRIPTION_FREQUENCIES } from "@/lib/prescription-frequency";
 import { priorityTone } from "@/lib/triage";
 import {
@@ -214,6 +216,8 @@ export default function ConsultationsPage() {
   const [savingNotes, setSavingNotes] = useState(false);
   const [saveMsg, setSaveMsg] = useState("");
   const hydratedVisitId = useRef<string | null>(null);
+  const [labReport, setLabReport] = useState<VisitLabReport | null>(null);
+  const [labReportLoading, setLabReportLoading] = useState(false);
 
   const inConsult =
     selected &&
@@ -259,6 +263,36 @@ export default function ConsultationsPage() {
     }, 400);
     return () => window.clearTimeout(t);
   }, [clinical, selected, inConsult]);
+
+  useEffect(() => {
+    if (
+      !selected ||
+      (selected.stage !== "LAB_PENDING" && selected.stage !== "RESULTS_READY")
+    ) {
+      setLabReport(null);
+      return;
+    }
+    let cancelled = false;
+    const load = async () => {
+      setLabReportLoading(true);
+      try {
+        const report = await api<VisitLabReport>(
+          `/laboratory/visit-report?visitId=${encodeURIComponent(selected.id)}`,
+        );
+        if (!cancelled) setLabReport(report);
+      } catch {
+        if (!cancelled) setLabReport(null);
+      } finally {
+        if (!cancelled) setLabReportLoading(false);
+      }
+    };
+    void load();
+    const poll = window.setInterval(() => void load(), 30_000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(poll);
+    };
+  }, [selected]);
 
   const diagnosisText = useMemo(
     () => clinical.impression.trim() || selected?.diagnosis?.trim() || "",
@@ -608,7 +642,7 @@ export default function ConsultationsPage() {
               </Card>
             )}
 
-            {selected.stage === "LAB_PENDING" && selected.labOrder && (
+            {selected.stage === "LAB_PENDING" && selected.labOrder && !(labReport?.released && labReport.lines.length > 0) && (
               <Card>
                 <CardHeader title="Laboratory — awaiting results" subtitle="The lab technician has this request on their worklist" />
                 <div className="px-5 pb-5">
@@ -622,15 +656,25 @@ export default function ConsultationsPage() {
                   {selected.labOrder.notes && (
                     <p className="mt-3 text-xs text-slate-400">Notes to lab: {selected.labOrder.notes}</p>
                   )}
+                  {labReportLoading && (
+                    <p className="mt-3 text-xs text-slate-400">Checking for released results…</p>
+                  )}
                 </div>
               </Card>
             )}
 
-            {selected.stage === "RESULTS_READY" && selected.labOrder && (
+            {((selected.stage === "RESULTS_READY" || selected.stage === "LAB_PENDING") &&
+              labReport &&
+              labReport.released &&
+              labReport.lines.length > 0) && (
               <Card>
                 <CardHeader
                   title="Lab Report"
-                  subtitle={`Returned ${selected.labOrder.completedAt ? `at ${formatTime(selected.labOrder.completedAt)}` : ""}`}
+                  subtitle={
+                    labReport.releasedAt
+                      ? `Released ${formatTime(labReport.releasedAt)}`
+                      : "Released from laboratory"
+                  }
                   action={<Badge tone="teal">Results ready</Badge>}
                 />
                 <div className="px-5 pb-5">
@@ -643,20 +687,72 @@ export default function ConsultationsPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {selected.labOrder.tests.map((t) => (
-                        <tr key={t.name} className="border-t border-slate-50">
-                          <td className="py-2.5 font-medium text-slate-800">{t.name}</td>
-                          <td className="py-2.5 font-semibold text-brand-700">{t.result ?? "—"} {t.unit}</td>
-                          <td className="py-2.5 text-slate-400">{t.range}</td>
+                      {labReport.lines.map((t) => (
+                        <tr key={t.id} className="border-t border-slate-50">
+                          <td className="py-2.5 font-medium text-slate-800">
+                            {t.parameterName ?? t.testName ?? "—"}
+                            {t.testName && t.parameterName ? (
+                              <span className="block text-xs font-normal text-slate-400">
+                                {t.testName}
+                              </span>
+                            ) : null}
+                          </td>
+                          <td className="py-2.5 font-semibold text-brand-700">
+                            {t.resultValue ?? "—"}
+                            {t.unitOfMeasurement ? ` ${t.unitOfMeasurement}` : ""}
+                          </td>
+                          <td className="py-2.5 text-slate-400">
+                            {t.normalReferenceRange ?? "—"}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
-                  {selected.labOrder.comments && (
+                  {(labReport.observations || labReport.conclusion) && (
                     <p className="mt-3 rounded-xl bg-[#f3f7f7] px-3.5 py-2.5 text-xs text-slate-500">
-                      Technician comments: {selected.labOrder.comments}
+                      {[labReport.observations, labReport.conclusion]
+                        .filter(Boolean)
+                        .join(" · ")}
                     </p>
                   )}
+                  <Link
+                    href={relatedLabsHref({
+                      visitId: selected.id,
+                      appointmentId: selected.appointmentId,
+                      patientName: selected.patientName,
+                    })}
+                    className="mt-3 inline-flex text-xs font-semibold text-brand-700"
+                  >
+                    Open related labs →
+                  </Link>
+                </div>
+              </Card>
+            )}
+
+            {selected.stage === "RESULTS_READY" &&
+              !labReportLoading &&
+              !(labReport?.released && (labReport.lines.length ?? 0) > 0) && (
+              <Card>
+                <CardHeader
+                  title="Lab Report"
+                  subtitle="Awaiting laboratory release"
+                  action={<Badge tone="amber">Not released</Badge>}
+                />
+                <div className="px-5 pb-5">
+                  <p className="text-sm text-slate-500">
+                    Results are not yet released to the consultation. Ask the laboratory
+                    to use <span className="font-semibold">Send to Doctor</span> after
+                    verification.
+                  </p>
+                  {selected.labOrder?.tests?.length ? (
+                    <ul className="mt-3 flex flex-wrap gap-2">
+                      {selected.labOrder.tests.map((t) => (
+                        <li key={t.name}>
+                          <Badge tone="slate">{t.name}</Badge>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
                 </div>
               </Card>
             )}
