@@ -12,6 +12,14 @@ export type ReceiptData = {
   issuedAt: string;
   lineItems: { description: string; amount: number }[];
   meta?: Record<string, unknown>;
+  paymentContext?: {
+    invoiceNumber?: string;
+    invoiceTotal?: number;
+    previousPaid?: number;
+    currentPayment?: number;
+    balance?: number;
+    totalPaid?: number;
+  };
   patient: { mrn?: string; name: string; phone?: string };
   facility: { name: string; location: string };
 };
@@ -22,6 +30,10 @@ function escapeHtml(value: string): string {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+}
+
+function money(n: number | undefined): string {
+  return Number(n ?? 0).toLocaleString();
 }
 
 export function ReceiptModal({
@@ -45,6 +57,26 @@ export function ReceiptModal({
     .map((v) => v?.trim())
     .filter(Boolean) as string[];
 
+  const ctx = receipt.paymentContext ?? {
+    invoiceNumber: receipt.meta?.invoiceNumber
+      ? String(receipt.meta.invoiceNumber)
+      : undefined,
+    invoiceTotal: Number(receipt.meta?.invoiceTotal ?? NaN),
+    previousPaid: Number(receipt.meta?.previousPaid ?? NaN),
+    currentPayment: Number(receipt.meta?.currentPayment ?? receipt.amount),
+    balance: Number(receipt.meta?.balance ?? NaN),
+    totalPaid: Number(
+      receipt.meta?.totalPaid ??
+        (Number(receipt.meta?.previousPaid ?? 0) +
+          Number(receipt.meta?.currentPayment ?? receipt.amount)),
+    ),
+  };
+
+  const showContext =
+    Number.isFinite(ctx.invoiceTotal) ||
+    Number.isFinite(ctx.previousPaid) ||
+    Number.isFinite(ctx.balance);
+
   const handlePrint = () => {
     const facility = {
       name: facilityName,
@@ -62,6 +94,43 @@ export function ReceiptModal({
       </tr>`,
       )
       .join("");
+
+    const contextRows = showContext
+      ? `
+        <div class="totals">
+          ${
+            Number.isFinite(ctx.invoiceTotal)
+              ? `<div class="row"><span>Invoice total${
+                  ctx.invoiceNumber ? ` (${escapeHtml(ctx.invoiceNumber)})` : ""
+                }</span><span>KES ${escapeHtml(money(ctx.invoiceTotal))}</span></div>`
+              : ""
+          }
+          ${
+            Number.isFinite(ctx.previousPaid) && (ctx.previousPaid ?? 0) > 0
+              ? `<div class="row"><span>Previous payments</span><span>KES ${escapeHtml(
+                  money(ctx.previousPaid),
+                )}</span></div>`
+              : ""
+          }
+          <div class="row"><span>This payment</span><span>KES ${escapeHtml(
+            money(ctx.currentPayment ?? receipt.amount),
+          )}</span></div>
+          ${
+            Number.isFinite(ctx.balance)
+              ? `<div class="row"><span>Balance</span><span>KES ${escapeHtml(
+                  money(ctx.balance),
+                )}</span></div>`
+              : ""
+          }
+          <div class="row grand"><span>Receipt total</span><span>KES ${escapeHtml(
+            receipt.amount.toLocaleString(),
+          )}</span></div>
+        </div>`
+      : `<div class="totals">
+          <div class="row grand"><span>Total</span><span>KES ${escapeHtml(
+            receipt.amount.toLocaleString(),
+          )}</span></div>
+        </div>`;
 
     printIsolatedDocument({
       title: `Receipt ${receipt.receiptNumber}`,
@@ -101,11 +170,7 @@ export function ReceiptModal({
           </thead>
           <tbody>${lines}</tbody>
         </table>
-        <div class="totals">
-          <div class="row grand"><span>Total</span><span>KES ${escapeHtml(
-            receipt.amount.toLocaleString(),
-          )}</span></div>
-        </div>
+        ${contextRows}
         <div class="footer">Thank you for choosing ${escapeHtml(facility.name)}.</div>
       `,
     });
@@ -175,10 +240,44 @@ export function ReceiptModal({
             ))}
           </ul>
 
-          <div className="flex items-center justify-between text-base font-bold">
-            <span>Total</span>
-            <span>KES {receipt.amount.toLocaleString()}</span>
-          </div>
+          {showContext ? (
+            <div className="space-y-1 text-sm">
+              {Number.isFinite(ctx.invoiceTotal) && (
+                <div className="flex justify-between text-slate-500">
+                  <span>
+                    Invoice total
+                    {ctx.invoiceNumber ? ` (${ctx.invoiceNumber})` : ""}
+                  </span>
+                  <span>KES {money(ctx.invoiceTotal)}</span>
+                </div>
+              )}
+              {Number.isFinite(ctx.previousPaid) && (ctx.previousPaid ?? 0) > 0 && (
+                <div className="flex justify-between text-slate-500">
+                  <span>Previous payments</span>
+                  <span>KES {money(ctx.previousPaid)}</span>
+                </div>
+              )}
+              <div className="flex justify-between text-slate-600">
+                <span>This payment</span>
+                <span>KES {money(ctx.currentPayment ?? receipt.amount)}</span>
+              </div>
+              {Number.isFinite(ctx.balance) && (
+                <div className="flex justify-between text-slate-500">
+                  <span>Balance</span>
+                  <span>KES {money(ctx.balance)}</span>
+                </div>
+              )}
+              <div className="flex items-center justify-between border-t border-dashed border-slate-200 pt-2 text-base font-bold">
+                <span>Receipt total</span>
+                <span>KES {receipt.amount.toLocaleString()}</span>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between text-base font-bold">
+              <span>Total</span>
+              <span>KES {receipt.amount.toLocaleString()}</span>
+            </div>
+          )}
 
           <div className="rounded-xl bg-[#f3f7f7] px-3 py-2.5 text-xs text-slate-600">
             <p>

@@ -626,6 +626,20 @@ export default function TriagePage() {
                         <FieldLabel>{label}</FieldLabel>
                         <input
                           className={inputClass}
+                          placeholder={
+                            (
+                              {
+                                temperature: "e.g. 37.0",
+                                systolic: "e.g. 120",
+                                diastolic: "e.g. 80",
+                                pulse: "e.g. 72",
+                                respRate: "e.g. 16",
+                                spo2: "e.g. 98",
+                                weightKg: "e.g. 70",
+                                heightCm: "e.g. 170",
+                              } as Record<string, string>
+                            )[key]
+                          }
                           value={String(vitals[key] || "")}
                           onChange={(e) =>
                             setVitals((v) => ({ ...v, [key]: e.target.value }))
@@ -641,6 +655,7 @@ export default function TriagePage() {
                       <FieldLabel>Pain score 0–10</FieldLabel>
                       <input
                         className={inputClass}
+                        placeholder="e.g. 3"
                         value={vitals.painScore || ""}
                         onChange={(e) =>
                           setVitals((v) => ({ ...v, painScore: e.target.value }))
@@ -651,6 +666,7 @@ export default function TriagePage() {
                       <FieldLabel>Pain location</FieldLabel>
                       <input
                         className={inputClass}
+                        placeholder="e.g. Lower back"
                         value={vitals.painLocation || ""}
                         onChange={(e) =>
                           setVitals((v) => ({ ...v, painLocation: e.target.value }))
@@ -661,6 +677,7 @@ export default function TriagePage() {
                       <FieldLabel>Blood glucose</FieldLabel>
                       <input
                         className={inputClass}
+                        placeholder="e.g. 5.4"
                         value={vitals.bloodGlucose || ""}
                         onChange={(e) =>
                           setVitals((v) => ({ ...v, bloodGlucose: e.target.value }))

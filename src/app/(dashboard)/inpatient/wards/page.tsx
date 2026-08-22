@@ -2,6 +2,7 @@
 
 import { Plus, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { BulkImportButton } from "@/components/bulk-import-button";
 import { FieldLabel } from "@/components/field-label";
 import { PaginationBar } from "@/components/pagination-bar";
 import { RoleGuard } from "@/components/role-guard";
@@ -135,9 +136,18 @@ export default function IpdWardsPage() {
         title="IPD Wards"
         subtitle={loading ? "Loading…" : `${total.toLocaleString()} wards`}
         action={
-          <PrimaryButton onClick={() => setOpen(true)}>
-            <Plus className="h-4 w-4" /> Add ward
-          </PrimaryButton>
+          <div className="flex flex-wrap items-center gap-2">
+            <BulkImportButton
+              resource="wards"
+              title="Import wards"
+              description="First row is the header. Fix any invalid rows before import — partial import is not allowed."
+              label="Import wards"
+              onImported={load}
+            />
+            <PrimaryButton onClick={() => setOpen(true)}>
+              <Plus className="h-4 w-4" /> Add ward
+            </PrimaryButton>
+          </div>
         }
       />
       {error && <p className="mb-4 text-sm text-rose-500">{error}</p>}

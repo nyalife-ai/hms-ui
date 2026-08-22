@@ -33,6 +33,7 @@ export function MpesaCheckoutModal({
   const [checkoutId, setCheckoutId] = useState("");
   const [status, setStatus] = useState<"IDLE" | "PENDING" | "SUCCESS" | "FAILED">("IDLE");
   const [hint, setHint] = useState("");
+  const [mode, setMode] = useState<string>("");
   const [receipt, setReceipt] = useState<ReceiptData | null>(null);
 
   useEffect(() => {
@@ -88,6 +89,7 @@ export function MpesaCheckoutModal({
         body: JSON.stringify({ visitId, phone, source }),
       });
       setCheckoutId(data.checkoutId);
+      setMode(data.mode || "");
       setStatus("PENDING");
       setHint(data.message || "Waiting for M-Pesa PIN…");
     } catch (err) {
@@ -124,6 +126,7 @@ export function MpesaCheckoutModal({
         </p>
         <p className="mt-1 text-[11px] text-slate-400">
           {source === "PHARMACY" ? "Pharmacy dispense payment" : "Reception outpatient bill"}
+          {mode ? ` · ${mode}` : ""}
         </p>
 
         {status === "IDLE" || status === "FAILED" ? (

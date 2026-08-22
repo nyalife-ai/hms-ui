@@ -715,10 +715,7 @@ export default function FrontDeskPage() {
             )}
 
             <div>
-              <FieldLabel>Presenting context (administrative)</FieldLabel>
-              <p className="mt-1 text-[11px] text-slate-400">
-                Clinical reason for visit and chief complaint are captured at Triage.
-              </p>
+              <FieldLabel>Presenting context</FieldLabel>
               <input
                 className={`mt-1.5 ${inputClass}`}
                 value={reasonForVisit}
@@ -729,12 +726,12 @@ export default function FrontDeskPage() {
             </div>
 
             <div>
-              <FieldLabel>Reception notes (administrative)</FieldLabel>
+              <FieldLabel>Reception notes</FieldLabel>
               <textarea
                 className={`mt-1.5 min-h-20 resize-y ${inputClass}`}
                 value={additionalNotes}
                 onChange={(e) => setAdditionalNotes(e.target.value)}
-                placeholder="Administrative notes for triage / front desk (not a clinical assessment)…"
+                placeholder="Notes for triage / front desk…"
                 disabled={checkInBusy}
               />
             </div>

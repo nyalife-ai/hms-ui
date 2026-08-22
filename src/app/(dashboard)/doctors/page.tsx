@@ -3,6 +3,7 @@
 import { MessageCircle, Phone, Plus, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import { BulkImportButton } from "@/components/bulk-import-button";
 import { FieldLabel } from "@/components/field-label";
 import { PaginationBar } from "@/components/pagination-bar";
 import { PatientSearchSelect } from "@/components/patient-search-select";
@@ -66,9 +67,18 @@ export default function DoctorsPage() {
             : `${total.toLocaleString()} doctors · ${availableCount} available on this page`
         }
         action={
-          <PrimaryButton onClick={() => setOpen(true)}>
-            <Plus className="h-4 w-4" /> Add New Doctor
-          </PrimaryButton>
+          <div className="flex flex-wrap items-center gap-2">
+            <BulkImportButton
+              resource="doctors"
+              title="Import doctors / staff"
+              description="Download the template, fill details (no passwords), then review before importing."
+              label="Import doctors"
+              onImported={refresh}
+            />
+            <PrimaryButton onClick={() => setOpen(true)}>
+              <Plus className="h-4 w-4" /> Add New Doctor
+            </PrimaryButton>
+          </div>
         }
       />
 

@@ -8,12 +8,23 @@ import {
   LogOut,
   Menu,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth, roleLabel } from "@/lib/auth";
-import { useDashboardSummary } from "@/lib/catalog";
 import { ALL_ROLES, ROLE_LABELS, canAccess, type Role } from "@/lib/roles";
 import { useShell } from "@/lib/shell";
+import {
+  fetchMyNotifications,
+  fetchNotificationPreferences,
+  fetchUnreadCount,
+  markNotificationRead,
+  type AppNotification,
+} from "@/lib/notifications";
+import {
+  playNotificationSound,
+  unlockNotificationAudio,
+} from "@/lib/notification-sound";
+import { connectRealtime } from "@/lib/realtime-client";
 import { Avatar } from "./ui";
 
 const SEARCH_ROUTES: Array<{ label: string; href: string; keywords: string }> = [
@@ -26,7 +37,11 @@ const SEARCH_ROUTES: Array<{ label: string; href: string; keywords: string }> = 
   { label: "Laboratory", href: "/laboratory", keywords: "lab results" },
   { label: "Pharmacy", href: "/pharmacy", keywords: "medications stock" },
   { label: "Billing", href: "/billing", keywords: "invoice mpesa claim" },
-    { label: "Inpatient", href: "/inpatient", keywords: "ward bed discharge ipd admission reservation nursing" },
+  {
+    label: "Inpatient",
+    href: "/inpatient",
+    keywords: "ward bed discharge ipd admission reservation nursing",
+  },
   { label: "Radiology", href: "/radiology", keywords: "scan imaging" },
   { label: "Doctors", href: "/doctors", keywords: "clinicians" },
   { label: "Staff", href: "/staff", keywords: "roles employees" },
@@ -35,20 +50,35 @@ const SEARCH_ROUTES: Array<{ label: string; href: string; keywords: string }> = 
   { label: "Dashboard", href: "/dashboard", keywords: "home overview" },
 ];
 
+function formatWhen(iso: string): string {
+  try {
+    const d = new Date(iso);
+    return d.toLocaleString(undefined, {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return "";
+  }
+}
+
 export function Topbar() {
   const { user, logout, loginAsRole, demoAuthEnabled } = useAuth();
   const { toggleMobileNav } = useShell();
-  const { data: summary } = useDashboardSummary();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [bellOpen, setBellOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
+  const [items, setItems] = useState<AppNotification[]>([]);
+  const [unread, setUnread] = useState(0);
+  const [soundEnabled, setSoundEnabled] = useState(true);
   const menuRef = useRef<HTMLDivElement>(null);
   const bellRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
-
-  const reports = summary?.reports ?? [];
+  const seenLiveIds = useRef(new Set<string>());
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -61,6 +91,93 @@ export function Topbar() {
     ).slice(0, 6);
   }, [query]);
 
+  const syncFromApi = useCallback(async () => {
+    try {
+      const [page, count, prefs] = await Promise.all([
+        fetchMyNotifications({ page: 1, limit: 15 }),
+        fetchUnreadCount(),
+        fetchNotificationPreferences(),
+      ]);
+      setItems(page.items);
+      setUnread(count);
+      setSoundEnabled(prefs.notificationSoundEnabled);
+      // Seed seen set so history never triggers sound after login/reconnect.
+      for (const n of page.items) seenLiveIds.current.add(n.id);
+    } catch {
+      // Notification center is best-effort; do not break the shell.
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    void syncFromApi();
+  }, [user, syncFromApi]);
+
+  useEffect(() => {
+    if (!user) return;
+    const unlock = () => unlockNotificationAudio();
+    window.addEventListener("pointerdown", unlock, { once: true });
+    window.addEventListener("keydown", unlock, { once: true });
+
+    const disconnect = connectRealtime({
+      role: user.role,
+      onReconnect: () => {
+        void syncFromApi();
+      },
+      onEvent: (type, payload) => {
+        const notificationId =
+          typeof payload.notificationId === "string"
+            ? payload.notificationId
+            : null;
+        const isLive = payload.isLive === true;
+
+        if (notificationId && isLive && !seenLiveIds.current.has(notificationId)) {
+          seenLiveIds.current.add(notificationId);
+          const next: AppNotification = {
+            id: notificationId,
+            userId: user.id,
+            notificationType:
+              typeof payload.notificationType === "string"
+                ? payload.notificationType
+                : type,
+            title:
+              typeof payload.title === "string" ? payload.title : "Notification",
+            body: typeof payload.body === "string" ? payload.body : null,
+            priority:
+              typeof payload.priority === "string" ? payload.priority : "NORMAL",
+            isRead: false,
+            actionPath:
+              typeof payload.actionPath === "string" ? payload.actionPath : null,
+            entityType:
+              typeof payload.entityType === "string" ? payload.entityType : null,
+            entityId:
+              typeof payload.entityId === "string" ? payload.entityId : null,
+            deliveryStatus: "DELIVERED",
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+          setItems((prev) => {
+            if (prev.some((p) => p.id === notificationId)) return prev;
+            return [next, ...prev].slice(0, 30);
+          });
+          setUnread((c) => c + 1);
+          if (soundEnabled) {
+            void playNotificationSound();
+          }
+        } else if (!notificationId) {
+          // Department queue events without durable row — refresh quietly.
+          void syncFromApi();
+        }
+      },
+    });
+
+    return () => {
+      disconnect();
+      window.removeEventListener("pointerdown", unlock);
+      window.removeEventListener("keydown", unlock);
+    };
+  }, [user, soundEnabled, syncFromApi]);
+
   useEffect(() => {
     if (!menuOpen && !bellOpen && !searchOpen) return;
 
@@ -68,7 +185,8 @@ export function Topbar() {
       const target = event.target as Node;
       if (menuRef.current && !menuRef.current.contains(target)) setMenuOpen(false);
       if (bellRef.current && !bellRef.current.contains(target)) setBellOpen(false);
-      if (searchRef.current && !searchRef.current.contains(target)) setSearchOpen(false);
+      if (searchRef.current && !searchRef.current.contains(target))
+        setSearchOpen(false);
     };
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -101,6 +219,22 @@ export function Topbar() {
     setSearchOpen(false);
     setBellOpen(false);
     router.push(href);
+  };
+
+  const openNotification = async (n: AppNotification) => {
+    setBellOpen(false);
+    if (!n.isRead) {
+      try {
+        await markNotificationRead(n.id);
+        setItems((prev) =>
+          prev.map((x) => (x.id === n.id ? { ...x, isRead: true } : x)),
+        );
+        setUnread((c) => Math.max(0, c - 1));
+      } catch {
+        // ignore
+      }
+    }
+    go(n.actionPath || "/dashboard");
   };
 
   return (
@@ -224,46 +358,54 @@ export function Topbar() {
         <div className="relative" ref={bellRef}>
           <button
             type="button"
-            onClick={() => setBellOpen((v) => !v)}
+            onClick={() => {
+              unlockNotificationAudio();
+              setBellOpen((v) => !v);
+              if (!bellOpen) void syncFromApi();
+            }}
             className="relative rounded-full bg-white p-2.5 text-slate-500 shadow-sm transition hover:bg-brand-50"
             aria-label="Notifications"
           >
             <Bell className="h-4 w-4" />
-            {reports.length > 0 && (
-              <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-rose-500" />
+            {unread > 0 && (
+              <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-semibold text-white">
+                {unread > 99 ? "99+" : unread}
+              </span>
             )}
           </button>
           {bellOpen && (
-            <div className="absolute right-0 mt-2 w-72 rounded-2xl bg-white p-2 shadow-lg ring-1 ring-slate-100">
+            <div className="absolute right-0 mt-2 max-h-96 w-80 overflow-y-auto rounded-2xl bg-white p-2 shadow-lg ring-1 ring-slate-100">
               <p className="px-2 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-                Live alerts
+                Notifications
               </p>
-              {reports.length === 0 ? (
-                <p className="px-3 py-4 text-sm text-slate-400">No operational alerts.</p>
+              {items.length === 0 ? (
+                <p className="px-3 py-4 text-sm text-slate-400">
+                  No notifications yet.
+                </p>
               ) : (
-                reports.map((r) => {
-                  const href =
-                    r.source === "Billing"
-                      ? "/billing"
-                      : r.source === "Front desk"
-                        ? "/front-desk"
-                        : r.source === "Scheduling"
-                          ? "/appointments"
-                          : "/dashboard";
-                  return (
-                    <button
-                      key={r.id}
-                      type="button"
-                      onClick={() => go(href)}
-                      className="block w-full rounded-xl px-3 py-2.5 text-left hover:bg-brand-50"
-                    >
-                      <p className="text-xs font-semibold text-slate-800">{r.title}</p>
-                      <p className="mt-0.5 text-[11px] text-slate-400">
-                        {r.source} · {r.time}
+                items.map((n) => (
+                  <button
+                    key={n.id}
+                    type="button"
+                    onClick={() => void openNotification(n)}
+                    className={`block w-full rounded-xl px-3 py-2.5 text-left hover:bg-brand-50 ${
+                      n.isRead ? "opacity-70" : ""
+                    }`}
+                  >
+                    <p className="text-xs font-semibold text-slate-800">
+                      {n.title}
+                    </p>
+                    {n.body && (
+                      <p className="mt-0.5 line-clamp-2 text-[11px] text-slate-500">
+                        {n.body}
                       </p>
-                    </button>
-                  );
-                })
+                    )}
+                    <p className="mt-0.5 text-[11px] text-slate-400">
+                      {n.notificationType} · {formatWhen(n.createdAt)}
+                      {!n.isRead ? " · unread" : ""}
+                    </p>
+                  </button>
+                ))
               )}
             </div>
           )}

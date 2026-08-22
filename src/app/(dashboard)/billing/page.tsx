@@ -426,14 +426,12 @@ export default function BillingPage() {
       </div>
 
       <Card className="mb-5">
-        <CardHeader
-          title="Consultation fees from triage"
-          subtitle="Record payment against the draft invoice (Invoices / Payments pages work the same). Patient returns to triage when paid."
-        />
+        <CardHeader title="Consultation fee" />
         {awaitingConsultFee.length === 0 ? (
-          <p className="px-5 pb-5 text-sm text-slate-400">
-            No patients waiting for consultation-fee payment.
-          </p>
+          <div className="flex flex-col items-center justify-center px-5 pb-8 pt-2 text-center">
+            <Wallet className="mb-3 h-10 w-10 text-slate-300" />
+            <p className="text-sm font-semibold text-slate-700">No pending payments</p>
+          </div>
         ) : (
           <ul className="space-y-3 px-5 pb-5">
             {awaitingConsultFee.map((v) => {
@@ -446,10 +444,8 @@ export default function BillingPage() {
                       <div>
                         <p className="text-sm font-semibold text-slate-800">{v.patientName}</p>
                         <p className="text-[11px] text-slate-400">
-                          {v.mrn}
-                          {v.billing?.invoiceNumber
-                            ? ` · ${v.billing.invoiceNumber}`
-                            : " · draft invoice"}
+                          {v.billing?.invoiceNumber ?? "Draft"} · KES{" "}
+                          {Number(amount).toLocaleString()} · Awaiting payment
                         </p>
                       </div>
                     </div>
@@ -486,7 +482,7 @@ export default function BillingPage() {
                       className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
                     >
                       <Smartphone className="h-4 w-4" />
-                      Send M-Pesa request
+                      Pay via M-Pesa
                     </button>
                   </div>
                 </li>
@@ -502,9 +498,10 @@ export default function BillingPage() {
           subtitle="Consultation complete — settle by cash or submit insurance claim"
         />
         {billable.length === 0 ? (
-          <p className="px-5 pb-5 text-sm text-slate-400">
-            Nothing waiting. Visits arrive here when the doctor completes a consultation.
-          </p>
+          <div className="flex flex-col items-center justify-center px-5 pb-8 pt-2 text-center">
+            <Wallet className="mb-3 h-10 w-10 text-slate-300" />
+            <p className="text-sm font-semibold text-slate-700">No patients awaiting payment</p>
+          </div>
         ) : (
           <ul className="space-y-3 px-5 pb-5">
             {billable.map((v) => {

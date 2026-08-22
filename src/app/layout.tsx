@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth";
@@ -12,10 +12,21 @@ const jakarta = Plus_Jakarta_Sans({
 export const metadata: Metadata = {
   title: "NyaLife HMS",
   description: "Hospital management system dashboard",
+  applicationName: "NyaLife HMS",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    title: "NyaLife",
+    statusBarStyle: "default",
+  },
   icons: {
     icon: [{ url: "/logo-transparent.png", type: "image/png" }],
     apple: [{ url: "/logo-transparent.png", type: "image/png" }],
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#058b7c",
 };
 
 export default function RootLayout({

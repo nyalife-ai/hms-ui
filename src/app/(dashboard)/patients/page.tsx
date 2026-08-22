@@ -3,6 +3,7 @@
 import {
   Pencil,
   Plus,
+  Upload,
   UserRound,
   Users,
   UserRoundPlus,
@@ -11,6 +12,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import { BulkImportDialog } from "@/components/bulk-import-dialog";
 import { FieldLabel } from "@/components/field-label";
 import { PaginationBar } from "@/components/pagination-bar";
 import { PatientQuickViewModal } from "@/components/patient-quick-view-modal";
@@ -35,12 +37,18 @@ import {
 } from "@/lib/catalog";
 import { toPageMeta } from "@/lib/pagination";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
+import { useAuth } from "@/lib/auth";
 
 const inputClass =
   "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 export default function PatientsPage() {
   const router = useRouter();
+  const { user } = useAuth();
+  const canImport =
+    user?.role === "ADMIN" ||
+    user?.role === "SUPER_ADMIN" ||
+    user?.role === "RECEPTIONIST";
   const [page, setPage] = useState(1);
   const [searchInput, setSearchInput] = useState("");
   const [gender, setGender] = useState("");
@@ -67,6 +75,7 @@ export default function PatientsPage() {
   } = usePatientSummary();
 
   const [open, setOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [edit, setEdit] = useState<CatalogPatient | null>(null);
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState("");
@@ -181,14 +190,26 @@ export default function PatientsPage() {
           loading ? "Loading patients…" : `${total.toLocaleString()} in the registry`
         }
         action={
-          <PrimaryButton
-            onClick={() => {
-              resetCreate();
-              setOpen(true);
-            }}
-          >
-            <Plus className="h-4 w-4" /> Register patient
-          </PrimaryButton>
+          <div className="flex flex-wrap items-center gap-2">
+            {canImport && (
+              <button
+                type="button"
+                onClick={() => setImportOpen(true)}
+                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-brand-50 hover:text-brand-700"
+              >
+                <Upload className="h-4 w-4" />
+                Import patients
+              </button>
+            )}
+            <PrimaryButton
+              onClick={() => {
+                resetCreate();
+                setOpen(true);
+              }}
+            >
+              <Plus className="h-4 w-4" /> Register patient
+            </PrimaryButton>
+          </div>
         }
       />
 
@@ -415,6 +436,18 @@ export default function PatientsPage() {
           patientName={vitalsPatient.name}
           onClose={() => setVitalsPatient(null)}
           onSaved={() => void refresh()}
+        />
+      )}
+
+      {importOpen && (
+        <BulkImportDialog
+          resource="patients"
+          title="Import patients"
+          description="Download the template, fill in patient details, then review before importing."
+          onClose={() => setImportOpen(false)}
+          onImported={async () => {
+            await Promise.all([refresh(), refreshSummary()]);
+          }}
         />
       )}
     </RoleGuard>

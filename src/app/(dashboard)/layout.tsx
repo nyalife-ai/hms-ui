@@ -2,10 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
-import { useAuth } from "@/lib/auth";
-import { ShellProvider } from "@/lib/shell";
+import { PushNotificationsBootstrap } from "@/components/push-notifications-bootstrap";
 import { Sidebar } from "@/components/sidebar";
 import { Topbar } from "@/components/topbar";
+import { useAuth } from "@/lib/auth";
+import { ShellProvider } from "@/lib/shell";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
@@ -31,6 +32,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           <Topbar />
           <main className="p-4 sm:p-6 lg:p-8">{children}</main>
         </div>
+        <PushNotificationsBootstrap />
       </div>
     </ShellProvider>
   );

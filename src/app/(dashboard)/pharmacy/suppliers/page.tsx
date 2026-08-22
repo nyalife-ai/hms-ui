@@ -2,6 +2,7 @@
 
 import { Pencil, Plus, Power, PowerOff, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { BulkImportButton } from "@/components/bulk-import-button";
 import { FieldLabel } from "@/components/field-label";
 import { PaginationBar } from "@/components/pagination-bar";
 import { RoleGuard } from "@/components/role-guard";
@@ -148,9 +149,18 @@ export default function PharmacySuppliersPage() {
         title="Suppliers"
         subtitle={loading ? "Loading…" : `${total} vendors`}
         action={
-          <PrimaryButton onClick={openCreate}>
-            <Plus className="h-4 w-4" /> Add supplier
-          </PrimaryButton>
+          <div className="flex flex-wrap items-center gap-2">
+            <BulkImportButton
+              resource="suppliers"
+              title="Import suppliers"
+              description="First row is the header. Company names must be unique. Invalid files cannot be partially imported."
+              label="Import suppliers"
+              onImported={load}
+            />
+            <PrimaryButton onClick={openCreate}>
+              <Plus className="h-4 w-4" /> Add supplier
+            </PrimaryButton>
+          </div>
         }
       />
       {error && <p className="mb-4 text-sm text-rose-500">{error}</p>}

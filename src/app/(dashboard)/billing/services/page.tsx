@@ -2,6 +2,7 @@
 
 import { CheckCircle2, ListChecks, PauseCircle, Pencil, Plus, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { BulkImportButton } from "@/components/bulk-import-button";
 import { FieldLabel } from "@/components/field-label";
 import { PaginationBar } from "@/components/pagination-bar";
 import { RoleGuard } from "@/components/role-guard";
@@ -236,9 +237,18 @@ export default function BillingServicesPage() {
         subtitle={loading ? "Loading…" : `${total.toLocaleString()} billable services`}
         action={
           canEdit ? (
-            <PrimaryButton onClick={openCreate}>
-              <Plus className="h-4 w-4" /> Add service
-            </PrimaryButton>
+            <div className="flex flex-wrap items-center gap-2">
+              <BulkImportButton
+                resource="services"
+                title="Import services"
+                description="First row is the header. Service codes must be unique. Invalid files cannot be partially imported."
+                label="Import services"
+                onImported={load}
+              />
+              <PrimaryButton onClick={openCreate}>
+                <Plus className="h-4 w-4" /> Add service
+              </PrimaryButton>
+            </div>
           ) : undefined
         }
       />

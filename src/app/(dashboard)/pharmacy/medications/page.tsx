@@ -2,6 +2,7 @@
 
 import { Eye, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { BulkImportButton } from "@/components/bulk-import-button";
 import { FieldLabel } from "@/components/field-label";
 import { PaginationBar } from "@/components/pagination-bar";
 import { RoleGuard } from "@/components/role-guard";
@@ -211,9 +212,18 @@ export default function PharmacyMedicationsPage() {
         title="Medications"
         subtitle={loading ? "Loading…" : `${total} in formulary`}
         action={
-          <PrimaryButton onClick={openCreate}>
-            <Plus className="h-4 w-4" /> Add medication
-          </PrimaryButton>
+          <div className="flex flex-wrap items-center gap-2">
+            <BulkImportButton
+              resource="medications"
+              title="Import medications"
+              description="First row is the header. Category names must already exist. Partial import of invalid CSVs is not allowed."
+              label="Import medications"
+              onImported={load}
+            />
+            <PrimaryButton onClick={openCreate}>
+              <Plus className="h-4 w-4" /> Add medication
+            </PrimaryButton>
+          </div>
         }
       />
       {error && <p className="mb-4 text-sm text-rose-500">{error}</p>}

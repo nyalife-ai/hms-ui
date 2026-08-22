@@ -4,13 +4,20 @@ import {
   Building2,
   MapPinned,
   ShieldCheck,
+  Bell,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { RoleGuard } from "@/components/role-guard";
+import { PushDeviceSettings } from "@/components/push-device-settings";
 import { Card, CardHeader, PageHeader, PrimaryButton } from "@/components/ui";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { buildListQuery, unwrapPage } from "@/lib/pagination";
+import {
+  fetchNotificationPreferences,
+  updateNotificationPreferences,
+} from "@/lib/notifications";
+import { unlockNotificationAudio } from "@/lib/notification-sound";
 
 const inputClass =
   "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
@@ -37,7 +44,7 @@ type SettingsResponse = {
   groups: Array<{ name: string; items: SettingItem[] }>;
 };
 
-type Section = "general" | "contact" | "security";
+type Section = "general" | "contact" | "security" | "notifications";
 
 function itemsToMap(items: SettingItem[]): Record<string, SettingItem> {
   return Object.fromEntries(items.map((i) => [i.key, i]));
@@ -61,6 +68,7 @@ export default function SettingsPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [twoFactor, setTwoFactor] = useState(Boolean(user?.twoFactorEnabled));
   const [didPickDefaultTab, setDidPickDefaultTab] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
   const [consultOptions, setConsultOptions] = useState<
     Array<{ code: string; label: string; price: string }>
   >([]);
@@ -68,6 +76,19 @@ export default function SettingsPage() {
   useEffect(() => {
     setTwoFactor(Boolean(user?.twoFactorEnabled));
   }, [user?.twoFactorEnabled]);
+
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    void fetchNotificationPreferences()
+      .then((p) => {
+        if (!cancelled) setSoundEnabled(p.notificationSoundEnabled);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   useEffect(() => {
     if (!user || didPickDefaultTab) return;
@@ -265,6 +286,30 @@ export default function SettingsPage() {
       setNotice("Password updated. Please sign in again.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not change password");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const toggleSound = async (enabled: boolean) => {
+    unlockNotificationAudio();
+    setBusy(true);
+    setError("");
+    setNotice("");
+    try {
+      const prefs = await updateNotificationPreferences({
+        notificationSoundEnabled: enabled,
+      });
+      setSoundEnabled(prefs.notificationSoundEnabled);
+      setNotice(
+        prefs.notificationSoundEnabled
+          ? "Notification sounds enabled."
+          : "Notification sounds disabled. Alerts still appear silently.",
+      );
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Could not update sound preference",
+      );
     } finally {
       setBusy(false);
     }
@@ -527,6 +572,7 @@ export default function SettingsPage() {
           [
             { id: "general" as const, label: "General", icon: Building2, admin: true },
             { id: "contact" as const, label: "Contact & about", icon: MapPinned, admin: true },
+            { id: "notifications" as const, label: "Notifications", icon: Bell, admin: false },
             { id: "security" as const, label: "Security", icon: ShieldCheck, admin: false },
           ] as const
         )
@@ -597,6 +643,47 @@ export default function SettingsPage() {
               {busy ? "Saving…" : "Save contact settings"}
             </PrimaryButton>
           </div>
+        </Card>
+      )}
+
+      {section === "notifications" && (
+        <Card>
+          <CardHeader
+            title="Notification sounds"
+            subtitle="Controls audio only. Notifications still arrive in the center when sound is off."
+          />
+          <div className="flex flex-wrap items-center justify-between gap-3 px-5 pb-5 sm:max-w-xl">
+            <div>
+              <p className="text-sm font-medium text-slate-800">
+                Enable notification sounds
+              </p>
+              <p className="mt-1 text-xs text-slate-500">
+                {soundEnabled ? "On — play a chime for new live alerts" : "Off — silent alerts only"}
+              </p>
+            </div>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => void toggleSound(!soundEnabled)}
+              className={`rounded-full px-4 py-2 text-sm font-semibold transition disabled:opacity-50 ${
+                soundEnabled
+                  ? "bg-brand-500 text-white hover:bg-brand-600"
+                  : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+              }`}
+            >
+              {soundEnabled ? "On" : "Off"}
+            </button>
+          </div>
+        </Card>
+      )}
+
+      {section === "notifications" && (
+        <Card>
+          <CardHeader
+            title="Desktop / push alerts"
+            subtitle="Register this browser for FCM push. Deny is fine — in-app alerts still work."
+          />
+          <PushDeviceSettings />
         </Card>
       )}
 

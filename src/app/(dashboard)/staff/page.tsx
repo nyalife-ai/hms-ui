@@ -2,6 +2,7 @@
 
 import { Pencil, Plus, ShieldCheck, UserX, X } from "lucide-react";
 import { useMemo, useState } from "react";
+import { BulkImportButton } from "@/components/bulk-import-button";
 import { FieldLabel } from "@/components/field-label";
 import { PaginationBar } from "@/components/pagination-bar";
 import { RoleGuard } from "@/components/role-guard";
@@ -152,9 +153,18 @@ export default function StaffPage() {
           loading ? "Loading…" : `${total.toLocaleString()} employees · role-based access`
         }
         action={
-          <PrimaryButton onClick={() => setOpen(true)}>
-            <Plus className="h-4 w-4" /> Add staff member
-          </PrimaryButton>
+          <div className="flex flex-wrap items-center gap-2">
+            <BulkImportButton
+              resource="doctors"
+              title="Import staff"
+              description="Download the template, fill staff details (no passwords), then review before importing."
+              label="Import staff"
+              onImported={refresh}
+            />
+            <PrimaryButton onClick={() => setOpen(true)}>
+              <Plus className="h-4 w-4" /> Add staff member
+            </PrimaryButton>
+          </div>
         }
       />
       <div className="space-y-6">
