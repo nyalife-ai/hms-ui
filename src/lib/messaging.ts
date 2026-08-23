@@ -201,11 +201,47 @@ export function listMessages(
 export function sendMessage(
   conversationId: string,
   input: SendMessageInput,
-): Promise<Partial<ChatMessage> & { id: string; conversationId: string }> {
+): Promise<ChatMessage> {
   return api(`/messages/conversations/${conversationId}/messages`, {
     method: "POST",
     body: JSON.stringify(input),
   });
+}
+
+/** Prefer WebSocket send; fall back to HTTP on failure / offline. */
+export async function sendMessageLive(
+  conversationId: string,
+  input: SendMessageInput,
+): Promise<ChatMessage> {
+  try {
+    const { sendMessageOverSocket } = await import("./realtime-client");
+    const result = await sendMessageOverSocket({
+      conversationId,
+      ...input,
+    });
+    if (result.ok && result.message?.id) {
+      return result.message as ChatMessage;
+    }
+  } catch {
+    // fall through to HTTP
+  }
+  return sendMessage(conversationId, input);
+}
+
+export function attachmentContentUrl(attachmentId: string): string {
+  return `${API_URL}/messages/attachments/${attachmentId}/content`;
+}
+
+export async function fetchAttachmentBlobUrl(
+  attachmentId: string,
+): Promise<string> {
+  const headers = new Headers();
+  const token = getAccessToken();
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  const res = await fetch(attachmentContentUrl(attachmentId), { headers });
+  if (!res.ok) throw new ApiError(res.status, await parseError(res));
+  const blob = await res.blob();
+  return URL.createObjectURL(blob);
 }
 
 export function createConversation(

@@ -9,24 +9,12 @@ import {
   type KeyboardEvent,
 } from "react";
 import {
-  ALLOWED_REACTIONS,
   clearDraft,
   loadDraft,
   saveDraft,
 } from "@/lib/messaging";
 import { emitTyping } from "@/lib/realtime-client";
-
-const COMPOSER_EMOJIS = [
-  ...ALLOWED_REACTIONS,
-  "😊",
-  "🎉",
-  "👏",
-  "🔥",
-  "✅",
-  "👋",
-  "💪",
-  "🤝",
-];
+import { EmojiPicker } from "./emoji-picker";
 
 export type ComposerReply = {
   id: string;
@@ -203,22 +191,13 @@ export function MessageComposer({
             <Smile className="h-4 w-4" />
           </button>
           {emojiOpen ? (
-            <div className="absolute bottom-full left-0 z-20 mb-2 grid w-56 grid-cols-7 gap-1 rounded-2xl border border-slate-200 bg-white p-2 shadow-lg">
-              {COMPOSER_EMOJIS.map((e) => (
-                <button
-                  key={e}
-                  type="button"
-                  className="rounded-lg p-1 text-lg hover:bg-slate-50"
-                  aria-label={`Insert ${e}`}
-                  onClick={() => {
-                    insertEmoji(e);
-                    setEmojiOpen(false);
-                  }}
-                >
-                  {e}
-                </button>
-              ))}
-            </div>
+            <EmojiPicker
+              onSelect={(e) => {
+                insertEmoji(e);
+                setEmojiOpen(false);
+              }}
+              onClose={() => setEmojiOpen(false)}
+            />
           ) : null}
         </div>
 

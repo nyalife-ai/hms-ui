@@ -167,6 +167,72 @@ export function emitPresenceHeartbeat(): void {
   socket.emit("presence.heartbeat");
 }
 
+export type SocketSendMessageInput = {
+  conversationId: string;
+  body?: string;
+  messageType?: string;
+  parentMessageId?: string;
+  clientMessageId?: string;
+  attachmentRefs?: Array<{
+    key: string;
+    fileName: string;
+    mimeType?: string;
+    fileSize?: number;
+  }>;
+};
+
+export type SocketSendMessageResult = {
+  ok: boolean;
+  message?: import("./messaging").ChatMessage;
+  reason?: string;
+};
+
+/** Send a chat message over Socket.IO with ack. Rejects so callers can fall back to HTTP. */
+export function sendMessageOverSocket(
+  input: SocketSendMessageInput,
+): Promise<SocketSendMessageResult> {
+  const s = socket;
+  if (!s?.connected) {
+    return Promise.reject(new Error("socket_unavailable"));
+  }
+
+  const ACK_MS = 8_000;
+
+  type TimedSocket = Socket & {
+    timeout?: (ms: number) => {
+      emitWithAck: (
+        event: string,
+        payload: unknown,
+      ) => Promise<SocketSendMessageResult>;
+    };
+    emitWithAck?: (
+      event: string,
+      payload: unknown,
+    ) => Promise<SocketSendMessageResult>;
+  };
+
+  const timed = s as TimedSocket;
+  if (typeof timed.timeout === "function") {
+    return timed.timeout(ACK_MS).emitWithAck("message.send", input);
+  }
+  if (typeof timed.emitWithAck === "function") {
+    return Promise.race([
+      timed.emitWithAck("message.send", input),
+      new Promise<never>((_, reject) =>
+        window.setTimeout(() => reject(new Error("ack_timeout")), ACK_MS),
+      ),
+    ]);
+  }
+
+  return new Promise((resolve, reject) => {
+    const timer = window.setTimeout(() => reject(new Error("ack_timeout")), ACK_MS);
+    s.emit("message.send", input, (res: SocketSendMessageResult) => {
+      window.clearTimeout(timer);
+      resolve(res ?? { ok: false, reason: "empty_ack" });
+    });
+  });
+}
+
 export function connectRealtime(opts: {
   role?: string;
   onEvent: Handler;

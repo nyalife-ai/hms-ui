@@ -27,7 +27,7 @@ import {
   markRead,
   muteConversation,
   removeReaction,
-  sendMessage,
+  sendMessageLive,
   uploadAttachment,
   type ChatMessage,
   type ConversationListItem,
@@ -43,11 +43,98 @@ import { useDebouncedValue } from "@/lib/use-debounced-value";
 
 function mergeById(a: ChatMessage[], b: ChatMessage[]): ChatMessage[] {
   const map = new Map<string, ChatMessage>();
-  for (const m of a) map.set(m.id, m);
-  for (const m of b) map.set(m.id, { ...map.get(m.id), ...m });
+  const byClient = new Map<string, string>();
+
+  const put = (m: ChatMessage) => {
+    if (m.clientMessageId) {
+      const existingId = byClient.get(m.clientMessageId);
+      if (existingId && existingId !== m.id) {
+        map.delete(existingId);
+      }
+      byClient.set(m.clientMessageId, m.id);
+    }
+    const prev = map.get(m.id);
+    map.set(m.id, prev ? { ...prev, ...m } : m);
+  };
+
+  for (const m of a) put(m);
+  for (const m of b) put(m);
+
   return [...map.values()].sort(
     (x, y) => new Date(x.createdAt).getTime() - new Date(y.createdAt).getTime(),
   );
+}
+
+function payloadToMessage(
+  payload: Record<string, unknown>,
+): ChatMessage | null {
+  const id =
+    (typeof payload.id === "string" && payload.id) ||
+    (typeof payload.messageId === "string" && payload.messageId) ||
+    null;
+  const conversationId =
+    typeof payload.conversationId === "string" ? payload.conversationId : null;
+  if (!id || !conversationId) return null;
+
+  // Ignore notification-center wake-ups (no chat body) so they cannot
+  // overwrite a rich message.created already merged from MessagingService.
+  const isRich =
+    "body" in payload ||
+    "attachments" in payload ||
+    typeof payload.senderName === "string";
+  if (!isRich) return null;
+
+  const attachments = Array.isArray(payload.attachments)
+    ? payload.attachments
+        .map((raw) => {
+          if (!raw || typeof raw !== "object") return null;
+          const a = raw as Record<string, unknown>;
+          if (typeof a.id !== "string") return null;
+          return {
+            id: a.id,
+            fileName: typeof a.fileName === "string" ? a.fileName : "file",
+            mimeType: typeof a.mimeType === "string" ? a.mimeType : null,
+            fileSize: typeof a.fileSize === "number" ? a.fileSize : null,
+          };
+        })
+        .filter((x): x is NonNullable<typeof x> => Boolean(x))
+    : [];
+
+  return {
+    id,
+    conversationId,
+    senderId: typeof payload.senderId === "string" ? payload.senderId : "",
+    senderName:
+      typeof payload.senderName === "string" ? payload.senderName : "Staff",
+    messageType:
+      typeof payload.messageType === "string" ? payload.messageType : "TEXT",
+    body: typeof payload.body === "string" ? payload.body : null,
+    isDeleted: Boolean(payload.isDeleted),
+    editedAt: typeof payload.editedAt === "string" ? payload.editedAt : null,
+    createdAt:
+      typeof payload.createdAt === "string"
+        ? payload.createdAt
+        : new Date().toISOString(),
+    parentMessageId:
+      typeof payload.parentMessageId === "string"
+        ? payload.parentMessageId
+        : null,
+    parentPreview:
+      typeof payload.parentPreview === "string" ? payload.parentPreview : null,
+    attachments,
+    reactions: Array.isArray(payload.reactions)
+      ? (payload.reactions as ChatMessage["reactions"])
+      : [],
+    deliveryStatus:
+      typeof payload.deliveryStatus === "string"
+        ? payload.deliveryStatus
+        : "SENT",
+    clientMessageId:
+      typeof payload.clientMessageId === "string"
+        ? payload.clientMessageId
+        : null,
+    pending: false,
+  };
 }
 
 function applyReactionLocal(
@@ -133,6 +220,33 @@ export default function MessagesPage() {
     void refreshConversations();
   }, [refreshConversations]);
 
+  const bumpConversationPreview = useCallback(
+    (
+      conversationId: string,
+      preview: string | null,
+      createdAt: string,
+      opts: { fromSelf: boolean; isActive: boolean },
+    ) => {
+      setConversations((prev) => {
+        const existing = prev.find((c) => c.id === conversationId);
+        if (!existing) {
+          void refreshConversations();
+          return prev;
+        }
+        const unreadBump =
+          !opts.fromSelf && !opts.isActive ? existing.unreadCount + 1 : existing.unreadCount;
+        const next: ConversationListItem = {
+          ...existing,
+          preview: preview ?? existing.preview,
+          updatedAt: createdAt,
+          unreadCount: opts.isActive && !opts.fromSelf ? 0 : unreadBump,
+        };
+        return [next, ...prev.filter((c) => c.id !== conversationId)];
+      });
+    },
+    [refreshConversations],
+  );
+
   const loadThread = useCallback(
     async (conversationId: string, opts?: { silent?: boolean }) => {
       if (!opts?.silent) setThreadLoading(true);
@@ -217,7 +331,9 @@ export default function MessagesPage() {
         const conversationId =
           typeof payload.conversationId === "string" ? payload.conversationId : null;
         const messageId =
-          typeof payload.messageId === "string" ? payload.messageId : null;
+          (typeof payload.messageId === "string" && payload.messageId) ||
+          (typeof payload.id === "string" && payload.id) ||
+          null;
         const activeId = selectedIdRef.current;
 
         if (type === "presence.updated") {
@@ -250,27 +366,112 @@ export default function MessagesPage() {
         }
 
         if (type === "message.created") {
-          void refreshConversations();
-          if (conversationId && conversationId === activeId) {
-            void loadThread(conversationId, { silent: true });
-            if (
-              typeof payload.senderId === "string" &&
-              payload.senderId !== user.id &&
-              messageId &&
-              !deliveredRef.current.has(messageId)
-            ) {
-              deliveredRef.current.add(messageId);
-              void markDelivered([messageId]);
+          const mapped = payloadToMessage(payload);
+          const preview =
+            typeof payload.preview === "string"
+              ? payload.preview
+              : mapped?.body?.slice(0, 160) ?? null;
+          const createdAt =
+            mapped?.createdAt ??
+            (typeof payload.createdAt === "string"
+              ? payload.createdAt
+              : new Date().toISOString());
+          const fromSelf =
+            (mapped?.senderId ??
+              (typeof payload.senderId === "string" ? payload.senderId : "")) ===
+            user.id;
+
+          if (conversationId) {
+            bumpConversationPreview(conversationId, preview, createdAt, {
+              fromSelf,
+              isActive: conversationId === activeId,
+            });
+          }
+
+          if (mapped && conversationId === activeId) {
+            setMessages((prev) => {
+              const withoutOptimistic = mapped.clientMessageId
+                ? prev.filter(
+                    (m) =>
+                      m.clientMessageId !== mapped.clientMessageId &&
+                      m.id !== mapped.clientMessageId,
+                  )
+                : prev;
+              return mergeById(withoutOptimistic, [mapped]);
+            });
+
+            if (!fromSelf && mapped.id && !deliveredRef.current.has(mapped.id)) {
+              deliveredRef.current.add(mapped.id);
+              void markDelivered([mapped.id]);
+            }
+
+            if (!fromSelf && mapped.id) {
+              void markRead(conversationId!, mapped.id).then(() => {
+                setConversations((prev) =>
+                  prev.map((c) =>
+                    c.id === conversationId ? { ...c, unreadCount: 0 } : c,
+                  ),
+                );
+                setActive((a) =>
+                  a?.id === conversationId ? { ...a, unreadCount: 0 } : a,
+                );
+              });
             }
           }
           return;
         }
 
-        if (type === "message.updated" || type === "message.deleted") {
-          if (conversationId && conversationId === activeId) {
-            void loadThread(conversationId, { silent: true });
+        if (type === "message.updated") {
+          if (!conversationId || conversationId !== activeId || !messageId) return;
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === messageId
+                ? {
+                    ...m,
+                    body:
+                      typeof payload.body === "string" ? payload.body : m.body,
+                    editedAt:
+                      typeof payload.editedAt === "string"
+                        ? payload.editedAt
+                        : m.editedAt,
+                  }
+                : m,
+            ),
+          );
+          if (typeof payload.body === "string") {
+            bumpConversationPreview(
+              conversationId,
+              payload.body.slice(0, 160),
+              new Date().toISOString(),
+              { fromSelf: true, isActive: true },
+            );
           }
-          void refreshConversations();
+          return;
+        }
+
+        if (type === "message.deleted") {
+          if (!conversationId || conversationId !== activeId || !messageId) return;
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === messageId ? { ...m, isDeleted: true, body: null } : m,
+            ),
+          );
+          return;
+        }
+
+        if (type === "message.delivered") {
+          const ids = Array.isArray(payload.messageIds)
+            ? payload.messageIds.filter((x): x is string => typeof x === "string")
+            : [];
+          if (!ids.length) return;
+          if (conversationId && conversationId !== activeId) return;
+          setMessages((prev) =>
+            prev.map((m) => {
+              if (m.senderId !== user.id || !ids.includes(m.id)) return m;
+              if (m.deliveryStatus === "READ") return m;
+              return { ...m, deliveryStatus: "DELIVERED" };
+            }),
+          );
           return;
         }
 
@@ -279,10 +480,7 @@ export default function MessagesPage() {
           const reactionType =
             typeof payload.reactionType === "string" ? payload.reactionType : null;
           const uid = typeof payload.userId === "string" ? payload.userId : null;
-          if (!reactionType || !uid) {
-            void loadThread(conversationId, { silent: true });
-            return;
-          }
+          if (!reactionType || !uid) return;
           setMessages((prev) =>
             applyReactionLocal(prev, messageId, reactionType, uid, type === "message.reaction_added"),
           );
@@ -318,7 +516,7 @@ export default function MessagesPage() {
       disconnect();
       window.clearInterval(heartbeat);
     };
-  }, [user, refreshConversations, loadThread]);
+  }, [user, refreshConversations, loadThread, bumpConversationPreview]);
 
   const loadOlder = async () => {
     if (!selectedId || !nextCursor || loadingOlder) return;
@@ -385,31 +583,41 @@ export default function MessagesPage() {
       pending: true,
     };
     setMessages((prev) => [...prev, optimistic]);
+    bumpConversationPreview(
+      selectedId,
+      input.body?.slice(0, 160) || (attachmentRefs?.length ? "Attachment" : null),
+      optimistic.createdAt,
+      { fromSelf: true, isActive: true },
+    );
 
     try {
-      const saved = await sendMessage(selectedId, {
+      const saved = await sendMessageLive(selectedId, {
         body: input.body || undefined,
         parentMessageId: input.parentMessageId,
         clientMessageId,
         attachmentRefs,
         messageType: attachmentRefs?.length ? "FILE" : "TEXT",
       });
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.clientMessageId === clientMessageId || m.id === clientMessageId
-            ? {
-                ...optimistic,
-                ...saved,
-                id: saved.id,
-                pending: false,
-                deliveryStatus: "SENT",
-                body: saved.body ?? optimistic.body,
-              }
-            : m,
-        ),
-      );
+      setMessages((prev) => {
+        const withoutOptimistic = prev.filter(
+          (m) =>
+            m.clientMessageId !== clientMessageId && m.id !== clientMessageId,
+        );
+        const reconciled: ChatMessage = {
+          ...optimistic,
+          ...saved,
+          id: saved.id,
+          pending: false,
+          deliveryStatus: saved.deliveryStatus ?? "SENT",
+          body: saved.body ?? optimistic.body,
+          attachments: saved.attachments?.length
+            ? saved.attachments
+            : optimistic.attachments,
+          clientMessageId,
+        };
+        return mergeById(withoutOptimistic, [reconciled]);
+      });
       setReplyTo(null);
-      void refreshConversations();
     } catch (err) {
       setMessages((prev) => prev.filter((m) => m.clientMessageId !== clientMessageId));
       throw err;
