@@ -1,9 +1,15 @@
 "use client";
 
-import { ArrowLeft, MoreVertical } from "lucide-react";
+import {
+  ArrowLeft,
+  ClipboardList,
+  FlaskConical,
+  Pill,
+} from "lucide-react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { EmptyState } from "@/components/empty-state";
 import { RoleGuard } from "@/components/role-guard";
 import {
   Avatar,
@@ -48,6 +54,7 @@ function formatWhen(iso: string) {
 
 export default function AppointmentDetailPage() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
   const id = params?.id;
   const [detail, setDetail] = useState<AppointmentDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -273,9 +280,12 @@ export default function AppointmentDetailPage() {
             <CardHeader title="Clinical notes" />
             <div className="space-y-3 px-5 pb-5">
               {detail.clinicalNotes.length === 0 ? (
-                <p className="text-sm text-slate-400">
-                  No clinical notes recorded for this visit yet.
-                </p>
+                <EmptyState
+                  icon={ClipboardList}
+                  title="No clinical notes recorded"
+                  description="Doctor notes will appear here once the consultation narrative is saved."
+                  className="min-h-28"
+                />
               ) : (
                 detail.clinicalNotes.map((note) => (
                   <div
@@ -312,16 +322,33 @@ export default function AppointmentDetailPage() {
                   <td className="px-4 py-2.5">
                     <Badge tone={STATUS_TONES[c.status] ?? "slate"}>{c.status}</Badge>
                   </td>
-                  <td className="px-4 py-2.5 text-slate-300">
-                    <MoreVertical className="h-4 w-4" />
+                  <td className="px-4 py-2.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const target =
+                          c.href ||
+                          (c.visitId
+                            ? consultationJourneyHref(c.visitId)
+                            : detail.visitId
+                              ? consultationJourneyHref(detail.visitId)
+                              : null);
+                        if (target) router.push(target);
+                      }}
+                      className="text-xs font-semibold text-brand-700 hover:underline"
+                    >
+                      Open
+                    </button>
                   </td>
                 </tr>
               ))}
             </Table>
             {detail.consultations.length === 0 && (
-              <p className="px-5 pb-5 text-sm text-slate-400">
-                No consultations linked to this visit yet.
-              </p>
+              <EmptyState
+                icon={ClipboardList}
+                title="No consultations linked"
+                description="Consultations appear after the doctor saves clinical notes or completes the visit."
+              />
             )}
           </Card>
 
@@ -340,16 +367,40 @@ export default function AppointmentDetailPage() {
                       {lab.status}
                     </Badge>
                   </td>
-                  <td className="px-4 py-2.5 text-slate-300">
-                    <MoreVertical className="h-4 w-4" />
+                  <td className="px-4 py-2.5">
+                    {lab.id.startsWith("visit-") ? (
+                      <Link
+                        href={
+                          detail.visitId
+                            ? consultationJourneyHref(detail.visitId, "laboratory")
+                            : relatedLabsHref({
+                                visitId: detail.visitId ?? undefined,
+                                appointmentId: detail.id,
+                                patientName: detail.patient.name,
+                              })
+                        }
+                        className="text-xs font-semibold text-brand-700 hover:underline"
+                      >
+                        Open
+                      </Link>
+                    ) : (
+                      <Link
+                        href={`/laboratory/requests/${lab.id}`}
+                        className="text-xs font-semibold text-brand-700 hover:underline"
+                      >
+                        Open
+                      </Link>
+                    )}
                   </td>
                 </tr>
               ))}
             </Table>
             {detail.labRequests.length === 0 && (
-              <p className="px-5 pb-5 text-sm text-slate-400">
-                No lab tests requested for this visit.
-              </p>
+              <EmptyState
+                icon={FlaskConical}
+                title="No lab tests requested"
+                description="Laboratory requests ordered during this visit will appear here."
+              />
             )}
           </Card>
 
@@ -370,16 +421,27 @@ export default function AppointmentDetailPage() {
                       {rx.status}
                     </Badge>
                   </td>
-                  <td className="px-4 py-2.5 text-slate-300">
-                    <MoreVertical className="h-4 w-4" />
+                  <td className="px-4 py-2.5">
+                    <Link
+                      href={relatedPrescriptionsHref({
+                        visitId: detail.visitId ?? undefined,
+                        appointmentId: detail.id,
+                        patientName: detail.patient.name,
+                      })}
+                      className="text-xs font-semibold text-brand-700 hover:underline"
+                    >
+                      Open
+                    </Link>
                   </td>
                 </tr>
               ))}
             </Table>
             {detail.prescriptions.length === 0 && (
-              <p className="px-5 pb-5 text-sm text-slate-400">
-                No prescriptions issued for this visit.
-              </p>
+              <EmptyState
+                icon={Pill}
+                title="No prescriptions issued"
+                description="Pharmacy orders from this visit will appear here."
+              />
             )}
           </Card>
         </div>

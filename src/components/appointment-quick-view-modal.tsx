@@ -8,10 +8,11 @@ import {
   Info,
   Pill,
   Stethoscope,
-  X,
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { EmptyState } from "@/components/empty-state";
+import { Modal } from "@/components/modal";
 import { Badge, type BadgeTone } from "@/components/ui";
 import { api } from "@/lib/api";
 import type { AppointmentDetail } from "@/lib/catalog";
@@ -29,7 +30,7 @@ const STATUS_TONES: Record<string, BadgeTone> = {
   Cancelled: "red",
 };
 
-type Tab = "details" | "notes" | "labs" | "prescriptions";
+type Tab = "info" | "details" | "notes" | "labs" | "prescriptions";
 
 export function AppointmentQuickViewModal({
   appointmentId,
@@ -38,7 +39,7 @@ export function AppointmentQuickViewModal({
   appointmentId: string;
   onClose: () => void;
 }) {
-  const [tab, setTab] = useState<Tab>("details");
+  const [tab, setTab] = useState<Tab>("info");
   const [detail, setDetail] = useState<AppointmentDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -55,6 +56,7 @@ export function AppointmentQuickViewModal({
         if (!cancelled) setDetail(data);
       } catch (err) {
         if (!cancelled) {
+          setDetail(null);
           setError(err instanceof Error ? err.message : "Unable to load visit");
         }
       } finally {
@@ -71,21 +73,27 @@ export function AppointmentQuickViewModal({
     detail?.status === "Scheduled" ? "Pending" : detail?.status || "—";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4 backdrop-blur-[1px]">
-      <div className="flex max-h-[90vh] w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-xl">
-        <aside className="flex w-[220px] shrink-0 flex-col border-r border-slate-100 bg-[#faf7f9]">
+    <Modal open onClose={onClose} size="xl" hideHeader>
+      <div className="flex max-h-[80vh] overflow-hidden">
+        <aside className="flex w-[200px] shrink-0 flex-col border-r border-slate-100 bg-[#faf7f9] sm:w-[220px]">
           <div className="px-4 pb-3 pt-5">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-brand-600">
-              Appointment info
+              Appointment
             </p>
             <h2 className="mt-1 text-base font-bold text-slate-900">
               Visit: {firstName}
             </h2>
+            {detail?.appointmentNumber ? (
+              <p className="mt-0.5 text-xs text-slate-400">
+                {detail.appointmentNumber}
+              </p>
+            ) : null}
           </div>
           <nav className="flex flex-1 flex-col gap-1 px-2">
             {(
               [
-                { id: "details", label: "Visit Details", icon: Info },
+                { id: "info", label: "Appointment Info", icon: Info },
+                { id: "details", label: "Visit Details", icon: Clock3 },
                 { id: "notes", label: "Clinical Notes", icon: Stethoscope },
                 { id: "labs", label: "Labs", icon: FlaskConical },
                 { id: "prescriptions", label: "Prescriptions", icon: Pill },
@@ -122,66 +130,53 @@ export function AppointmentQuickViewModal({
         </aside>
 
         <div className="relative min-w-0 flex-1 overflow-y-auto p-5 sm:p-6">
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            className="absolute right-4 top-4 text-slate-400 hover:text-slate-700"
-          >
-            <X className="h-4 w-4" />
-          </button>
+          {loading && (
+            <div className="space-y-3 py-6">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="h-14 animate-pulse rounded-xl bg-slate-100"
+                />
+              ))}
+            </div>
+          )}
+          {error && !loading && (
+            <div className="rounded-xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-rose-600">
+              <p className="font-medium">Unable to load appointment</p>
+              <p className="mt-1 text-xs">{error}</p>
+            </div>
+          )}
 
-          {loading && <p className="text-sm text-slate-400">Loading visit…</p>}
-          {error && <p className="text-sm text-rose-500">{error}</p>}
-
-          {detail && !loading && tab === "details" && (
-            <div className="space-y-5 pr-6">
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+          {detail && !loading && tab === "info" && (
+            <div className="space-y-5">
+              <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2 text-sm">
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-                    Appointment info
-                  </p>
-                  <dl className="mt-3 space-y-3 text-sm">
-                    <div>
-                      <dt className="text-xs text-slate-400">Date</dt>
-                      <dd className="font-semibold text-slate-900">{detail.date}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-xs text-slate-400">Time</dt>
-                      <dd className="font-semibold text-slate-900">{detail.time}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-xs text-slate-400">Status</dt>
-                      <dd className="mt-1">
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
-                          <Clock3 className="h-3 w-3" />
-                          {statusLabel}
-                        </span>
-                      </dd>
-                    </div>
-                  </dl>
+                  <dt className="text-xs text-slate-400">Date / time</dt>
+                  <dd className="font-semibold">
+                    {detail.date} · {detail.time}
+                  </dd>
                 </div>
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-                    Medical team
-                  </p>
-                  <dl className="mt-3 space-y-3 text-sm">
-                    <div>
-                      <dt className="text-xs text-slate-400">Doctor</dt>
-                      <dd className="font-semibold text-slate-900">
-                        {detail.provider.name}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-xs text-slate-400">Department</dt>
-                      <dd className="font-semibold text-slate-900">
-                        {detail.provider.department}
-                      </dd>
-                    </div>
-                  </dl>
+                  <dt className="text-xs text-slate-400">Status</dt>
+                  <dd className="mt-1">
+                    <Badge tone={STATUS_TONES[detail.status] ?? "slate"}>
+                      {statusLabel}
+                    </Badge>
+                  </dd>
                 </div>
-              </div>
-
+                <div>
+                  <dt className="text-xs text-slate-400">Patient</dt>
+                  <dd className="font-semibold">{detail.patient.name}</dd>
+                  <dd className="text-xs text-slate-400">{detail.patient.mrn}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-slate-400">Doctor</dt>
+                  <dd className="font-semibold">{detail.provider.name}</dd>
+                  <dd className="text-xs text-slate-400">
+                    {detail.provider.department}
+                  </dd>
+                </div>
+              </dl>
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
                   Reason for visit
@@ -190,49 +185,114 @@ export function AppointmentQuickViewModal({
                   {detail.reason || "No reason recorded for this visit."}
                 </div>
               </div>
-
               {(detail.additionalNotes || detail.notes) && (
                 <div>
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-                    Additional notes
+                    Reception notes
                   </p>
-                  <div className="mt-2 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-700 whitespace-pre-wrap">
+                  <div className="mt-2 rounded-xl bg-slate-50 px-4 py-3 text-sm whitespace-pre-wrap text-slate-700">
                     {detail.additionalNotes || detail.notes}
                   </div>
                 </div>
               )}
-
+              <div className="flex flex-wrap gap-4 text-sm">
+                <p>
+                  Consultations{" "}
+                  <span className="font-semibold">
+                    {detail.counts.consultations}
+                  </span>
+                </p>
+                <p>
+                  Labs{" "}
+                  <span className="font-semibold">
+                    {detail.counts.labRequests}
+                  </span>
+                </p>
+                <p>
+                  Rx{" "}
+                  <span className="font-semibold">
+                    {detail.counts.prescriptions}
+                  </span>
+                </p>
+              </div>
               <Link
-                href={
-                  detail.visitId
-                    ? consultationJourneyHref(detail.visitId)
-                    : `/appointments/${detail.id}`
-                }
+                href={`/appointments/${detail.id}`}
                 className="inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-800 hover:border-brand-300 hover:text-brand-700"
               >
-                View Full Records
+                View full appointment record
               </Link>
             </div>
           )}
 
+          {detail && !loading && tab === "details" && (
+            <div className="space-y-4">
+              <dl className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <dt className="text-xs text-slate-400">Visit stage</dt>
+                  <dd className="font-semibold">
+                    {detail.visitStage?.replace(/_/g, " ") || "—"}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-slate-400">Type</dt>
+                  <dd className="font-semibold">{detail.type}</dd>
+                </div>
+              </dl>
+              {detail.visitId ? (
+                <Link
+                  href={consultationJourneyHref(detail.visitId)}
+                  className="inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-800 hover:border-brand-300 hover:text-brand-700"
+                >
+                  Open consultation journey
+                </Link>
+              ) : (
+                <p className="text-sm text-slate-500">
+                  No outpatient visit linked yet (patient may not be checked in).
+                </p>
+              )}
+              {detail.consultations.length > 0 && (
+                <ul className="space-y-2">
+                  {detail.consultations.map((c) => (
+                    <li key={c.id}>
+                      <Link
+                        href={
+                          c.href ||
+                          (c.visitId
+                            ? consultationJourneyHref(c.visitId)
+                            : detail.visitId
+                              ? consultationJourneyHref(detail.visitId)
+                              : `/appointments/${detail.id}`)
+                        }
+                        onClick={onClose}
+                        className="block rounded-xl border border-slate-100 px-3 py-2 text-sm hover:border-brand-200"
+                      >
+                        <span className="font-semibold">{c.diagnosis}</span>
+                        <span className="text-xs text-slate-400">
+                          {" "}
+                          · {c.status}
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+
           {detail && !loading && tab === "notes" && (
-            <div className="pr-6">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-                Consultation data
-              </p>
+            <div>
               {detail.clinicalNotes.length === 0 &&
               !detail.notes &&
               !detail.additionalNotes ? (
-                <div className="mt-4 flex min-h-48 flex-col items-center justify-center rounded-xl border border-slate-200 bg-slate-50 px-6 text-center">
-                  <FilePlus2 className="mb-3 h-10 w-10 text-slate-300" />
-                  <p className="text-sm font-semibold text-slate-700">
-                    No clinical notes recorded yet.
-                  </p>
-                </div>
+                <EmptyState
+                  icon={FilePlus2}
+                  title="No clinical notes recorded"
+                  description="Notes appear after triage or the doctor saves the consultation narrative."
+                />
               ) : (
-                <div className="mt-4 space-y-3">
+                <div className="space-y-3">
                   {detail.additionalNotes && (
-                    <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm text-slate-700 whitespace-pre-wrap">
+                    <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm whitespace-pre-wrap">
                       <p className="mb-1 text-[10px] font-semibold uppercase text-slate-400">
                         Reception notes
                       </p>
@@ -241,9 +301,9 @@ export function AppointmentQuickViewModal({
                   )}
                   {detail.notes &&
                     detail.notes !== detail.additionalNotes && (
-                      <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm text-slate-700 whitespace-pre-wrap">
+                      <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm whitespace-pre-wrap">
                         <p className="mb-1 text-[10px] font-semibold uppercase text-slate-400">
-                          Triage & internal notes
+                          Visit notes
                         </p>
                         {detail.notes}
                       </div>
@@ -251,7 +311,7 @@ export function AppointmentQuickViewModal({
                   {detail.clinicalNotes.map((note) => (
                     <div
                       key={note.id}
-                      className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm text-slate-700 whitespace-pre-wrap"
+                      className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm whitespace-pre-wrap"
                     >
                       <div className="mb-2 flex items-center justify-between gap-2">
                         <p className="text-[10px] font-semibold uppercase text-slate-400">
@@ -270,19 +330,15 @@ export function AppointmentQuickViewModal({
           )}
 
           {detail && !loading && tab === "labs" && (
-            <div className="pr-6">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-                Laboratory
-              </p>
+            <div>
               {detail.labRequests.length === 0 ? (
-                <div className="mt-4 flex min-h-48 flex-col items-center justify-center rounded-xl border border-slate-200 bg-slate-50 px-6 text-center">
-                  <FlaskConical className="mb-3 h-10 w-10 text-slate-300" />
-                  <p className="text-sm font-semibold text-slate-700">
-                    No lab requests for this visit.
-                  </p>
-                </div>
+                <EmptyState
+                  icon={FlaskConical}
+                  title="No lab requests for this visit"
+                  description="Orders placed during the consultation will appear here."
+                />
               ) : (
-                <ul className="mt-4 divide-y divide-slate-100 rounded-xl border border-slate-100">
+                <ul className="divide-y divide-slate-100 rounded-xl border border-slate-100">
                   {detail.labRequests.map((lab) => (
                     <li
                       key={lab.id}
@@ -290,9 +346,13 @@ export function AppointmentQuickViewModal({
                     >
                       <div>
                         <p className="font-semibold text-slate-800">{lab.test}</p>
-                        <p className="text-xs text-slate-400">{lab.requestNumber}</p>
+                        <p className="text-xs text-slate-400">
+                          {lab.requestNumber}
+                        </p>
                       </div>
-                      <Badge tone={STATUS_TONES[lab.status] ?? "amber"}>{lab.status}</Badge>
+                      <Badge tone={STATUS_TONES[lab.status] ?? "amber"}>
+                        {lab.status}
+                      </Badge>
                     </li>
                   ))}
                 </ul>
@@ -303,6 +363,7 @@ export function AppointmentQuickViewModal({
                   appointmentId: detail.id,
                   patientName: detail.patient.name,
                 })}
+                onClick={onClose}
                 className="mt-4 inline-flex text-sm font-semibold text-brand-700 hover:underline"
               >
                 See related labs →
@@ -311,30 +372,25 @@ export function AppointmentQuickViewModal({
           )}
 
           {detail && !loading && tab === "prescriptions" && (
-            <div className="pr-6">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-                Medical orders
-              </p>
+            <div>
               {detail.prescriptions.length === 0 ? (
-                <div className="mt-4 flex min-h-48 flex-col items-center justify-center rounded-xl border border-slate-200 bg-slate-50 px-6 text-center">
-                  <Pill className="mb-3 h-10 w-10 text-slate-300" />
-                  <p className="text-sm font-semibold text-slate-700">
-                    No prescriptions found for this visit.
-                  </p>
-                </div>
+                <EmptyState
+                  icon={Pill}
+                  title="No prescriptions for this visit"
+                  description="Pharmacy orders from the consultation will appear here."
+                />
               ) : (
-                <ul className="mt-4 divide-y divide-slate-100 rounded-xl border border-slate-100">
+                <ul className="divide-y divide-slate-100 rounded-xl border border-slate-100">
                   {detail.prescriptions.map((rx) => (
                     <li
                       key={rx.id}
                       className="flex items-start justify-between gap-3 px-4 py-3 text-sm"
                     >
                       <div>
-                        <p className="font-semibold text-slate-800">{rx.medication}</p>
-                        <p className="text-xs text-slate-400">{rx.regimen}</p>
-                        <p className="text-[11px] text-slate-400">
-                          {rx.prescriptionNumber}
+                        <p className="font-semibold text-slate-800">
+                          {rx.medication}
                         </p>
+                        <p className="text-xs text-slate-400">{rx.regimen}</p>
                       </div>
                       <Badge tone="amber">{rx.status}</Badge>
                     </li>
@@ -347,6 +403,7 @@ export function AppointmentQuickViewModal({
                   appointmentId: detail.id,
                   patientName: detail.patient.name,
                 })}
+                onClick={onClose}
                 className="mt-4 inline-flex text-sm font-semibold text-brand-700 hover:underline"
               >
                 See prescriptions →
@@ -355,6 +412,6 @@ export function AppointmentQuickViewModal({
           )}
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }

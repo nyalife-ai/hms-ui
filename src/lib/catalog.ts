@@ -115,7 +115,14 @@ export type PatientDetail = {
     diagnoses?: Array<{ code: string; description: string; isPrimary?: boolean }>;
     status: string;
     notes?: string;
+    treatmentPlan?: string;
+    followUpInstructions?: string;
+    historyPresentIllness?: string;
+    physicalExamination?: string;
     doctorId?: string;
+    appointmentId?: string | null;
+    visitId?: string | null;
+    href?: string;
   }>;
   vitalsHistory: Array<{
     id: string;
@@ -345,6 +352,7 @@ export type AppointmentSummary = {
 export type AppointmentDetail = {
   id: string;
   visitId?: string | null;
+  visitStage?: string | null;
   appointmentNumber: string;
   date: string;
   time: string;
@@ -377,12 +385,15 @@ export type AppointmentDetail = {
     consultations: number;
     labRequests: number;
     prescriptions: number;
+    clinicalNotes?: number;
   };
   consultations: Array<{
     id: string;
     date: string;
     diagnosis: string;
     status: string;
+    visitId?: string | null;
+    href?: string;
   }>;
   labRequests: Array<{
     id: string;

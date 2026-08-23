@@ -12,7 +12,7 @@ import {
   UserRound,
 } from "lucide-react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { EmptyState } from "@/components/empty-state";
 import { Modal } from "@/components/modal";
@@ -37,6 +37,7 @@ import {
 } from "@/components/ui";
 import { api } from "@/lib/api";
 import type { PatientDetail } from "@/lib/catalog";
+import { consultationJourneyHref } from "@/lib/clinical-links";
 
 function formatDateTime(iso: string) {
   try {
@@ -113,6 +114,7 @@ function detailToForm(d: PatientDetail): PatientFormValues {
 
 export default function PatientProfilePage() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
   const id = params?.id;
   const [detail, setDetail] = useState<PatientDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -148,6 +150,23 @@ export default function PatientProfilePage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- async data load
     void load();
   }, [load]);
+
+  const openConsultation = (
+    c: PatientDetail["consultations"][number] | { id: string; href?: string; visitId?: string | null },
+  ) => {
+    const visitId =
+      "visitId" in c ? c.visitId : undefined;
+    const href = "href" in c ? c.href : undefined;
+    if (href?.startsWith("/consultations/")) {
+      router.push(href);
+      return;
+    }
+    if (visitId) {
+      router.push(consultationJourneyHref(visitId));
+      return;
+    }
+    setConsultationId(c.id);
+  };
 
   const activeConsultation = useMemo(() => {
     if (!detail || !consultationId) return null;
@@ -534,7 +553,7 @@ export default function PatientProfilePage() {
                       <button
                         type="button"
                         className="hover:text-brand-700"
-                        onClick={() => setConsultationId(item.id)}
+                        onClick={() => openConsultation(item)}
                       >
                         {item.label}
                       </button>
@@ -564,7 +583,7 @@ export default function PatientProfilePage() {
                     {item.kind === "consultation" ? (
                       <button
                         type="button"
-                        onClick={() => setConsultationId(item.id)}
+                        onClick={() => openConsultation(item)}
                         className="text-xs font-semibold text-brand-700 hover:underline"
                       >
                         Open
@@ -621,7 +640,7 @@ export default function PatientProfilePage() {
                   <td className="px-4 py-2.5">
                     <button
                       type="button"
-                      onClick={() => setConsultationId(c.id)}
+                      onClick={() => openConsultation(c)}
                       className="text-xs font-semibold text-brand-700 hover:underline"
                     >
                       Open
@@ -886,6 +905,36 @@ export default function PatientProfilePage() {
               </dt>
               <dd className="font-medium">{activeConsultation.diagnosis}</dd>
             </div>
+            {activeConsultation.historyPresentIllness ? (
+              <div>
+                <dt className="text-[10px] uppercase tracking-wide text-slate-400">
+                  History of present illness
+                </dt>
+                <dd className="whitespace-pre-wrap text-slate-700">
+                  {activeConsultation.historyPresentIllness}
+                </dd>
+              </div>
+            ) : null}
+            {activeConsultation.physicalExamination ? (
+              <div>
+                <dt className="text-[10px] uppercase tracking-wide text-slate-400">
+                  Physical examination
+                </dt>
+                <dd className="whitespace-pre-wrap text-slate-700">
+                  {activeConsultation.physicalExamination}
+                </dd>
+              </div>
+            ) : null}
+            {activeConsultation.treatmentPlan ? (
+              <div>
+                <dt className="text-[10px] uppercase tracking-wide text-slate-400">
+                  Treatment plan
+                </dt>
+                <dd className="whitespace-pre-wrap text-slate-700">
+                  {activeConsultation.treatmentPlan}
+                </dd>
+              </div>
+            ) : null}
             {(activeConsultation.diagnoses?.length ?? 0) > 0 && (
               <div>
                 <dt className="text-[10px] uppercase tracking-wide text-slate-400">
@@ -906,12 +955,30 @@ export default function PatientProfilePage() {
             {activeConsultation.notes ? (
               <div>
                 <dt className="text-[10px] uppercase tracking-wide text-slate-400">
-                  Notes
+                  Doctor notes
                 </dt>
                 <dd className="whitespace-pre-wrap text-slate-700">
                   {activeConsultation.notes}
                 </dd>
               </div>
+            ) : null}
+            {activeConsultation.followUpInstructions ? (
+              <div>
+                <dt className="text-[10px] uppercase tracking-wide text-slate-400">
+                  Follow-up instructions
+                </dt>
+                <dd className="whitespace-pre-wrap text-slate-700">
+                  {activeConsultation.followUpInstructions}
+                </dd>
+              </div>
+            ) : null}
+            {activeConsultation.visitId ? (
+              <Link
+                href={consultationJourneyHref(activeConsultation.visitId)}
+                className="inline-flex text-sm font-semibold text-brand-700 hover:underline"
+              >
+                Open full consultation journey →
+              </Link>
             ) : null}
           </dl>
         )}
