@@ -63,6 +63,13 @@ export type MessageAttachment = {
   fileName: string;
   mimeType: string | null;
   fileSize: number | null;
+  /** Optimistic local preview (object URL); revoke on reconcile. */
+  previewUrl?: string;
+};
+
+export type MessageMention = {
+  userId: string;
+  displayName: string;
 };
 
 export type MessageReaction = {
@@ -83,6 +90,7 @@ export type ChatMessage = {
   createdAt: string;
   parentMessageId: string | null;
   parentPreview: string | null;
+  mentions?: MessageMention[];
   attachments: MessageAttachment[];
   reactions: MessageReaction[];
   deliveryStatus: DeliveryStatus | string | null;
@@ -125,6 +133,7 @@ export type SendMessageInput = {
   messageType?: MessageType | string;
   parentMessageId?: string;
   clientMessageId?: string;
+  mentionedUserIds?: string[];
   attachmentRefs?: Array<{
     key: string;
     fileName: string;

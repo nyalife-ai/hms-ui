@@ -168,7 +168,29 @@ export function Topbar() {
           });
           setUnread((c) => c + 1);
           if (soundEnabled) {
-            void playNotificationSound();
+            const actionPath =
+              typeof payload.actionPath === "string" ? payload.actionPath : null;
+            const onMessages =
+              typeof window !== "undefined" &&
+              window.location.pathname.includes("/messages");
+            if (onMessages && actionPath) {
+              try {
+                const url = new URL(actionPath, window.location.origin);
+                const notifConv = url.searchParams.get("c");
+                const currentConv = new URLSearchParams(
+                  window.location.search,
+                ).get("c");
+                if (notifConv && currentConv && notifConv === currentConv) {
+                  // Already viewing this conversation — skip topbar chime.
+                } else {
+                  void playNotificationSound();
+                }
+              } catch {
+                void playNotificationSound();
+              }
+            } else {
+              void playNotificationSound();
+            }
           }
         } else if (!notificationId) {
           // Department queue events without durable row — refresh quietly.

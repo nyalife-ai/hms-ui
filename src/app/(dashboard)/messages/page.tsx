@@ -31,7 +31,13 @@ import {
   uploadAttachment,
   type ChatMessage,
   type ConversationListItem,
+  type MessageType,
 } from "@/lib/messaging";
+import {
+  playMessageReceivedSound,
+  playMessageSentSound,
+} from "@/lib/notification-sound";
+import { fetchNotificationPreferences } from "@/lib/notifications";
 import {
   connectRealtime,
   emitPresenceHeartbeat,
@@ -40,6 +46,15 @@ import {
   type RealtimeConnectionStatus,
 } from "@/lib/realtime-client";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
+
+function inferMessageTypeFromMime(mime?: string | null): MessageType {
+  const m = (mime ?? "").toLowerCase();
+  if (m.startsWith("image/")) return "IMAGE";
+  if (m.startsWith("video/")) return "VIDEO";
+  if (m.startsWith("audio/")) return "AUDIO";
+  if (mime) return "FILE";
+  return "TEXT";
+}
 
 function mergeById(a: ChatMessage[], b: ChatMessage[]): ChatMessage[] {
   const map = new Map<string, ChatMessage>();
@@ -100,6 +115,21 @@ function payloadToMessage(
         .filter((x): x is NonNullable<typeof x> => Boolean(x))
     : [];
 
+  const mentions = Array.isArray(payload.mentions)
+    ? payload.mentions
+        .map((raw) => {
+          if (!raw || typeof raw !== "object") return null;
+          const m = raw as Record<string, unknown>;
+          if (typeof m.userId !== "string") return null;
+          return {
+            userId: m.userId,
+            displayName:
+              typeof m.displayName === "string" ? m.displayName : "Staff",
+          };
+        })
+        .filter((x): x is NonNullable<typeof x> => Boolean(x))
+    : [];
+
   return {
     id,
     conversationId,
@@ -121,6 +151,7 @@ function payloadToMessage(
         : null,
     parentPreview:
       typeof payload.parentPreview === "string" ? payload.parentPreview : null,
+    mentions,
     attachments,
     reactions: Array.isArray(payload.reactions)
       ? (payload.reactions as ChatMessage["reactions"])
@@ -194,10 +225,19 @@ export default function MessagesPage() {
   const [typingUsers, setTypingUsers] = useState<Record<string, string>>({});
   const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(() => new Set());
   const [mobileShowThread, setMobileShowThread] = useState(Boolean(queryId));
+  const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(
+    null,
+  );
+  const [messageSoundsEnabled, setMessageSoundsEnabled] = useState(true);
 
   const selectedIdRef = useRef(selectedId);
   selectedIdRef.current = selectedId;
   const deliveredRef = useRef(new Set<string>());
+  const highlightTimerRef = useRef<number | null>(null);
+  const messagesRef = useRef(messages);
+  messagesRef.current = messages;
+  const nextCursorRef = useRef(nextCursor);
+  nextCursorRef.current = nextCursor;
 
   const refreshConversations = useCallback(async () => {
     setListLoading(true);
@@ -219,6 +259,26 @@ export default function MessagesPage() {
   useEffect(() => {
     void refreshConversations();
   }, [refreshConversations]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetchNotificationPreferences()
+      .then((prefs) => {
+        if (!cancelled) setMessageSoundsEnabled(prefs.notificationSoundEnabled);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (highlightTimerRef.current != null) {
+        window.clearTimeout(highlightTimerRef.current);
+      }
+    };
+  }, []);
 
   const bumpConversationPreview = useCallback(
     (
@@ -416,6 +476,13 @@ export default function MessagesPage() {
                   a?.id === conversationId ? { ...a, unreadCount: 0 } : a,
                 );
               });
+              if (
+                messageSoundsEnabled &&
+                typeof document !== "undefined" &&
+                document.visibilityState === "visible"
+              ) {
+                void playMessageReceivedSound();
+              }
             }
           }
           return;
@@ -516,7 +583,7 @@ export default function MessagesPage() {
       disconnect();
       window.clearInterval(heartbeat);
     };
-  }, [user, refreshConversations, loadThread, bumpConversationPreview]);
+  }, [user, refreshConversations, loadThread, bumpConversationPreview, messageSoundsEnabled]);
 
   const loadOlder = async () => {
     if (!selectedId || !nextCursor || loadingOlder) return;
@@ -530,10 +597,46 @@ export default function MessagesPage() {
     }
   };
 
+  const jumpToMessage = useCallback(
+    async (messageId: string) => {
+      if (!selectedId) return;
+      let found = messagesRef.current.some((m) => m.id === messageId);
+      let guard = 0;
+      while (!found && nextCursorRef.current && guard < 20) {
+        guard += 1;
+        const cursor = nextCursorRef.current;
+        setLoadingOlder(true);
+        try {
+          const page = await listMessages(selectedId, {
+            cursor,
+            limit: 50,
+          });
+          setMessages((prev) => mergeById(page.items, prev));
+          setNextCursor(page.nextCursor);
+          nextCursorRef.current = page.nextCursor;
+          found = page.items.some((m) => m.id === messageId) ||
+            messagesRef.current.some((m) => m.id === messageId);
+          if (!page.nextCursor) break;
+        } finally {
+          setLoadingOlder(false);
+        }
+      }
+      setHighlightedMessageId(messageId);
+      if (highlightTimerRef.current != null) {
+        window.clearTimeout(highlightTimerRef.current);
+      }
+      highlightTimerRef.current = window.setTimeout(() => {
+        setHighlightedMessageId(null);
+      }, 2500);
+    },
+    [selectedId],
+  );
+
   const typingLabel = useMemo(() => {
     const names = Object.values(typingUsers);
     if (!names.length) return null;
     if (names.length === 1) return `${names[0]} is typing…`;
+    if (names.length === 2) return `${names[0]} and ${names[1]} are typing…`;
     return "Several people are typing…";
   }, [typingUsers]);
 
@@ -541,6 +644,7 @@ export default function MessagesPage() {
     body: string;
     parentMessageId?: string;
     file?: File | null;
+    mentionedUserIds?: string[];
   }) => {
     if (!selectedId || !user) return;
     const clientMessageId =
@@ -564,19 +668,40 @@ export default function MessagesPage() {
       ];
     }
 
+    const mime =
+      attachmentRefs?.[0]?.mimeType ?? input.file?.type ?? null;
+    const messageType = inferMessageTypeFromMime(mime);
+    const localPreviewUrl = input.file
+      ? URL.createObjectURL(input.file)
+      : undefined;
+
     const optimistic: ChatMessage = {
       id: clientMessageId,
       conversationId: selectedId,
       senderId: user.id,
       senderName: user.name,
-      messageType: attachmentRefs?.length ? "FILE" : "TEXT",
+      messageType,
       body: input.body || null,
       isDeleted: false,
       editedAt: null,
       createdAt: new Date().toISOString(),
       parentMessageId: input.parentMessageId ?? null,
       parentPreview: replyTo?.preview ?? null,
-      attachments: [],
+      mentions: (input.mentionedUserIds ?? []).map((userId) => {
+        const p = active?.participants.find((x) => x.userId === userId);
+        return { userId, displayName: p?.displayName ?? "Staff" };
+      }),
+      attachments: input.file
+        ? [
+            {
+              id: `local-${clientMessageId}`,
+              fileName: input.file.name,
+              mimeType: input.file.type || null,
+              fileSize: input.file.size,
+              previewUrl: localPreviewUrl,
+            },
+          ]
+        : [],
       reactions: [],
       deliveryStatus: "SENT",
       clientMessageId,
@@ -585,7 +710,16 @@ export default function MessagesPage() {
     setMessages((prev) => [...prev, optimistic]);
     bumpConversationPreview(
       selectedId,
-      input.body?.slice(0, 160) || (attachmentRefs?.length ? "Attachment" : null),
+      input.body?.slice(0, 160) ||
+        (attachmentRefs?.length
+          ? mime?.startsWith("image/")
+            ? "📷 Image"
+            : mime?.startsWith("video/")
+              ? "🎬 Video"
+              : mime?.startsWith("audio/")
+                ? "🎤 Voice message"
+                : "📎 Attachment"
+          : null),
       optimistic.createdAt,
       { fromSelf: true, isActive: true },
     );
@@ -596,8 +730,10 @@ export default function MessagesPage() {
         parentMessageId: input.parentMessageId,
         clientMessageId,
         attachmentRefs,
-        messageType: attachmentRefs?.length ? "FILE" : "TEXT",
+        messageType,
+        mentionedUserIds: input.mentionedUserIds,
       });
+      if (localPreviewUrl) URL.revokeObjectURL(localPreviewUrl);
       setMessages((prev) => {
         const withoutOptimistic = prev.filter(
           (m) =>
@@ -612,13 +748,18 @@ export default function MessagesPage() {
           body: saved.body ?? optimistic.body,
           attachments: saved.attachments?.length
             ? saved.attachments
-            : optimistic.attachments,
+            : optimistic.attachments.map(({ previewUrl: _, ...rest }) => rest),
+          mentions: saved.mentions?.length
+            ? saved.mentions
+            : optimistic.mentions,
           clientMessageId,
         };
         return mergeById(withoutOptimistic, [reconciled]);
       });
       setReplyTo(null);
+      if (messageSoundsEnabled) void playMessageSentSound();
     } catch (err) {
+      if (localPreviewUrl) URL.revokeObjectURL(localPreviewUrl);
       setMessages((prev) => prev.filter((m) => m.clientMessageId !== clientMessageId));
       throw err;
     }
@@ -746,12 +887,24 @@ export default function MessagesPage() {
                   error={threadError}
                   typingLabel={typingLabel}
                   muted={active.muted}
+                  highlightedMessageId={highlightedMessageId}
                   onBack={clearSelection}
                   onLoadOlder={loadOlder}
+                  onJumpToMessage={(id) => void jumpToMessage(id)}
                   onReply={(m) =>
                     setReplyTo({
                       id: m.id,
-                      preview: m.body?.slice(0, 120) || "Attachment",
+                      preview:
+                        m.body?.slice(0, 120) ||
+                        (m.attachments?.[0]
+                          ? m.attachments[0].mimeType?.startsWith("image/")
+                            ? "📷 Image"
+                            : m.attachments[0].mimeType?.startsWith("video/")
+                              ? "🎬 Video"
+                              : m.attachments[0].mimeType?.startsWith("audio/")
+                                ? "🎤 Voice message"
+                                : `📎 ${m.attachments[0].fileName}`
+                          : "Attachment"),
                     })
                   }
                   onReact={handleReact}
@@ -765,6 +918,8 @@ export default function MessagesPage() {
                 replyTo={replyTo}
                 onClearReply={() => setReplyTo(null)}
                 onSend={handleSend}
+                participants={active.participants}
+                currentUserId={userId}
               />
             </>
           ) : (

@@ -1,9 +1,10 @@
 "use client";
 
-import { Download, Loader2, Paperclip, Reply, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, Loader2, Paperclip, Reply, X } from "lucide-react";
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type TouchEvent,
@@ -27,29 +28,63 @@ const SWIPE_REPLY_PX = 56;
 function isImageMime(mime: string | null | undefined): boolean {
   return Boolean(mime?.startsWith("image/"));
 }
+function isVideoMime(mime: string | null | undefined): boolean {
+  return Boolean(mime?.startsWith("video/"));
+}
+function isAudioMime(mime: string | null | undefined): boolean {
+  return Boolean(mime?.startsWith("audio/"));
+}
+function isMediaMime(mime: string | null | undefined): boolean {
+  return isImageMime(mime) || isVideoMime(mime) || isAudioMime(mime);
+}
+
+function usePrefersReducedMotion(): boolean {
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setReduced(mq.matches);
+    const onChange = () => setReduced(mq.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+  return reduced;
+}
 
 function useAttachmentBlobUrls(attachments: MessageAttachment[]) {
   const [urls, setUrls] = useState<Record<string, string>>({});
   const cacheRef = useRef<Record<string, string>>({});
+  const attachmentIdsKey = useMemo(
+    () =>
+      attachments
+        .map((a) => a.id)
+        .slice()
+        .sort()
+        .join(","),
+    [attachments],
+  );
 
   useEffect(() => {
     let cancelled = false;
-    const imageIds = attachments
-      .filter((a) => isImageMime(a.mimeType))
-      .map((a) => a.id);
+    const media = attachments.filter((a) => isMediaMime(a.mimeType));
 
     void (async () => {
       const next: Record<string, string> = { ...cacheRef.current };
-      for (const id of imageIds) {
-        if (next[id]) continue;
+      for (const a of media) {
+        if (next[a.id]) continue;
+        if (a.previewUrl) {
+          next[a.id] = a.previewUrl;
+          cacheRef.current[a.id] = a.previewUrl;
+          continue;
+        }
+        if (a.id.startsWith("local-")) continue;
         try {
-          const url = await fetchAttachmentBlobUrl(id);
+          const url = await fetchAttachmentBlobUrl(a.id);
           if (cancelled) {
             URL.revokeObjectURL(url);
             return;
           }
-          next[id] = url;
-          cacheRef.current[id] = url;
+          next[a.id] = url;
+          cacheRef.current[a.id] = url;
         } catch {
           // ignore per-attachment failures
         }
@@ -60,7 +95,9 @@ function useAttachmentBlobUrls(attachments: MessageAttachment[]) {
     return () => {
       cancelled = true;
     };
-  }, [attachments]);
+    // attachmentIdsKey captures id set; attachments used for mime/previewUrl
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [attachmentIdsKey]);
 
   return urls;
 }
@@ -68,7 +105,10 @@ function useAttachmentBlobUrls(attachments: MessageAttachment[]) {
 async function openAttachment(id: string, fileName: string) {
   try {
     const meta = await downloadAttachment(id);
-    if (meta.url && !meta.url.startsWith("memory://")) {
+    if (
+      meta.url &&
+      (meta.url.startsWith("http://") || meta.url.startsWith("https://"))
+    ) {
       window.open(meta.url, "_blank", "noopener,noreferrer");
       return;
     }
@@ -86,33 +126,188 @@ async function openAttachment(id: string, fileName: string) {
   window.setTimeout(() => URL.revokeObjectURL(blobUrl), 30_000);
 }
 
+function highlightMentions(
+  body: string,
+  mentions: Array<{ displayName: string }> | undefined,
+  mine: boolean,
+) {
+  if (!body || !mentions?.length) return body;
+  const names = mentions
+    .map((m) => m.displayName.trim())
+    .filter(Boolean)
+    .sort((a, b) => b.length - a.length);
+  if (!names.length) return body;
+
+  const escaped = names.map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  const re = new RegExp(`(@?(?:${escaped.join("|")}))`, "gi");
+  const parts = body.split(re);
+  return parts.map((part, i) => {
+    const isMention = names.some(
+      (n) => part === n || part === `@${n}` || part.toLowerCase() === `@${n.toLowerCase()}`,
+    );
+    if (!isMention) return <span key={i}>{part}</span>;
+    return (
+      <span
+        key={i}
+        className={
+          mine
+            ? "rounded bg-white/20 px-0.5 font-medium"
+            : "rounded bg-brand-100 px-0.5 font-medium text-brand-800"
+        }
+      >
+        {part.startsWith("@") ? part : `@${part}`}
+      </span>
+    );
+  });
+}
+
+function ImageLightbox({
+  images,
+  index,
+  urls,
+  onClose,
+  onIndexChange,
+}: {
+  images: MessageAttachment[];
+  index: number;
+  urls: Record<string, string>;
+  onClose: () => void;
+  onIndexChange: (i: number) => void;
+}) {
+  const touchStartX = useRef<number | null>(null);
+  const current = images[index];
+  const src = current ? urls[current.id] : null;
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowLeft") onIndexChange(Math.max(0, index - 1));
+      if (e.key === "ArrowRight")
+        onIndexChange(Math.min(images.length - 1, index + 1));
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [index, images.length, onClose, onIndexChange]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+      role="dialog"
+      aria-modal
+      aria-label="Image preview"
+      onClick={onClose}
+      onTouchStart={(e) => {
+        touchStartX.current = e.touches[0]?.clientX ?? null;
+      }}
+      onTouchEnd={(e) => {
+        const start = touchStartX.current;
+        const end = e.changedTouches[0]?.clientX;
+        touchStartX.current = null;
+        if (start == null || end == null) return;
+        const dx = end - start;
+        if (Math.abs(dx) < 48) return;
+        if (dx > 0) onIndexChange(Math.max(0, index - 1));
+        else onIndexChange(Math.min(images.length - 1, index + 1));
+      }}
+    >
+      {src ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={src}
+          alt={current?.fileName ?? "Attachment preview"}
+          className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain"
+          onClick={(e) => e.stopPropagation()}
+        />
+      ) : null}
+
+      <p className="absolute bottom-6 left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-3 py-1 text-xs text-white">
+        {index + 1} / {images.length}
+      </p>
+
+      {index > 0 ? (
+        <button
+          type="button"
+          className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-white/90 p-2 text-slate-700"
+          onClick={(e) => {
+            e.stopPropagation();
+            onIndexChange(index - 1);
+          }}
+          aria-label="Previous image"
+        >
+          <ChevronLeft className="h-5 w-5" />
+        </button>
+      ) : null}
+      {index < images.length - 1 ? (
+        <button
+          type="button"
+          className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-white/90 p-2 text-slate-700"
+          onClick={(e) => {
+            e.stopPropagation();
+            onIndexChange(index + 1);
+          }}
+          aria-label="Next image"
+        >
+          <ChevronRight className="h-5 w-5" />
+        </button>
+      ) : null}
+
+      <button
+        type="button"
+        className="absolute right-4 top-4 rounded-full bg-white/90 p-2 text-slate-700"
+        onClick={onClose}
+        aria-label="Close preview"
+      >
+        <X className="h-5 w-5" />
+      </button>
+    </div>
+  );
+}
+
 function MessageBubble({
   message: m,
   mine,
   currentUserId,
+  highlighted,
   onReply,
   onReact,
   onEdit,
   onDelete,
-  onScrollToParent,
+  onJumpToMessage,
 }: {
   message: ChatMessage;
   mine: boolean;
   currentUserId?: string;
+  highlighted?: boolean;
   onReply: (message: ChatMessage) => void;
   onReact: (message: ChatMessage, reactionType: string) => void;
   onEdit: (message: ChatMessage) => void;
   onDelete: (message: ChatMessage) => void;
-  onScrollToParent: (parentId: string) => void;
+  onJumpToMessage: (parentId: string) => void;
 }) {
   const deleted = m.isDeleted;
-  const images = (m.attachments ?? []).filter((a) => isImageMime(a.mimeType));
-  const docs = (m.attachments ?? []).filter((a) => !isImageMime(a.mimeType));
-  const blobUrls = useAttachmentBlobUrls(images);
-  const [lightbox, setLightbox] = useState<string | null>(null);
+  const attachments = m.attachments ?? [];
+  const images = attachments.filter((a) => isImageMime(a.mimeType));
+  const videos = attachments.filter((a) => isVideoMime(a.mimeType));
+  const audios = attachments.filter((a) => isAudioMime(a.mimeType));
+  const docs = attachments.filter(
+    (a) =>
+      !isImageMime(a.mimeType) &&
+      !isVideoMime(a.mimeType) &&
+      !isAudioMime(a.mimeType),
+  );
+  const blobUrls = useAttachmentBlobUrls(attachments);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [swipeX, setSwipeX] = useState(0);
   const touchStart = useRef<{ x: number; y: number } | null>(null);
   const dominantAxis = useRef<"h" | "v" | null>(null);
+  const reducedMotion = usePrefersReducedMotion();
+
+  const imageGridClass =
+    images.length === 1
+      ? "grid-cols-1"
+      : images.length === 2 || images.length === 3
+        ? "grid-cols-2"
+        : "grid-cols-2";
 
   const onTouchStart = (e: TouchEvent) => {
     const t = e.touches[0];
@@ -147,6 +342,8 @@ function MessageBubble({
     setSwipeX(0);
   };
 
+  const replyPreview = m.parentPreview?.trim() || "Attachment";
+
   return (
     <div
       data-message-id={m.id}
@@ -168,14 +365,22 @@ function MessageBubble({
       ) : null}
 
       <div
-        style={{ transform: `translateX(${swipeX}px)` }}
-        className={`relative max-w-[min(85%,32rem)] rounded-2xl px-3.5 py-2.5 text-sm transition-transform ${
+        style={
+          reducedMotion ? undefined : { transform: `translateX(${swipeX}px)` }
+        }
+        className={`relative max-w-[min(85%,32rem)] rounded-2xl px-3.5 py-2.5 text-sm transition-[box-shadow,background-color,transform] duration-500 ${
           deleted
             ? "bg-slate-50 italic text-slate-400"
             : mine
               ? "bg-brand-500 text-white"
               : "bg-[#eef4f4] text-slate-700"
-        } ${m.pending ? "opacity-70" : ""}`}
+        } ${m.pending ? "opacity-70" : ""} ${
+          highlighted
+            ? mine
+              ? "ring-2 ring-white/80 ring-offset-2 ring-offset-brand-500"
+              : "bg-brand-50 ring-2 ring-brand-300"
+            : ""
+        }`}
       >
         {!deleted ? (
           <MessageActions
@@ -198,28 +403,18 @@ function MessageBubble({
           </p>
         ) : null}
 
-        {m.parentPreview && m.parentMessageId ? (
+        {m.parentMessageId ? (
           <button
             type="button"
-            onClick={() => onScrollToParent(m.parentMessageId!)}
+            onClick={() => onJumpToMessage(m.parentMessageId!)}
             className={`mb-2 w-full rounded-lg border-l-2 px-2 py-1 text-left text-xs ${
               mine
                 ? "border-white/50 bg-white/15 text-white/90"
                 : "border-brand-400 bg-white/70 text-slate-500"
             }`}
           >
-            {m.parentPreview}
+            {replyPreview}
           </button>
-        ) : m.parentPreview ? (
-          <div
-            className={`mb-2 rounded-lg border-l-2 px-2 py-1 text-xs ${
-              mine
-                ? "border-white/50 bg-white/15 text-white/90"
-                : "border-brand-400 bg-white/70 text-slate-500"
-            }`}
-          >
-            {m.parentPreview}
-          </div>
         ) : null}
 
         {deleted ? (
@@ -227,22 +422,20 @@ function MessageBubble({
         ) : (
           <>
             {m.body ? (
-              <p className="whitespace-pre-wrap break-words">{m.body}</p>
+              <p className="whitespace-pre-wrap break-words">
+                {highlightMentions(m.body, m.mentions, mine)}
+              </p>
             ) : null}
 
             {images.length ? (
-              <div
-                className={`mt-2 grid gap-1 ${
-                  images.length > 1 ? "grid-cols-2" : "grid-cols-1"
-                }`}
-              >
-                {images.map((a) => {
+              <div className={`mt-2 grid gap-1 ${imageGridClass}`}>
+                {images.map((a, idx) => {
                   const src = blobUrls[a.id];
                   return (
                     <button
                       key={a.id}
                       type="button"
-                      onClick={() => src && setLightbox(src)}
+                      onClick={() => src && setLightboxIndex(idx)}
                       className="overflow-hidden rounded-xl bg-black/10"
                       aria-label={`View ${a.fileName}`}
                     >
@@ -259,6 +452,56 @@ function MessageBubble({
                         </div>
                       )}
                     </button>
+                  );
+                })}
+              </div>
+            ) : null}
+
+            {videos.length ? (
+              <div className="mt-2 space-y-2">
+                {videos.map((a) => {
+                  const src = blobUrls[a.id];
+                  return src ? (
+                    <video
+                      key={a.id}
+                      controls
+                      playsInline
+                      preload="metadata"
+                      src={src}
+                      className="max-h-64 w-full rounded-lg"
+                    />
+                  ) : (
+                    <div
+                      key={a.id}
+                      className="flex h-28 items-center justify-center rounded-lg bg-black/10"
+                    >
+                      <Loader2 className="h-4 w-4 animate-spin opacity-60" />
+                    </div>
+                  );
+                })}
+              </div>
+            ) : null}
+
+            {audios.length ? (
+              <div className="mt-2 space-y-2">
+                {audios.map((a) => {
+                  const src = blobUrls[a.id];
+                  return src ? (
+                    <audio
+                      key={a.id}
+                      controls
+                      preload="metadata"
+                      src={src}
+                      className="w-full max-w-xs"
+                    />
+                  ) : (
+                    <div
+                      key={a.id}
+                      className="flex h-10 items-center gap-2 rounded-lg bg-black/10 px-3"
+                    >
+                      <Loader2 className="h-3.5 w-3.5 animate-spin opacity-60" />
+                      <span className="text-xs opacity-70">{a.fileName}</span>
+                    </div>
                   );
                 })}
               </div>
@@ -335,30 +578,14 @@ function MessageBubble({
         </div>
       </div>
 
-      {lightbox ? (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
-          role="dialog"
-          aria-modal
-          aria-label="Image preview"
-          onClick={() => setLightbox(null)}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={lightbox}
-            alt="Attachment preview"
-            className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain"
-            onClick={(e) => e.stopPropagation()}
-          />
-          <button
-            type="button"
-            className="absolute right-4 top-4 rounded-full bg-white/90 p-2 text-slate-700"
-            onClick={() => setLightbox(null)}
-            aria-label="Close preview"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+      {lightboxIndex != null && images[lightboxIndex] ? (
+        <ImageLightbox
+          images={images}
+          index={lightboxIndex}
+          urls={blobUrls}
+          onClose={() => setLightboxIndex(null)}
+          onIndexChange={setLightboxIndex}
+        />
       ) : null}
     </div>
   );
@@ -374,6 +601,7 @@ export function ThreadView({
   error,
   typingLabel,
   muted,
+  highlightedMessageId,
   onBack,
   onLoadOlder,
   onReply,
@@ -381,6 +609,7 @@ export function ThreadView({
   onEdit,
   onDelete,
   onMuteToggle,
+  onJumpToMessage,
 }: {
   conversation: ConversationListItem;
   currentUserId?: string;
@@ -391,6 +620,7 @@ export function ThreadView({
   error?: string | null;
   typingLabel?: string | null;
   muted?: boolean;
+  highlightedMessageId?: string | null;
   onBack?: () => void;
   onLoadOlder?: () => void | Promise<void>;
   onReply: (message: ChatMessage) => void;
@@ -398,6 +628,7 @@ export function ThreadView({
   onEdit: (message: ChatMessage) => void;
   onDelete: (message: ChatMessage) => void;
   onMuteToggle?: () => void;
+  onJumpToMessage?: (messageId: string) => void;
 }) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -410,12 +641,27 @@ export function ThreadView({
     }
   }, [messages.length, typingLabel]);
 
-  const scrollToMessage = useCallback((messageId: string) => {
+  useEffect(() => {
+    if (!highlightedMessageId) return;
     const el = scrollerRef.current?.querySelector(
-      `[data-message-id="${CSS.escape(messageId)}"]`,
+      `[data-message-id="${CSS.escape(highlightedMessageId)}"]`,
     );
     el?.scrollIntoView({ behavior: "smooth", block: "center" });
-  }, []);
+  }, [highlightedMessageId, messages]);
+
+  const scrollToMessage = useCallback(
+    (messageId: string) => {
+      if (onJumpToMessage) {
+        onJumpToMessage(messageId);
+        return;
+      }
+      const el = scrollerRef.current?.querySelector(
+        `[data-message-id="${CSS.escape(messageId)}"]`,
+      );
+      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    },
+    [onJumpToMessage],
+  );
 
   const onScroll = () => {
     const el = scrollerRef.current;
@@ -539,11 +785,12 @@ export function ThreadView({
                 message={m}
                 mine={mine}
                 currentUserId={currentUserId}
+                highlighted={highlightedMessageId === m.id}
                 onReply={onReply}
                 onReact={onReact}
                 onEdit={onEdit}
                 onDelete={onDelete}
-                onScrollToParent={scrollToMessage}
+                onJumpToMessage={scrollToMessage}
               />
             </div>
           );

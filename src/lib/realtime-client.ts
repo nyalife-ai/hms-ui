@@ -173,6 +173,7 @@ export type SocketSendMessageInput = {
   messageType?: string;
   parentMessageId?: string;
   clientMessageId?: string;
+  mentionedUserIds?: string[];
   attachmentRefs?: Array<{
     key: string;
     fileName: string;
