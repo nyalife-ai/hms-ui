@@ -15,6 +15,7 @@ import {
   usePaginatedCatalog,
   type CatalogDoctor,
 } from "@/lib/catalog";
+import { createConversation } from "@/lib/messaging";
 import { toPageMeta } from "@/lib/pagination";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 
@@ -170,13 +171,10 @@ export default function DoctorsPage() {
                 type="button"
                 title="Message"
                 onClick={() => {
-                  void api("/ops/conversations", {
-                    method: "POST",
-                    body: JSON.stringify({
-                      name: doc.name,
-                      preview: `Care coordination with ${doc.name}`,
-                    }),
-                  }).then(() => router.push("/messages"));
+                  void createConversation({
+                    type: "DIRECT",
+                    participantIds: [doc.userId],
+                  }).then((conv) => router.push(`/messages?c=${conv.id}`));
                 }}
                 className="rounded-full border border-slate-200 p-2.5 text-slate-400 transition hover:border-brand-300 hover:text-brand-600"
               >

@@ -17,6 +17,7 @@ import {
   fetchMyNotifications,
   fetchNotificationPreferences,
   fetchUnreadCount,
+  markAllNotificationsRead,
   markNotificationRead,
   type AppNotification,
 } from "@/lib/notifications";
@@ -380,9 +381,29 @@ export function Topbar() {
           </button>
           {bellOpen && (
             <div className="absolute right-0 mt-2 max-h-96 w-80 overflow-y-auto rounded-2xl bg-white p-2 shadow-lg ring-1 ring-slate-100">
-              <p className="px-2 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-                Notifications
-              </p>
+              <div className="flex items-center justify-between gap-2 px-2 py-1.5">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                  Notifications
+                </p>
+                {unread > 0 && (
+                  <button
+                    type="button"
+                    className="text-[11px] font-medium text-brand-600 hover:text-brand-700"
+                    onClick={() => {
+                      void markAllNotificationsRead()
+                        .then(() => {
+                          setItems((prev) =>
+                            prev.map((x) => ({ ...x, isRead: true })),
+                          );
+                          setUnread(0);
+                        })
+                        .catch(() => undefined);
+                    }}
+                  >
+                    Mark all read
+                  </button>
+                )}
+              </div>
               {items.length === 0 ? (
                 <p className="px-3 py-4 text-sm text-slate-400">
                   No notifications yet.

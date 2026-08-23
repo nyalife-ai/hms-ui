@@ -78,7 +78,8 @@ export const MODULE_ACCESS: Record<string, Role[]> = {
 /**
  * Role allow-list is the product truth. JWT permissions may further restrict,
  * but cannot grant modules the role is not supposed to operate.
- * SUPER_ADMIN bypasses module allow-lists (still respects explicit deny via empty perms only if we add that later).
+ * SUPER_ADMIN always bypasses (matches backend RolesGuard) — stale JWT
+ * permission lists must never lock the system administrator out of new modules.
  */
 export function canAccess(
   role: Role,
@@ -86,10 +87,7 @@ export function canAccess(
   permissions?: string[],
 ): boolean {
   if (role === "SUPER_ADMIN") {
-    if (!permissions?.length) return true;
-    return (
-      permissions.includes("*") || permissions.includes(`module:${module}`)
-    );
+    return true;
   }
   if (!(MODULE_ACCESS[module]?.includes(role) ?? false)) {
     return false;
