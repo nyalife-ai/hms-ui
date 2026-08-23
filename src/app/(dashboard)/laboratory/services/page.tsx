@@ -69,8 +69,8 @@ export default function LaboratoryServicesPage() {
         search: search || undefined,
         kind: kindFilter || undefined,
         active: true,
-        take: PAGE_SIZE,
-        skip: (page - 1) * PAGE_SIZE,
+        page,
+        limit: PAGE_SIZE,
       });
       const data = unwrapPage<ServiceRow>(
         await api(`/laboratory/clinical-services?${qs}`),

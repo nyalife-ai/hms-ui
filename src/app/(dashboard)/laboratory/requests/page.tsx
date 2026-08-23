@@ -139,12 +139,12 @@ export default function LabRequestsPage() {
         status: status || undefined,
         priority: priority || undefined,
         search: search || undefined,
-        take: PAGE_SIZE,
-        skip: (page - 1) * PAGE_SIZE,
+        page,
+        limit: PAGE_SIZE,
       });
       const [r, t] = await Promise.all([
         api(`/laboratory/requests?${qs}`),
-        api("/laboratory/test-types?active=true&take=100"),
+        api("/laboratory/test-types?active=true&page=1&limit=100"),
       ]);
       const reqPage = unwrapPage<RequestRow>(r);
       setRows(reqPage.items);
@@ -183,8 +183,8 @@ export default function LabRequestsPage() {
         search: search || undefined,
         from: `${calendarRange.from}T00:00:00.000Z`,
         to: `${calendarRange.to}T23:59:59.999Z`,
-        take: 100,
-        skip: 0,
+        page: 1,
+        limit: 100,
       });
       const r = await api(`/laboratory/requests?${qs}`);
       setCalendarItems(unwrapPage<RequestRow>(r).items);

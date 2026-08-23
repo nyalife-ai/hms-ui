@@ -48,6 +48,11 @@ const SEARCH_ROUTES: Array<{ label: string; href: string; keywords: string }> = 
   { label: "Messages", href: "/messages", keywords: "chat conversation" },
   { label: "Settings", href: "/settings", keywords: "hospital password" },
   { label: "Dashboard", href: "/dashboard", keywords: "home overview" },
+  {
+    label: "Reports & Analytics",
+    href: "/reports",
+    keywords: "analytics kpi revenue reports charts",
+  },
 ];
 
 function formatWhen(iso: string): string {

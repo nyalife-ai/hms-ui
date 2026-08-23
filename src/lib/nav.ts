@@ -17,6 +17,7 @@ import {
   ConciergeBell,
   Activity,
   ClipboardPlus,
+  BarChart3,
 } from "lucide-react";
 import { canAccess, MODULE_ACCESS, type Role } from "./roles";
 
@@ -45,6 +46,12 @@ export const NAV_SECTIONS: NavSection[] = [
     title: "Overview",
     items: [
       { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, module: "dashboard" },
+      {
+        label: "Reports & Analytics",
+        href: "/reports",
+        icon: BarChart3,
+        module: "reports",
+      },
     ],
   },
   {

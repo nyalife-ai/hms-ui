@@ -63,8 +63,8 @@ function RelatedLabsInner() {
       const qs = buildListQuery({
         visitId: visitId || undefined,
         appointmentId: appointmentId || undefined,
-        take: 100,
-        skip: 0,
+        page: 1,
+        limit: 100,
       });
       const r = await api(`/laboratory/requests?${qs}`);
       setRows(unwrapPage<RequestRow>(r).items);

@@ -83,8 +83,8 @@ export default function LabResultsPage() {
         status: status || undefined,
         criticalOnly: criticalOnly ? "true" : undefined,
         unverifiedOnly: unverifiedOnly ? "true" : undefined,
-        take: PAGE_SIZE,
-        skip: (page - 1) * PAGE_SIZE,
+        page,
+        limit: PAGE_SIZE,
       });
       const data = await api(`/laboratory/results/bundles?${qs}`);
       const pageData = unwrapPage<LabResultBundle>(data);

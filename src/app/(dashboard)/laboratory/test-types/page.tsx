@@ -65,8 +65,8 @@ export default function LabTestTypesPage() {
     try {
       const qs = buildListQuery({
         search: search || undefined,
-        take: PAGE_SIZE,
-        skip: (page - 1) * PAGE_SIZE,
+        page,
+        limit: PAGE_SIZE,
       });
       const data = unwrapPage<TestType>(await api(`/laboratory/test-types?${qs}`));
       setRows(data.items);

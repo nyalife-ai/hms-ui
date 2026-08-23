@@ -209,3 +209,143 @@ export function InventoryUsageChart({
     </ResponsiveContainer>
   );
 }
+
+const ANALYTICS_PALETTE = [
+  "#f02878",
+  "#0d9488",
+  "#2563eb",
+  "#f59e0b",
+  "#8b5cf6",
+  "#64748b",
+  "#ef4444",
+  "#14b8a6",
+];
+
+export function AnalyticsLineChart({
+  data = [],
+  valueKey = "value",
+  previousKey,
+  emptyLabel = "No data available for this period.",
+}: {
+  data?: Array<Record<string, string | number | null>>;
+  valueKey?: string;
+  previousKey?: string;
+  emptyLabel?: string;
+}) {
+  const hasData = data.some((d) => Number(d[valueKey] ?? 0) !== 0);
+  if (!data.length || !hasData) {
+    return (
+      <p className="px-4 py-16 text-center text-sm text-slate-400">{emptyLabel}</p>
+    );
+  }
+  return (
+    <ResponsiveContainer width="100%" height={260}>
+      <LineChart data={data} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="#eef2f2" vertical={false} />
+        <XAxis dataKey="period" tickLine={false} axisLine={false} tick={axisTick} />
+        <YAxis tickLine={false} axisLine={false} tick={axisTick} />
+        <Tooltip contentStyle={tooltipStyle} />
+        <Line
+          type="monotone"
+          dataKey={valueKey}
+          name="Current"
+          stroke="#f02878"
+          strokeWidth={2.5}
+          dot={false}
+        />
+        {previousKey ? (
+          <Line
+            type="monotone"
+            dataKey={previousKey}
+            name="Previous"
+            stroke="#94a3b8"
+            strokeWidth={2}
+            strokeDasharray="4 4"
+            dot={false}
+          />
+        ) : null}
+      </LineChart>
+    </ResponsiveContainer>
+  );
+}
+
+export function AnalyticsBarChart({
+  data = [],
+  emptyLabel = "No data available for this period.",
+}: {
+  data?: Array<{ name: string; value: number }>;
+  emptyLabel?: string;
+}) {
+  if (!data.length || data.every((d) => d.value === 0)) {
+    return (
+      <p className="px-4 py-16 text-center text-sm text-slate-400">{emptyLabel}</p>
+    );
+  }
+  return (
+    <ResponsiveContainer width="100%" height={260}>
+      <BarChart data={data} margin={{ top: 8, right: 4, left: -12, bottom: 0 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="#eef2f2" vertical={false} />
+        <XAxis dataKey="name" tickLine={false} axisLine={false} tick={axisTick} />
+        <YAxis tickLine={false} axisLine={false} tick={axisTick} />
+        <Tooltip contentStyle={tooltipStyle} />
+        <Bar dataKey="value" fill="#f02878" radius={[4, 4, 4, 4]} maxBarSize={36} />
+      </BarChart>
+    </ResponsiveContainer>
+  );
+}
+
+export function AnalyticsDonutChart({
+  data = [],
+  emptyLabel = "No data available for this period.",
+}: {
+  data?: Array<{ name: string; value: number }>;
+  emptyLabel?: string;
+}) {
+  const total = data.reduce((s, d) => s + d.value, 0);
+  if (!data.length || total === 0) {
+    return (
+      <p className="px-4 py-16 text-center text-sm text-slate-400">{emptyLabel}</p>
+    );
+  }
+  const slice = data.slice(0, 8).map((d, i) => ({
+    ...d,
+    color: ANALYTICS_PALETTE[i % ANALYTICS_PALETTE.length],
+  }));
+  return (
+    <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_auto] md:items-center">
+      <ResponsiveContainer width="100%" height={220}>
+        <PieChart>
+          <Tooltip contentStyle={tooltipStyle} />
+          <Pie
+            data={slice}
+            dataKey="value"
+            nameKey="name"
+            innerRadius={58}
+            outerRadius={88}
+            paddingAngle={2}
+            cornerRadius={4}
+            strokeWidth={0}
+          >
+            {slice.map((entry) => (
+              <Cell key={entry.name} fill={entry.color} />
+            ))}
+          </Pie>
+        </PieChart>
+      </ResponsiveContainer>
+      <ul className="space-y-1.5 px-2 text-xs text-slate-600">
+        {slice.map((d) => (
+          <li key={d.name} className="flex items-center gap-2">
+            <span
+              className="h-2.5 w-2.5 rounded-full"
+              style={{ background: d.color }}
+            />
+            <span className="truncate">{d.name}</span>
+            <span className="ml-auto font-medium tabular-nums">
+              {d.value.toLocaleString()}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
