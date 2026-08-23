@@ -19,6 +19,13 @@ import { AppointmentRowActions } from "@/components/appointment-row-actions";
 import { DoctorSearchSelect } from "@/components/doctor-search-select";
 import { FieldLabel } from "@/components/field-label";
 import { PaginationBar } from "@/components/pagination-bar";
+import {
+  EMPTY_PATIENT_FORM,
+  PatientForm,
+  toOpsCreateBody,
+  validatePatientForm,
+  type PatientFormValues,
+} from "@/components/patient-form";
 import { PatientSearchSelect } from "@/components/patient-search-select";
 import { RoleGuard } from "@/components/role-guard";
 import {
@@ -230,15 +237,8 @@ export default function AppointmentsPage() {
   const [reason, setReason] = useState("");
   const [quickViewId, setQuickViewId] = useState<string | null>(null);
   const [addPatientOpen, setAddPatientOpen] = useState(false);
-  const [newFirstName, setNewFirstName] = useState("");
-  const [newLastName, setNewLastName] = useState("");
-  const [newPhone, setNewPhone] = useState("");
-  const [newGender, setNewGender] = useState<"Male" | "Female" | "Other">("Female");
-  const [newDateOfBirth, setNewDateOfBirth] = useState("");
-  const [newAllergies, setNewAllergies] = useState("");
-  const [newChronic, setNewChronic] = useState("");
-  const [newKinName, setNewKinName] = useState("");
-  const [newKinPhone, setNewKinPhone] = useState("");
+  const [newPatientForm, setNewPatientForm] =
+    useState<PatientFormValues>(EMPTY_PATIENT_FORM);
   const [newPatientBusy, setNewPatientBusy] = useState(false);
   const [newPatientError, setNewPatientError] = useState("");
 
@@ -298,8 +298,9 @@ export default function AppointmentsPage() {
   };
 
   const createPatientForBooking = async () => {
-    if (!newFirstName.trim() || !newLastName.trim() || !newPhone.trim()) {
-      setNewPatientError("First name, last name and phone are required.");
+    const err = validatePatientForm(newPatientForm);
+    if (err) {
+      setNewPatientError(err);
       return;
     }
     setNewPatientBusy(true);
@@ -309,34 +310,22 @@ export default function AppointmentsPage() {
         id: string;
         patient_number?: string;
         patientNumber?: string;
+        firstName?: string;
+        lastName?: string;
+        name?: string;
       }>("/ops/patients", {
         method: "POST",
-        body: JSON.stringify({
-          firstName: newFirstName.trim(),
-          lastName: newLastName.trim(),
-          gender: newGender,
-          phone: newPhone.trim(),
-          dateOfBirth: newDateOfBirth || undefined,
-          allergies: newAllergies.trim() || undefined,
-          chronicDiseases: newChronic.trim() || undefined,
-          emergencyContactName: newKinName.trim() || undefined,
-          emergencyContactPhone: newKinPhone.trim() || undefined,
-        }),
+        body: JSON.stringify(toOpsCreateBody(newPatientForm)),
       });
       const mrn = created.patient_number || created.patientNumber || "";
-      const label = `${newFirstName.trim()} ${newLastName.trim()}${mrn ? ` · ${mrn}` : ""}`;
+      const nameLabel =
+        created.name ||
+        `${newPatientForm.firstName.trim()} ${newPatientForm.lastName.trim()}`;
+      const label = `${nameLabel}${mrn ? ` · ${mrn}` : ""}`;
       setPatientId(created.id);
       setPatientLabel(label);
       setAddPatientOpen(false);
-      setNewFirstName("");
-      setNewLastName("");
-      setNewPhone("");
-      setNewGender("Female");
-      setNewDateOfBirth("");
-      setNewAllergies("");
-      setNewChronic("");
-      setNewKinName("");
-      setNewKinPhone("");
+      setNewPatientForm(EMPTY_PATIENT_FORM);
       setFormError("");
     } catch (err) {
       setNewPatientError(
@@ -936,91 +925,14 @@ export default function AppointmentsPage() {
               {addPatientOpen ? (
                 <div className="space-y-3 rounded-xl border border-brand-100 bg-brand-50/40 p-3">
                   <p className="text-[11px] text-slate-500">
-                    Register the patient, then they will be selected for this appointment.
+                    Register the patient, then they will be selected for this
+                    appointment.
                   </p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <FieldLabel required>First name</FieldLabel>
-                      <input
-                        className={inputClass}
-                        value={newFirstName}
-                        onChange={(e) => setNewFirstName(e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <FieldLabel required>Last name</FieldLabel>
-                      <input
-                        className={inputClass}
-                        value={newLastName}
-                        onChange={(e) => setNewLastName(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <FieldLabel required>Gender</FieldLabel>
-                    <select
-                      className={inputClass}
-                      value={newGender}
-                      onChange={(e) =>
-                        setNewGender(e.target.value as "Male" | "Female" | "Other")
-                      }
-                    >
-                      <option value="Female">Female</option>
-                      <option value="Male">Male</option>
-                      <option value="Other">Other</option>
-                    </select>
-                  </div>
-                  <div>
-                    <FieldLabel required>Phone</FieldLabel>
-                    <input
-                      className={inputClass}
-                      value={newPhone}
-                      onChange={(e) => setNewPhone(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <FieldLabel optional>Date of birth</FieldLabel>
-                    <input
-                      className={inputClass}
-                      type="date"
-                      value={newDateOfBirth}
-                      onChange={(e) => setNewDateOfBirth(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <FieldLabel optional>Allergies</FieldLabel>
-                    <input
-                      className={inputClass}
-                      value={newAllergies}
-                      onChange={(e) => setNewAllergies(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <FieldLabel optional>Chronic conditions</FieldLabel>
-                    <input
-                      className={inputClass}
-                      value={newChronic}
-                      onChange={(e) => setNewChronic(e.target.value)}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <FieldLabel optional>Next of kin</FieldLabel>
-                      <input
-                        className={inputClass}
-                        value={newKinName}
-                        onChange={(e) => setNewKinName(e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <FieldLabel optional>Kin phone</FieldLabel>
-                      <input
-                        className={inputClass}
-                        value={newKinPhone}
-                        onChange={(e) => setNewKinPhone(e.target.value)}
-                      />
-                    </div>
-                  </div>
+                  <PatientForm
+                    values={newPatientForm}
+                    onChange={setNewPatientForm}
+                    mode="create"
+                  />
                   {newPatientError && (
                     <p className="text-xs text-rose-500">{newPatientError}</p>
                   )}

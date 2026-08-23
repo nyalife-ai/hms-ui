@@ -31,11 +31,16 @@ export type PatientDetail = {
   mrn: string;
   referenceCode: string;
   name: string;
+  firstName?: string;
+  lastName?: string;
   age: number;
   gender: string;
   phone: string;
   email: string;
   address: string;
+  city?: string;
+  country?: string;
+  postalCode?: string;
   dateOfBirth: string;
   bloodGroup: string;
   occupation: string;
@@ -48,6 +53,13 @@ export type PatientDetail = {
     phone: string;
     relationship: string;
   } | null;
+  insurance?: Array<{
+    id: string;
+    providerName: string;
+    memberId: string;
+    policyNumber: string;
+    status: string;
+  }>;
   physical: { height: number | null; weight: number | null };
   counts: {
     scheduledVisits: number;
@@ -64,6 +76,9 @@ export type PatientDetail = {
     weight: number | null;
     height: number | null;
     oxygenSaturation: number | null;
+    respiratoryRate?: number | null;
+    bmi?: number | null;
+    source?: string;
   } | null;
   appointments: Array<{
     id: string;
@@ -73,13 +88,34 @@ export type PatientDetail = {
     provider: string;
     status: string;
     rawStatus: string;
+    reason?: string;
+  }>;
+  scheduledAppointments?: Array<{
+    id: string;
+    appointmentNumber: string;
+    date: string;
+    time: string;
+    provider: string;
+    status: string;
+    rawStatus: string;
+  }>;
+  scheduledFollowUps?: Array<{
+    id: string;
+    date: string;
+    reason: string;
+    status: string;
+    provider?: string;
   }>;
   consultations: Array<{
     id: string;
     date: string;
     physician: string;
     diagnosis: string;
+    chiefComplaint?: string;
+    diagnoses?: Array<{ code: string; description: string; isPrimary?: boolean }>;
     status: string;
+    notes?: string;
+    doctorId?: string;
   }>;
   vitalsHistory: Array<{
     id: string;
@@ -90,9 +126,13 @@ export type PatientDetail = {
     temperature: number | null;
     weight: number | null;
     height: number | null;
+    bmi?: number | null;
     oxygenSaturation: number | null;
     notes: string;
     urgencyLevel?: string;
+    source?: "VITAL_SIGNS" | "TRIAGE";
+    recordedBy?: string;
+    painLevel?: number | null;
   }>;
   visitTimeline?: Array<{
     id: string;

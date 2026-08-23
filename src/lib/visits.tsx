@@ -28,9 +28,9 @@ export type VisitStage =
 export type ConsultFeeStatus = "PENDING" | "PAID" | "WAIVED";
 
 export const STAGE_META: Record<VisitStage, { label: string; tone: BadgeTone; step: number }> = {
-  CHECKED_IN: { label: "Waiting for Triage", tone: "blue", step: 1 },
+  CHECKED_IN: { label: "Waiting for Triage", tone: "blue", step: 2 },
   AWAITING_PAYMENT: { label: "Pay at Finance", tone: "amber", step: 1 },
-  WAITING_DOCTOR: { label: "Waiting for Doctor", tone: "amber", step: 2 },
+  WAITING_DOCTOR: { label: "Waiting for Doctor", tone: "amber", step: 3 },
   IN_CONSULTATION: { label: "In Consultation", tone: "teal", step: 3 },
   LAB_PENDING: { label: "At Laboratory", tone: "amber", step: 4 },
   RESULTS_READY: { label: "Lab Results Ready", tone: "blue", step: 5 },

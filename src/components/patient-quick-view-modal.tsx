@@ -6,10 +6,11 @@ import {
   FolderOpen,
   History,
   Users,
-  X,
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { EmptyState } from "@/components/empty-state";
+import { Modal } from "@/components/modal";
 import { Badge, type BadgeTone } from "@/components/ui";
 import { api } from "@/lib/api";
 import type { PatientDetail } from "@/lib/catalog";
@@ -28,6 +29,18 @@ const STATUS_TONES: Record<string, BadgeTone> = {
   COMPLETED: "green",
   IN_PROGRESS: "amber",
 };
+
+function formatDate(iso: string) {
+  try {
+    return new Date(iso).toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  } catch {
+    return iso || "—";
+  }
+}
 
 export function PatientQuickViewModal({
   patientId,
@@ -52,6 +65,7 @@ export function PatientQuickViewModal({
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : "Unable to load patient");
+          setDetail(null);
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -88,22 +102,28 @@ export function PatientQuickViewModal({
         provider: c.physician,
         status: c.status,
         summary: c.diagnosis,
-        href: `/patients/${detail.id}`,
+        href: `/patients/${detail.id}?consultationId=${c.id}`,
       })),
     ];
   }, [detail]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4 backdrop-blur-[1px]">
-      <div className="flex max-h-[90vh] w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-xl">
-        <aside className="flex w-[220px] shrink-0 flex-col border-r border-slate-100 bg-[#faf7f9]">
+    <Modal open onClose={onClose} size="xl" hideHeader>
+      <div className="flex max-h-[80vh] overflow-hidden">
+        <aside className="flex w-[200px] shrink-0 flex-col border-r border-slate-100 bg-[#faf7f9] sm:w-[220px]">
           <div className="px-4 pb-3 pt-5">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-brand-600">
               Diagnostic overview
             </p>
             <h2 className="mt-1 text-base font-bold leading-snug text-slate-900">
-              {detail?.name ?? "Patient"}
+              {detail?.name ?? (loading ? "Loading…" : "Patient")}
             </h2>
+            {detail?.mrn ? (
+              <p className="mt-0.5 text-xs text-slate-400">
+                {detail.mrn}
+                {detail.referenceCode ? ` · ${detail.referenceCode}` : ""}
+              </p>
+            ) : null}
           </div>
           <nav className="flex flex-1 flex-col gap-1 px-2">
             {(
@@ -143,24 +163,30 @@ export function PatientQuickViewModal({
         </aside>
 
         <div className="relative min-w-0 flex-1 overflow-y-auto p-5 sm:p-6">
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            className="absolute right-4 top-4 text-slate-400 hover:text-slate-700"
-          >
-            <X className="h-4 w-4" />
-          </button>
+          {loading && (
+            <div className="space-y-3 py-6">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="h-16 animate-pulse rounded-xl bg-slate-100"
+                />
+              ))}
+            </div>
+          )}
 
-          {loading && <p className="text-sm text-slate-400">Loading patient…</p>}
-          {error && <p className="text-sm text-rose-500">{error}</p>}
+          {error && !loading && (
+            <div className="rounded-xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-rose-600">
+              <p className="font-medium">Unable to load patient</p>
+              <p className="mt-1 text-xs">{error}</p>
+            </div>
+          )}
 
           {detail && !loading && tab === "personal" && (
-            <div className="space-y-5 pr-4">
+            <div className="space-y-5 pr-2">
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 <div>
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-brand-600">
-                    Demographics registry
+                    Demographics
                   </p>
                   <dl className="mt-3 space-y-3 text-sm">
                     <div>
@@ -171,7 +197,7 @@ export function PatientQuickViewModal({
                     </div>
                     <div>
                       <dt className="text-[10px] uppercase tracking-wide text-slate-400">
-                        Biological gender
+                        Gender
                       </dt>
                       <dd className="font-semibold text-slate-900">
                         {detail.gender || "—"}
@@ -179,15 +205,23 @@ export function PatientQuickViewModal({
                     </div>
                     <div>
                       <dt className="text-[10px] uppercase tracking-wide text-slate-400">
-                        Current age
+                        Date of birth
                       </dt>
                       <dd className="font-semibold text-slate-900">
-                        {detail.age > 0 ? `${detail.age} Years` : "N/A Years"}
+                        {detail.dateOfBirth || "—"}
                       </dd>
                     </div>
                     <div>
                       <dt className="text-[10px] uppercase tracking-wide text-slate-400">
-                        Blood profile
+                        Age
+                      </dt>
+                      <dd className="font-semibold text-slate-900">
+                        {detail.age > 0 ? `${detail.age} years` : "—"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-[10px] uppercase tracking-wide text-slate-400">
+                        Blood group
                       </dt>
                       <dd className="mt-1">
                         <span className="inline-flex rounded-full bg-rose-50 px-2.5 py-0.5 text-xs font-semibold text-rose-600">
@@ -195,16 +229,24 @@ export function PatientQuickViewModal({
                         </span>
                       </dd>
                     </div>
+                    <div>
+                      <dt className="text-[10px] uppercase tracking-wide text-slate-400">
+                        Registered
+                      </dt>
+                      <dd className="font-semibold text-slate-900">
+                        {formatDate(detail.registeredAt)}
+                      </dd>
+                    </div>
                   </dl>
                 </div>
                 <div>
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-brand-600">
-                    Communication matrix
+                    Contact
                   </p>
                   <dl className="mt-3 space-y-3 text-sm">
                     <div>
                       <dt className="text-[10px] uppercase tracking-wide text-slate-400">
-                        Direct phone
+                        Phone
                       </dt>
                       <dd className="font-semibold text-slate-900">
                         {detail.phone || "—"}
@@ -212,7 +254,7 @@ export function PatientQuickViewModal({
                     </div>
                     <div>
                       <dt className="text-[10px] uppercase tracking-wide text-slate-400">
-                        Email reach
+                        Email
                       </dt>
                       <dd className="truncate font-semibold text-slate-900">
                         {detail.email || "—"}
@@ -220,19 +262,70 @@ export function PatientQuickViewModal({
                     </div>
                     <div>
                       <dt className="text-[10px] uppercase tracking-wide text-slate-400">
-                        Residential address
+                        Address
                       </dt>
                       <dd className="font-medium text-slate-700">
-                        {detail.address || "Address not recorded in system"}
+                        {[detail.address, detail.city, detail.country]
+                          .filter(Boolean)
+                          .join(", ") || "—"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-[10px] uppercase tracking-wide text-slate-400">
+                        Occupation
+                      </dt>
+                      <dd className="font-semibold text-slate-900">
+                        {detail.occupation || "—"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-[10px] uppercase tracking-wide text-slate-400">
+                        Height / weight
+                      </dt>
+                      <dd className="font-semibold text-slate-900">
+                        {detail.physical.height != null
+                          ? `${detail.physical.height} cm`
+                          : "—"}
+                        {" / "}
+                        {detail.physical.weight != null
+                          ? `${detail.physical.weight} kg`
+                          : "—"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-[10px] uppercase tracking-wide text-slate-400">
+                        Vitals on file
+                      </dt>
+                      <dd className="font-semibold text-slate-900">
+                        {detail.counts.vitals}
                       </dd>
                     </div>
                   </dl>
                 </div>
               </div>
 
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-brand-600">
+                    Allergies
+                  </p>
+                  <p className="mt-1 text-sm font-medium text-slate-800">
+                    {detail.allergies || "None recorded"}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-brand-600">
+                    Chronic conditions
+                  </p>
+                  <p className="mt-1 text-sm font-medium text-slate-800">
+                    {detail.chronicDiseases || "None recorded"}
+                  </p>
+                </div>
+              </div>
+
               <div className="rounded-xl bg-brand-50 px-4 py-3">
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-brand-600">
-                  Emergency response (NOK)
+                  Emergency (NOK)
                 </p>
                 <div className="mt-2 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-slate-900">
                   <Users className="h-4 w-4 text-brand-600" />
@@ -246,6 +339,24 @@ export function PatientQuickViewModal({
                 )}
               </div>
 
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-brand-600">
+                  Insurance
+                </p>
+                {(detail.insurance?.length ?? 0) === 0 ? (
+                  <p className="mt-2 text-sm text-slate-500">No active policy on file</p>
+                ) : (
+                  <ul className="mt-2 space-y-1 text-sm">
+                    {detail.insurance!.map((pol) => (
+                      <li key={pol.id}>
+                        {pol.providerName}
+                        {pol.memberId ? ` · ${pol.memberId}` : ""}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
               <Link
                 href={`/patients/${detail.id}`}
                 className="inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-800 hover:border-brand-300 hover:text-brand-700"
@@ -256,17 +367,17 @@ export function PatientQuickViewModal({
           )}
 
           {detail && !loading && tab === "timeline" && (
-            <div className="pr-4">
+            <div className="pr-2">
               <p className="text-[10px] font-semibold uppercase tracking-wider text-brand-600">
                 Historical encounters
               </p>
               {timeline.length === 0 ? (
-                <div className="mt-4 flex min-h-48 flex-col items-center justify-center rounded-xl border border-slate-200 bg-slate-50 px-6 text-center">
-                  <FolderOpen className="mb-3 h-10 w-10 text-slate-300" />
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    No historical encounters detected
-                  </p>
-                </div>
+                <EmptyState
+                  icon={FolderOpen}
+                  title="No historical encounters"
+                  description="No appointments, visits, or consultations are on file for this patient yet."
+                  className="mt-2 rounded-xl border border-slate-200 bg-slate-50"
+                />
               ) : (
                 <ul className="mt-4 space-y-2">
                   {timeline.slice(0, 20).map((item) => (
@@ -299,6 +410,6 @@ export function PatientQuickViewModal({
           )}
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }

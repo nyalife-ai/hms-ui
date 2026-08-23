@@ -3,6 +3,13 @@
 import { CalendarDays, Send, ShieldCheck, Loader2, Smartphone, UserCheck } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { FieldLabel } from "@/components/field-label";
+import {
+  EMPTY_PATIENT_FORM,
+  PatientForm,
+  toOpsCreateBody,
+  validatePatientForm,
+  type PatientFormValues,
+} from "@/components/patient-form";
 import { PatientSearchSelect } from "@/components/patient-search-select";
 import { RoleGuard } from "@/components/role-guard";
 import { Avatar, Badge, Card, CardHeader, PageHeader } from "@/components/ui";
@@ -45,14 +52,10 @@ export default function FrontDeskPage() {
   const [firstVisit, setFirstVisit] = useState(false);
   const [existingId, setExistingId] = useState("");
   const [selectedPatient, setSelectedPatient] = useState<CatalogPatient | null>(null);
-  const [name, setName] = useState("");
-  const [age, setAge] = useState("");
-  const [gender, setGender] = useState<"Male" | "Female">("Female");
-  const [kinName, setKinName] = useState("");
-  const [kinPhone, setKinPhone] = useState("");
+  const [patientForm, setPatientForm] =
+    useState<PatientFormValues>(EMPTY_PATIENT_FORM);
   const [consultFeeEnabled, setConsultFeeEnabled] = useState(true);
   const [consultFeeAmount, setConsultFeeAmount] = useState<number | null>(null);
-  const [phone, setPhone] = useState("");
   const [method, setMethod] = useState<"CASH" | "INSURANCE">("CASH");
   const [providerId, setProviderId] = useState("");
   const [policyNumber, setPolicyNumber] = useState("");
@@ -221,12 +224,7 @@ export default function FrontDeskPage() {
   const resetForm = () => {
     setExistingId("");
     setSelectedPatient(null);
-    setName("");
-    setAge("");
-    setGender("Female");
-    setPhone("");
-    setKinName("");
-    setKinPhone("");
+    setPatientForm(EMPTY_PATIENT_FORM);
     setMethod("CASH");
     setProviderId("");
     setPolicyNumber("");
@@ -252,13 +250,11 @@ export default function FrontDeskPage() {
         | null = null;
 
       if (firstVisit) {
-        if (!name.trim() || !phone.trim()) {
-          setFormError("Name and phone are required for a first visit.");
+        const err = validatePatientForm(patientForm);
+        if (err) {
+          setFormError(err);
           return;
         }
-        const parts = name.trim().split(/\s+/);
-        const firstName = parts[0] || name.trim();
-        const lastName = parts.slice(1).join(" ") || firstName;
         try {
           const created = await api<{
             id: string;
@@ -266,23 +262,27 @@ export default function FrontDeskPage() {
             patientNumber?: string;
           }>("/ops/patients", {
             method: "POST",
-            body: JSON.stringify({
-              firstName,
-              lastName,
-              gender,
-              phone,
-              emergencyContactName: kinName.trim() || undefined,
-              emergencyContactPhone: kinPhone.trim() || undefined,
-            }),
+            body: JSON.stringify(toOpsCreateBody(patientForm)),
           });
           const mrn = created.patient_number || created.patientNumber;
           if (!mrn) throw new Error("Patient created without MRN");
+          const ageYears = patientForm.dateOfBirth
+            ? Math.max(
+                0,
+                Math.floor(
+                  (Date.now() -
+                    new Date(patientForm.dateOfBirth).getTime()) /
+                    (365.25 * 24 * 60 * 60 * 1000),
+                ),
+              )
+            : 0;
           patient = {
-            patientName: name.trim(),
+            patientName: `${patientForm.firstName.trim()} ${patientForm.lastName.trim()}`,
             mrn,
-            age: Number(age) || 0,
-            gender,
-            phone,
+            age: ageYears,
+            gender:
+              patientForm.gender === "Other" ? "Female" : patientForm.gender,
+            phone: patientForm.phone.trim(),
           };
         } catch (err) {
           setFormError(
@@ -368,7 +368,9 @@ export default function FrontDeskPage() {
     }
   };
 
-  const canSubmit = firstVisit ? name.trim() !== "" : existingId !== "";
+  const canSubmit = firstVisit
+    ? patientForm.firstName.trim() !== "" && patientForm.lastName.trim() !== ""
+    : existingId !== "";
   // Slade / SHA API insurers must finish OTP (auth_token). Manual insurers may proceed pending.
   const insuranceReady =
     method === "CASH" ||
@@ -408,67 +410,11 @@ export default function FrontDeskPage() {
             </div>
 
             {firstVisit ? (
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div className="sm:col-span-2">
-                  <label className="text-xs font-semibold text-slate-600">Full name</label>
-                  <input
-                    className={`mt-1.5 ${inputClass}`}
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g. Jane Wanjiku"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-slate-600">Age</label>
-                  <input
-                    className={`mt-1.5 ${inputClass}`}
-                    value={age}
-                    onChange={(e) => setAge(e.target.value)}
-                    placeholder="34"
-                    inputMode="numeric"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-slate-600">Gender</label>
-                  <select
-                    className={`mt-1.5 ${inputClass}`}
-                    value={gender}
-                    onChange={(e) => setGender(e.target.value as "Male" | "Female")}
-                  >
-                    <option>Female</option>
-                    <option>Male</option>
-                  </select>
-                </div>
-                <div className="sm:col-span-2">
-                  <label className="text-xs font-semibold text-slate-600">Phone</label>
-                  <input
-                    className={`mt-1.5 ${inputClass}`}
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+254 7…"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-slate-600">
-                    Next of kin
-                  </label>
-                  <input
-                    className={`mt-1.5 ${inputClass}`}
-                    value={kinName}
-                    onChange={(e) => setKinName(e.target.value)}
-                    placeholder="Relative name"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-slate-600">Kin phone</label>
-                  <input
-                    className={`mt-1.5 ${inputClass}`}
-                    value={kinPhone}
-                    onChange={(e) => setKinPhone(e.target.value)}
-                    placeholder="+254 7…"
-                  />
-                </div>
-              </div>
+              <PatientForm
+                values={patientForm}
+                onChange={setPatientForm}
+                mode="create"
+              />
             ) : (
               <div>
                 <FieldLabel required>Patient</FieldLabel>

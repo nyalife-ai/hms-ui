@@ -8,13 +8,21 @@ import {
   Users,
   UserRoundPlus,
   Venus,
-  X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { BulkImportDialog } from "@/components/bulk-import-dialog";
-import { FieldLabel } from "@/components/field-label";
+import { EmptyState } from "@/components/empty-state";
+import { Modal } from "@/components/modal";
 import { PaginationBar } from "@/components/pagination-bar";
+import {
+  EMPTY_PATIENT_FORM,
+  PatientForm,
+  toOpsCreateBody,
+  toPatientsUpdateBody,
+  validatePatientForm,
+  type PatientFormValues,
+} from "@/components/patient-form";
 import { PatientQuickViewModal } from "@/components/patient-quick-view-modal";
 import { PatientRowActions } from "@/components/patient-row-actions";
 import { RecordVitalsModal } from "@/components/record-vitals-modal";
@@ -34,13 +42,44 @@ import {
   usePaginatedCatalog,
   usePatientSummary,
   type CatalogPatient,
+  type PatientDetail,
 } from "@/lib/catalog";
 import { toPageMeta } from "@/lib/pagination";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 import { useAuth } from "@/lib/auth";
 
-const inputClass =
-  "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+function genderFromDetail(g: string): PatientFormValues["gender"] {
+  const u = g.toUpperCase();
+  if (u === "MALE" || g === "Male") return "Male";
+  if (u === "OTHER" || g === "Other") return "Other";
+  return "Female";
+}
+
+function detailToForm(d: PatientDetail): PatientFormValues {
+  return {
+    ...EMPTY_PATIENT_FORM,
+    firstName: d.firstName || d.name.trim().split(/\s+/)[0] || "",
+    lastName:
+      d.lastName ||
+      d.name.trim().split(/\s+/).slice(1).join(" ") ||
+      "",
+    email: d.email || "",
+    phone: d.phone || "",
+    gender: genderFromDetail(d.gender || ""),
+    dateOfBirth: d.dateOfBirth?.slice(0, 10) || "",
+    address: d.address || "",
+    city: d.city || "",
+    country: d.country || "",
+    postalCode: d.postalCode || "",
+    bloodGroup: d.bloodGroup || "",
+    occupation: d.occupation || "",
+    maritalStatus: d.maritalStatus || "",
+    allergies: d.allergies || "",
+    chronicDiseases: d.chronicDiseases || "",
+    emergencyContactName: d.emergencyContact?.name || "",
+    emergencyContactPhone: d.emergencyContact?.phone || "",
+  };
+}
 
 export default function PatientsPage() {
   const router = useRouter();
@@ -74,40 +113,54 @@ export default function PatientsPage() {
     refresh: refreshSummary,
   } = usePatientSummary();
 
-  const [open, setOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
-  const [edit, setEdit] = useState<CatalogPatient | null>(null);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [form, setForm] = useState<PatientFormValues>(EMPTY_PATIENT_FORM);
+  const [editInsurance, setEditInsurance] = useState<
+    PatientDetail["insurance"]
+  >([]);
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState("");
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [genderForm, setGenderForm] = useState<"Male" | "Female" | "Other">("Female");
-  const [phone, setPhone] = useState("");
-  const [dateOfBirth, setDateOfBirth] = useState("");
-  const [allergies, setAllergies] = useState("");
-  const [chronic, setChronic] = useState("");
-  const [kinName, setKinName] = useState("");
-  const [kinPhone, setKinPhone] = useState("");
 
   const [quickViewId, setQuickViewId] = useState<string | null>(null);
-  const [vitalsPatient, setVitalsPatient] = useState<CatalogPatient | null>(null);
+  const [vitalsPatient, setVitalsPatient] = useState<CatalogPatient | null>(
+    null,
+  );
 
-  const resetCreate = () => {
-    setFirstName("");
-    setLastName("");
-    setPhone("");
-    setDateOfBirth("");
-    setGenderForm("Female");
-    setAllergies("");
-    setChronic("");
-    setKinName("");
-    setKinPhone("");
+  const openCreate = () => {
+    setForm(EMPTY_PATIENT_FORM);
     setFormError("");
+    setCreateOpen(true);
   };
 
-  const submit = async () => {
-    if (!firstName.trim() || !lastName.trim() || !phone.trim()) {
-      setFormError("First name, last name and phone are required.");
+  const openEdit = async (p: CatalogPatient) => {
+    setEditId(p.id);
+    setFormError("");
+    setBusy(true);
+    try {
+      const d = await api<PatientDetail>(`/catalog/patients/${p.id}`);
+      setForm(detailToForm(d));
+      setEditInsurance(d.insurance ?? []);
+    } catch {
+      const parts = p.name.trim().split(/\s+/);
+      setForm({
+        ...EMPTY_PATIENT_FORM,
+        firstName: parts[0] || "",
+        lastName: parts.slice(1).join(" ") || "",
+        phone: p.phone || "",
+        gender: genderFromDetail(p.gender),
+      });
+      setEditInsurance([]);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const submitCreate = async () => {
+    const err = validatePatientForm(form);
+    if (err) {
+      setFormError(err);
       return;
     }
     setBusy(true);
@@ -115,61 +168,43 @@ export default function PatientsPage() {
     try {
       await api("/ops/patients", {
         method: "POST",
-        body: JSON.stringify({
-          firstName: firstName.trim(),
-          lastName: lastName.trim(),
-          gender: genderForm,
-          phone: phone.trim(),
-          dateOfBirth: dateOfBirth || undefined,
-          allergies: allergies.trim() || undefined,
-          chronicDiseases: chronic.trim() || undefined,
-          emergencyContactName: kinName.trim() || undefined,
-          emergencyContactPhone: kinPhone.trim() || undefined,
-        }),
+        body: JSON.stringify(toOpsCreateBody(form)),
       });
-      setOpen(false);
-      resetCreate();
+      setCreateOpen(false);
+      setForm(EMPTY_PATIENT_FORM);
       await Promise.all([refresh(), refreshSummary()]);
-    } catch (err) {
+    } catch (e) {
       setFormError(
-        err instanceof Error ? err.message : "Unable to register the patient. Please try again.",
+        e instanceof Error
+          ? e.message
+          : "Unable to register the patient. Please try again.",
       );
     } finally {
       setBusy(false);
     }
   };
 
-  const openEdit = (p: CatalogPatient) => {
-    const parts = p.name.trim().split(/\s+/);
-    setEdit(p);
-    setFirstName(parts[0] || "");
-    setLastName(parts.slice(1).join(" ") || "");
-    setPhone(p.phone || "");
-    setFormError("");
-  };
-
-  const saveEdit = async () => {
-    if (!edit) return;
-    if (!firstName.trim() || !lastName.trim()) {
-      setFormError("Name is required.");
+  const submitEdit = async () => {
+    if (!editId) return;
+    const err = validatePatientForm(form, { requirePhone: false });
+    if (err) {
+      setFormError(err);
       return;
     }
     setBusy(true);
     setFormError("");
     try {
-      await api(`/patients/${edit.id}`, {
+      await api(`/patients/${editId}`, {
         method: "PATCH",
-        body: JSON.stringify({
-          firstName: firstName.trim(),
-          lastName: lastName.trim(),
-          phone: phone.trim() || undefined,
-        }),
+        body: JSON.stringify(toPatientsUpdateBody(form)),
       });
-      setEdit(null);
+      setEditId(null);
       await refresh();
-    } catch (err) {
+    } catch (e) {
       setFormError(
-        err instanceof Error ? err.message : "Unable to save changes. Please try again.",
+        e instanceof Error
+          ? e.message
+          : "Unable to save changes. Please try again.",
       );
     } finally {
       setBusy(false);
@@ -178,6 +213,8 @@ export default function PatientsPage() {
 
   const meta = toPageMeta({ total, page, limit });
   const kpi = summary ?? { total: 0, female: 0, male: 0, recent7d: 0 };
+  const inputClass =
+    "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
   return (
     <RoleGuard module="patients">
@@ -201,12 +238,7 @@ export default function PatientsPage() {
                 Import patients
               </button>
             )}
-            <PrimaryButton
-              onClick={() => {
-                resetCreate();
-                setOpen(true);
-              }}
-            >
+            <PrimaryButton onClick={openCreate}>
               <Plus className="h-4 w-4" /> Register patient
             </PrimaryButton>
           </div>
@@ -279,14 +311,31 @@ export default function PatientsPage() {
 
       <Card>
         {error && <p className="px-4 py-3 text-sm text-rose-500">{error}</p>}
-        <Table headers={["Patient", "MRN", "Age", "Gender", "Phone", "Last visit", "Status", "Actions"]}>
+        <Table
+          headers={[
+            "Patient",
+            "MRN",
+            "Age",
+            "Gender",
+            "Phone",
+            "Last visit",
+            "Status",
+            "Actions",
+          ]}
+        >
           {!loading &&
             items.map((p) => (
               <tr key={p.id} className="transition hover:bg-slate-50/60">
                 <td className="px-4 py-2.5">
                   <div className="flex items-center gap-3">
                     <Avatar name={p.name} size="sm" />
-                    <span className="font-medium text-slate-800">{p.name}</span>
+                    <button
+                      type="button"
+                      onClick={() => setQuickViewId(p.id)}
+                      className="cursor-pointer text-left font-medium text-slate-800 underline-offset-2 hover:text-brand-700 hover:underline"
+                    >
+                      {p.name}
+                    </button>
                   </div>
                 </td>
                 <td className="px-4 py-2.5 text-slate-500">{p.mrn}</td>
@@ -297,7 +346,11 @@ export default function PatientsPage() {
                 <td className="px-4 py-2.5">
                   <Badge
                     tone={
-                      p.status === "Admitted" ? "amber" : p.status === "Active" ? "green" : "slate"
+                      p.status === "Admitted"
+                        ? "amber"
+                        : p.status === "Active"
+                          ? "green"
+                          : "slate"
                     }
                   >
                     {p.status}
@@ -309,7 +362,7 @@ export default function PatientsPage() {
                       icon={Pencil}
                       label="Edit patient"
                       tone="edit"
-                      onClick={() => openEdit(p)}
+                      onClick={() => void openEdit(p)}
                     />
                     <PatientRowActions
                       onRecordVital={() => setVitalsPatient(p)}
@@ -324,104 +377,69 @@ export default function PatientsPage() {
         {loading && (
           <div className="space-y-2 px-4 py-6">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-10 animate-pulse rounded-xl bg-slate-100" />
+              <div
+                key={i}
+                className="h-10 animate-pulse rounded-xl bg-slate-100"
+              />
             ))}
           </div>
+        )}
+        {!loading && !error && items.length === 0 && (
+          <EmptyState
+            icon={Users}
+            title="No patients found"
+            description="Try adjusting search or filters, or register a new patient."
+          />
         )}
         <PaginationBar meta={meta} onPageChange={setPage} disabled={loading} />
       </Card>
 
-      {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
-          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-5 shadow-xl">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-base font-semibold text-slate-900">Register patient</h2>
-              <button type="button" onClick={() => setOpen(false)} className="rounded-lg p-1 text-slate-400 hover:bg-slate-50">
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <FieldLabel required>First name</FieldLabel>
-                  <input className={inputClass} value={firstName} onChange={(e) => setFirstName(e.target.value)} />
-                </div>
-                <div>
-                  <FieldLabel required>Last name</FieldLabel>
-                  <input className={inputClass} value={lastName} onChange={(e) => setLastName(e.target.value)} />
-                </div>
-              </div>
-              <div>
-                <FieldLabel required>Gender</FieldLabel>
-                <select className={inputClass} value={genderForm} onChange={(e) => setGenderForm(e.target.value as "Male" | "Female" | "Other")}>
-                  <option value="Female">Female</option>
-                  <option value="Male">Male</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-              <div>
-                <FieldLabel required>Phone</FieldLabel>
-                <input className={inputClass} value={phone} onChange={(e) => setPhone(e.target.value)} />
-              </div>
-              <div>
-                <FieldLabel optional>Date of birth</FieldLabel>
-                <input className={inputClass} type="date" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} />
-              </div>
-              <div>
-                <FieldLabel optional>Allergies</FieldLabel>
-                <input className={inputClass} value={allergies} onChange={(e) => setAllergies(e.target.value)} />
-              </div>
-              <div>
-                <FieldLabel optional>Chronic conditions</FieldLabel>
-                <input className={inputClass} value={chronic} onChange={(e) => setChronic(e.target.value)} />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <FieldLabel optional>Next of kin</FieldLabel>
-                  <input className={inputClass} value={kinName} onChange={(e) => setKinName(e.target.value)} />
-                </div>
-                <div>
-                  <FieldLabel optional>Kin phone</FieldLabel>
-                  <input className={inputClass} value={kinPhone} onChange={(e) => setKinPhone(e.target.value)} />
-                </div>
-              </div>
-              {formError && <p className="text-sm text-rose-500">{formError}</p>}
-              <PrimaryButton disabled={busy} onClick={submit}>
-                {busy ? "Saving…" : "Create patient"}
-              </PrimaryButton>
-            </div>
+      <Modal
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        title="Register patient"
+        size="lg"
+        footer={
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            {formError ? (
+              <p className="text-sm text-rose-500">{formError}</p>
+            ) : (
+              <span />
+            )}
+            <PrimaryButton disabled={busy} onClick={() => void submitCreate()}>
+              {busy ? "Saving…" : "Create patient"}
+            </PrimaryButton>
           </div>
-        </div>
-      )}
+        }
+      >
+        <PatientForm values={form} onChange={setForm} mode="create" />
+      </Modal>
 
-      {edit && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
-          <div className="w-full max-w-md space-y-3 rounded-2xl bg-white p-5 shadow-xl">
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-semibold">Edit patient</h2>
-              <button type="button" onClick={() => setEdit(null)}>
-                <X className="h-4 w-4 text-slate-400" />
-              </button>
-            </div>
-            <div>
-              <FieldLabel required>First name</FieldLabel>
-              <input className={inputClass} value={firstName} onChange={(e) => setFirstName(e.target.value)} />
-            </div>
-            <div>
-              <FieldLabel required>Last name</FieldLabel>
-              <input className={inputClass} value={lastName} onChange={(e) => setLastName(e.target.value)} />
-            </div>
-            <div>
-              <FieldLabel>Phone</FieldLabel>
-              <input className={inputClass} value={phone} onChange={(e) => setPhone(e.target.value)} />
-            </div>
-            {formError && <p className="text-sm text-rose-500">{formError}</p>}
-            <PrimaryButton disabled={busy} onClick={saveEdit}>
+      <Modal
+        open={editId != null}
+        onClose={() => setEditId(null)}
+        title="Edit patient"
+        size="lg"
+        footer={
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            {formError ? (
+              <p className="text-sm text-rose-500">{formError}</p>
+            ) : (
+              <span />
+            )}
+            <PrimaryButton disabled={busy} onClick={() => void submitEdit()}>
               {busy ? "Saving…" : "Save changes"}
             </PrimaryButton>
           </div>
-        </div>
-      )}
+        }
+      >
+        <PatientForm
+          values={form}
+          onChange={setForm}
+          mode="edit"
+          insurance={editInsurance}
+        />
+      </Modal>
 
       {quickViewId && (
         <PatientQuickViewModal
