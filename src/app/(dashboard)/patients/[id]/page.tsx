@@ -37,7 +37,7 @@ import {
 } from "@/components/ui";
 import { api } from "@/lib/api";
 import type { PatientDetail } from "@/lib/catalog";
-import { consultationJourneyHref } from "@/lib/clinical-links";
+import { consultationJourneyHref, relatedLabsHref, relatedPrescriptionsHref } from "@/lib/clinical-links";
 
 function formatDateTime(iso: string) {
   try {
@@ -152,10 +152,21 @@ export default function PatientProfilePage() {
   }, [load]);
 
   const openConsultation = (
-    c: PatientDetail["consultations"][number] | { id: string; href?: string; visitId?: string | null },
+    c:
+      | PatientDetail["consultations"][number]
+      | {
+          id: string;
+          href?: string;
+          visitId?: string | null;
+          kind?: string;
+        },
   ) => {
     const visitId =
-      "visitId" in c ? c.visitId : undefined;
+      "visitId" in c && c.visitId
+        ? c.visitId
+        : "kind" in c && c.kind === "visit"
+          ? c.id
+          : undefined;
     const href = "href" in c ? c.href : undefined;
     if (href?.startsWith("/consultations/")) {
       router.push(href);
@@ -163,6 +174,10 @@ export default function PatientProfilePage() {
     }
     if (visitId) {
       router.push(consultationJourneyHref(visitId));
+      return;
+    }
+    if ("kind" in c && c.kind === "visit") {
+      router.push(consultationJourneyHref(c.id));
       return;
     }
     setConsultationId(c.id);
@@ -527,7 +542,10 @@ export default function PatientProfilePage() {
           </Card>
 
           <Card>
-            <CardHeader title="Visit timeline" />
+            <CardHeader title="Clinical History" />
+            <p className="mb-3 px-1 text-xs text-slate-500">
+              Previous visits, appointments, and consultations for this patient.
+            </p>
             <Table headers={["Encounter", "When", "Provider", "Status", ""]}>
               {(
                 detail.visitTimeline ??
@@ -549,7 +567,7 @@ export default function PatientProfilePage() {
                   className="hover:bg-slate-50/60"
                 >
                   <td className="px-4 py-2.5 font-medium text-slate-800">
-                    {item.kind === "consultation" ? (
+                    {item.kind === "consultation" || item.kind === "visit" ? (
                       <button
                         type="button"
                         className="hover:text-brand-700"
@@ -580,7 +598,7 @@ export default function PatientProfilePage() {
                     </Badge>
                   </td>
                   <td className="px-4 py-2.5">
-                    {item.kind === "consultation" ? (
+                    {item.kind === "consultation" || item.kind === "visit" ? (
                       <button
                         type="button"
                         onClick={() => openConsultation(item)}
@@ -838,17 +856,36 @@ export default function PatientProfilePage() {
             ) : (
               <ul className="space-y-2">
                 {scheduledFollowUps.map((f) => (
-                  <li
-                    key={f.id}
-                    className="rounded-xl border border-slate-100 px-3 py-2 text-sm"
-                  >
-                    <span className="font-semibold">{f.date}</span>
-                    <Badge tone="blue">Follow-up</Badge>
-                    <p className="text-xs text-slate-500">
-                      {f.reason || "Follow-up"}
-                      {f.provider ? ` · ${f.provider}` : ""}
-                      {f.status ? ` · ${f.status}` : ""}
-                    </p>
+                  <li key={f.id}>
+                    {f.href || f.visitId || f.consultationId ? (
+                      <Link
+                        href={
+                          f.href ||
+                          (f.visitId
+                            ? consultationJourneyHref(f.visitId)
+                            : `/follow-ups?highlight=${f.id}`)
+                        }
+                        className="block rounded-xl border border-slate-100 px-3 py-2 text-sm hover:border-brand-200"
+                      >
+                        <span className="font-semibold">{f.date}</span>
+                        <Badge tone="blue">Follow-up</Badge>
+                        <p className="text-xs text-slate-500">
+                          {f.reason || "Follow-up"}
+                          {f.provider ? ` · ${f.provider}` : ""}
+                          {f.status ? ` · ${f.status}` : ""}
+                        </p>
+                      </Link>
+                    ) : (
+                      <div className="rounded-xl border border-slate-100 px-3 py-2 text-sm">
+                        <span className="font-semibold">{f.date}</span>
+                        <Badge tone="blue">Follow-up</Badge>
+                        <p className="text-xs text-slate-500">
+                          {f.reason || "Follow-up"}
+                          {f.provider ? ` · ${f.provider}` : ""}
+                          {f.status ? ` · ${f.status}` : ""}
+                        </p>
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -979,6 +1016,38 @@ export default function PatientProfilePage() {
               >
                 Open full consultation journey →
               </Link>
+            ) : null}
+            {activeConsultation.appointmentId ? (
+              <Link
+                href={`/appointments/${activeConsultation.appointmentId}`}
+                className="ml-3 inline-flex text-sm font-semibold text-brand-700 hover:underline"
+              >
+                Open linked appointment →
+              </Link>
+            ) : null}
+            {activeConsultation.visitId || activeConsultation.appointmentId ? (
+              <div className="flex flex-wrap gap-3 pt-1">
+                <Link
+                  href={relatedLabsHref({
+                    visitId: activeConsultation.visitId ?? undefined,
+                    appointmentId: activeConsultation.appointmentId ?? undefined,
+                    patientName: detail?.name,
+                  })}
+                  className="text-sm font-semibold text-brand-700 hover:underline"
+                >
+                  Related labs →
+                </Link>
+                <Link
+                  href={relatedPrescriptionsHref({
+                    visitId: activeConsultation.visitId ?? undefined,
+                    appointmentId: activeConsultation.appointmentId ?? undefined,
+                    patientName: detail?.name,
+                  })}
+                  className="text-sm font-semibold text-brand-700 hover:underline"
+                >
+                  Related prescriptions →
+                </Link>
+              </div>
             ) : null}
           </dl>
         )}

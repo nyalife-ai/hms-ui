@@ -105,6 +105,10 @@ export type PatientDetail = {
     reason: string;
     status: string;
     provider?: string;
+    consultationId?: string;
+    appointmentId?: string | null;
+    visitId?: string | null;
+    href?: string;
   }>;
   consultations: Array<{
     id: string;
@@ -153,6 +157,7 @@ export type PatientDetail = {
     summary: string;
     href: string;
     appointmentId?: string | null;
+    visitId?: string | null;
   }>;
 };
 

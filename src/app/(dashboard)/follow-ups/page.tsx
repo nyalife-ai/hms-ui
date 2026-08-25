@@ -33,6 +33,7 @@ import {
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { usePaginatedCatalog } from "@/lib/catalog";
+import { consultationJourneyHref } from "@/lib/clinical-links";
 import { toPageMeta, unwrapPage } from "@/lib/pagination";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 
@@ -58,6 +59,8 @@ type FollowUpRow = {
   patientMrn: string;
   consultationId: string;
   appointmentId: string | null;
+  /** Outpatient visit id for doctor journey `/consultations/:visitId` */
+  visitId?: string | null;
   doctorId: string;
   doctorName: string;
   followUpDate: string;
@@ -66,6 +69,10 @@ type FollowUpRow = {
   status: string;
   notes: string | null;
 };
+
+function hasLinkedConsultation(row: FollowUpRow): boolean {
+  return Boolean(row.visitId || row.appointmentId || row.consultationId);
+}
 
 type FollowUpSummary = {
   scheduledThisMonth: number;
@@ -303,11 +310,25 @@ export default function FollowUpsPage() {
     }
   };
 
-  const openDetailed = (row: FollowUpRow) => {
+  /** Prefer visit journey (consultation UI), then appointment, then patient. */
+  const openLinkedConsultation = (row: FollowUpRow) => {
+    if (row.visitId) {
+      router.push(consultationJourneyHref(row.visitId));
+      return;
+    }
     if (row.appointmentId) {
       router.push(`/appointments/${row.appointmentId}`);
       return;
     }
+    if (row.consultationId && row.patientId) {
+      router.push(
+        `/patients/${row.patientId}?consultationId=${row.consultationId}`,
+      );
+      return;
+    }
+  };
+
+  const openDetailed = (row: FollowUpRow) => {
     setQuickView(row);
   };
 
@@ -463,6 +484,8 @@ export default function FollowUpsPage() {
                   <FollowUpRowActions
                     onQuickView={() => setQuickView(row)}
                     onDetailedView={() => openDetailed(row)}
+                    canOpenLinkedConsultation={hasLinkedConsultation(row)}
+                    onOpenLinkedConsultation={() => openLinkedConsultation(row)}
                     canComplete={row.status === "SCHEDULED"}
                     onMarkComplete={() => void markComplete(row.id)}
                   />
@@ -739,10 +762,27 @@ export default function FollowUpsPage() {
             <Badge tone={STATUS_TONES[quickView.status] ?? "slate"}>
               {quickView.status.replaceAll("_", " ")}
             </Badge>
-            <div className="flex gap-2 pt-2">
-              <PrimaryButton onClick={() => openDetailed(quickView)}>
-                Open linked consultation
-              </PrimaryButton>
+            <div className="flex flex-wrap gap-2 pt-2">
+              {hasLinkedConsultation(quickView) ? (
+                <PrimaryButton
+                  onClick={() => openLinkedConsultation(quickView)}
+                >
+                  Open linked consultation
+                </PrimaryButton>
+              ) : (
+                <p className="text-xs text-slate-400">
+                  No linked consultation on file for this follow-up.
+                </p>
+              )}
+              {quickView.patientId ? (
+                <button
+                  type="button"
+                  onClick={() => router.push(`/patients/${quickView.patientId}`)}
+                  className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:border-brand-300"
+                >
+                  Open patient
+                </button>
+              ) : null}
             </div>
           </div>
         </div>

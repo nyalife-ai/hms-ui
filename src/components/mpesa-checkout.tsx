@@ -32,7 +32,13 @@ type StatusPayload = {
   checkoutId?: string;
   paymentId?: string;
   correlationId?: string;
-  timeline?: Array<{ stage: string; at: string; message?: string }>;
+  /** Prefer public timeline (label). Legacy stage codes still accepted. */
+  timeline?: Array<{
+    label?: string;
+    stage?: string;
+    at: string;
+    message?: string;
+  }>;
 };
 
 type Props = {
@@ -51,7 +57,11 @@ function mapPhase(status: string, stage?: string): UiPhase {
   if (status === "FAILED" || status === "CANCELLED") return "FAILED";
   if (status === "QUEUED") return "QUEUED";
   if (status === "PROCESSING") {
-    if (stage === "DARAJA_REQUEST_STARTED" || stage === "DARAJA_RESPONSE_RECEIVED") {
+    if (
+      stage === "DARAJA_REQUEST_STARTED" ||
+      stage === "DARAJA_RESPONSE_RECEIVED" ||
+      stage === "STK_SENT"
+    ) {
       return "SENDING_STK";
     }
     return "PROCESSING";
@@ -63,31 +73,68 @@ function mapPhase(status: string, stage?: string): UiPhase {
 function phaseCopy(phase: UiPhase): { title: string; hint: string } {
   switch (phase) {
     case "PROCESSING":
-      return { title: "Processing payment…", hint: "Validating and preparing the request." };
+      return {
+        title: "Preparing payment…",
+        hint: "Setting up the M-Pesa request for this bill.",
+      };
     case "QUEUED":
       return {
-        title: "Payment request queued",
-        hint: "Waiting for the payment worker to pick up the job. This is not a successful payment.",
+        title: "Preparing payment…",
+        hint: "Almost ready — connecting to M-Pesa.",
       };
     case "SENDING_STK":
-      return { title: "Sending STK Push…", hint: "Contacting Safaricom Daraja." };
+      return {
+        title: "Sending phone prompt…",
+        hint: "The patient should receive an M-Pesa prompt shortly.",
+      };
     case "WAITING_CUSTOMER":
       return {
-        title: "STK Push sent — waiting for customer",
+        title: "Waiting for PIN",
         hint: "Ask the patient to enter their M-Pesa PIN on their phone.",
       };
     case "SUCCESS":
       return { title: "Payment successful", hint: "Receipt is ready." };
     case "TIMEOUT":
       return {
-        title: "Payment timed out",
-        hint: "M-Pesa accepted the request, but the customer did not complete payment in time.",
+        title: "No PIN entered in time",
+        hint: "You can send the payment request again.",
       };
     case "FAILED":
-      return { title: "Payment failed", hint: "See the reason below, then fix and retry." };
+      return {
+        title: "Payment not completed",
+        hint: "See the reason below, then try again if needed.",
+      };
     default:
-      return { title: "M-Pesa checkout", hint: "" };
+      return { title: "M-Pesa payment", hint: "" };
   }
+}
+
+function timelineLabel(ev: {
+  label?: string;
+  stage?: string;
+  message?: string;
+}): string {
+  if (ev.label?.trim()) return ev.label;
+  // Fallback if an older API still returns stage codes
+  const stage = ev.stage || "";
+  const map: Record<string, string> = {
+    INITIATED: "Preparing payment",
+    QUEUED: "Preparing payment",
+    JOB_CREATED: "Preparing payment",
+    JOB_PICKED_UP: "Connecting to M-Pesa",
+    PROCESSING: "Connecting to M-Pesa",
+    DARAJA_REQUEST_STARTED: "Sending phone prompt",
+    DARAJA_RESPONSE_RECEIVED: "Sending phone prompt",
+    STK_SENT: "Waiting for PIN",
+    WAITING_CALLBACK: "Waiting for PIN",
+    CALLBACK_RECEIVED: "Confirming payment",
+    FINALIZING: "Confirming payment",
+    SUCCESS: "Payment successful",
+    FAILED: "Payment failed",
+    CANCELLED: "Payment cancelled",
+    TIMEOUT: "Payment timed out",
+  };
+  return map[stage] || ev.message || "Updating payment";
 }
 
 export function MpesaCheckoutModal({
@@ -105,8 +152,6 @@ export function MpesaCheckoutModal({
   const [checkoutId, setCheckoutId] = useState("");
   const [phase, setPhase] = useState<UiPhase>("IDLE");
   const [hint, setHint] = useState("");
-  const [mode, setMode] = useState<string>("");
-  const [paymentId, setPaymentId] = useState("");
   const [timeline, setTimeline] = useState<StatusPayload["timeline"]>([]);
   const [showDetails, setShowDetails] = useState(false);
   const [receipt, setReceipt] = useState<ReceiptData | null>(null);
@@ -133,8 +178,6 @@ export function MpesaCheckoutModal({
           const next = mapPhase(data.status, data.stage);
           setPhase(next);
           setHint(data.message || phaseCopy(next).hint);
-          setMode(data.mode || "");
-          setPaymentId(data.paymentId || data.checkoutId || id);
           setTimeline(data.timeline || []);
           if (data.status === "SUCCESS" && data.receiptId) {
             setPhase("SUCCESS");
@@ -152,7 +195,7 @@ export function MpesaCheckoutModal({
             setError(
               data.failureReason ||
                 data.message ||
-                "Payment was cancelled or failed. Try again.",
+                "Payment was not completed. Please try again.",
             );
             return;
           }
@@ -163,7 +206,7 @@ export function MpesaCheckoutModal({
       if (generation !== pollGen.current) return;
       setPhase("TIMEOUT");
       setError(
-        "Timed out waiting for payment status. Check Redis/worker logs with this Payment ID, or retry.",
+        "Still waiting for M-Pesa. You can close this and check billing, or send the request again.",
       );
     },
     [onPaid],
@@ -184,7 +227,6 @@ export function MpesaCheckoutModal({
         ok: boolean;
         checkoutId: string;
         paymentId?: string;
-        jobId?: string;
         status?: string;
         stage?: string;
         message?: string;
@@ -198,15 +240,11 @@ export function MpesaCheckoutModal({
 
       if (!data.checkoutId) {
         setPhase("FAILED");
-        setError(
-          "Payment was accepted by the API but no checkoutId was returned. Cannot track STK status.",
-        );
+        setError("Could not start M-Pesa payment. Please try again.");
         return;
       }
 
       setCheckoutId(data.checkoutId);
-      setPaymentId(data.paymentId || data.checkoutId);
-      setMode(data.mode || "");
       const next = mapPhase(data.status || "QUEUED", data.stage);
       setPhase(next);
       setHint(data.message || phaseCopy(next).hint);
@@ -243,7 +281,7 @@ export function MpesaCheckoutModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
       <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-base font-semibold text-slate-800">M-Pesa checkout</h3>
+          <h3 className="text-base font-semibold text-slate-800">M-Pesa payment</h3>
           <button
             onClick={() => {
               stopPolling();
@@ -260,9 +298,7 @@ export function MpesaCheckoutModal({
           <span className="font-semibold text-slate-900">KES {amount.toLocaleString()}</span>
         </p>
         <p className="mt-1 text-[11px] text-slate-400">
-          {source === "PHARMACY" ? "Pharmacy dispense payment" : "Reception outpatient bill"}
-          {mode ? ` · ${mode}` : ""}
-          {paymentId ? ` · ID ${paymentId.slice(0, 8)}…` : ""}
+          {source === "PHARMACY" ? "Pharmacy dispense" : "Outpatient bill"}
         </p>
 
         {phase === "IDLE" || phase === "FAILED" || phase === "TIMEOUT" ? (
@@ -277,7 +313,7 @@ export function MpesaCheckoutModal({
                       {error || hint || copy.hint}
                     </p>
                     <p className="mt-2 text-[11px] text-rose-700/80">
-                      Verify the phone number, confirm Redis/worker is running, then try again.
+                      Check the phone number, then try again. Or record cash payment instead.
                     </p>
                   </div>
                 </div>
@@ -320,29 +356,35 @@ export function MpesaCheckoutModal({
             )}
             <p className="text-sm font-medium text-slate-800">{copy.title}</p>
             <p className="text-[11px] text-slate-400">{hint || copy.hint}</p>
-            {checkoutId && (
-              <p className="text-[10px] text-slate-400">Payment ID: {checkoutId}</p>
-            )}
             {timeline && timeline.length > 0 && (
               <button
                 type="button"
                 className="text-[11px] font-medium text-brand-700 hover:underline"
                 onClick={() => setShowDetails((v) => !v)}
               >
-                {showDetails ? "Hide details" : "View details"}
+                {showDetails ? "Hide progress" : "View progress"}
               </button>
             )}
             {showDetails && timeline && (
               <ol className="mt-1 max-h-40 w-full overflow-y-auto rounded-xl bg-slate-50 px-3 py-2 text-left text-[11px] text-slate-600">
                 {timeline.map((ev, idx) => (
                   <li key={`${ev.at}-${idx}`} className="border-b border-slate-100 py-1.5 last:border-0">
-                    <span className="font-semibold text-slate-800">{ev.stage}</span>
-                    <span className="text-slate-400"> · {new Date(ev.at).toLocaleTimeString()}</span>
-                    {ev.message ? <div className="text-slate-500">{ev.message}</div> : null}
+                    <span className="font-semibold text-slate-800">{timelineLabel(ev)}</span>
+                    <span className="text-slate-400">
+                      {" "}
+                      · {new Date(ev.at).toLocaleTimeString()}
+                    </span>
+                    {ev.message &&
+                    !/job_|daraja|redis|worker|enqueue/i.test(ev.message) ? (
+                      <div className="text-slate-500">{ev.message}</div>
+                    ) : null}
                   </li>
                 ))}
               </ol>
             )}
+            {checkoutId && showDetails ? (
+              <p className="text-[10px] text-slate-400">Ref {checkoutId.slice(0, 8)}…</p>
+            ) : null}
           </div>
         )}
       </div>

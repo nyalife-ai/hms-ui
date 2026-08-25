@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { DoctorSearchSelect } from "@/components/doctor-search-select";
+import { ClinicalHistoryPanel } from "@/components/clinical-history-panel";
 import { RoleGuard } from "@/components/role-guard";
 import { Badge, Card, CardHeader, PageHeader } from "@/components/ui";
 import { PaymentInfo, PipelineStepper, VitalsGrid } from "@/components/visit-flow";
@@ -240,6 +241,25 @@ function JourneyInner() {
               />
             </div>
           </Card>
+
+          {visit.patientId ? (
+            <ClinicalHistoryPanel
+              patientId={visit.patientId}
+              currentVisitId={visit.id}
+            />
+          ) : (
+            <Card>
+              <CardHeader
+                title="Clinical History"
+                subtitle="Link this visit to a patient record to see prior encounters"
+              />
+              <p className="px-5 pb-5 text-sm text-slate-400">
+                No patient id on this visit yet. Open the patient registry by MRN{" "}
+                <span className="font-semibold text-slate-600">{visit.mrn}</span>{" "}
+                to review prior history.
+              </p>
+            </Card>
+          )}
 
           {tab === "reception" && (
             <Card>

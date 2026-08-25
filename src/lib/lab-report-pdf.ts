@@ -14,6 +14,7 @@ import {
 } from "@/lib/lab-report-config";
 import type { LabRequestDetail, LabResultLine } from "@/lib/lab-types";
 import { statusLabel } from "@/lib/lab-types";
+import { humanReadableClinicalNotes } from "@/lib/clinical-notes-display";
 
 const BRAND = {
   primary: [217, 26, 102] as const,
@@ -465,8 +466,9 @@ export async function buildLabReportPdf(
   drawSummaryCard("Clinical Observations", observations);
   drawSummaryCard("Professional Conclusion", conclusion);
 
-  if (detail.notes?.trim()) {
-    drawSummaryCard("Clinical notes", detail.notes.trim());
+  const readableNotes = humanReadableClinicalNotes(detail.notes);
+  if (readableNotes) {
+    drawSummaryCard("Clinical notes", readableNotes);
   }
 
   // ── Laboratory Technician Signature (+ ordering dept / verifier) ──

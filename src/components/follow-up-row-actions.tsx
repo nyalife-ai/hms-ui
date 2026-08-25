@@ -1,18 +1,22 @@
 "use client";
 
-import { CheckCircle2, Eye, FileText, MoreVertical } from "lucide-react";
+import { CheckCircle2, Eye, FileText, MoreVertical, Stethoscope } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 export function FollowUpRowActions({
   onQuickView,
   onDetailedView,
+  onOpenLinkedConsultation,
   onMarkComplete,
   canComplete,
+  canOpenLinkedConsultation,
 }: {
   onQuickView: () => void;
   onDetailedView: () => void;
+  onOpenLinkedConsultation?: () => void;
   onMarkComplete?: () => void;
   canComplete?: boolean;
+  canOpenLinkedConsultation?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -48,7 +52,7 @@ export function FollowUpRowActions({
       {open && (
         <div
           role="menu"
-          className="absolute right-0 z-30 mt-1 w-48 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg"
+          className="absolute right-0 z-30 mt-1 w-52 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg"
         >
           <button
             type="button"
@@ -72,6 +76,19 @@ export function FollowUpRowActions({
           >
             <FileText className="h-3.5 w-3.5" /> Detailed view
           </button>
+          {canOpenLinkedConsultation && onOpenLinkedConsultation ? (
+            <button
+              type="button"
+              role="menuitem"
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-slate-700 hover:bg-brand-50 hover:text-brand-800"
+              onClick={() => {
+                setOpen(false);
+                onOpenLinkedConsultation();
+              }}
+            >
+              <Stethoscope className="h-3.5 w-3.5" /> Open linked consultation
+            </button>
+          ) : null}
           {canComplete && onMarkComplete && (
             <button
               type="button"

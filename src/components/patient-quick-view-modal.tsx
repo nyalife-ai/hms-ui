@@ -14,6 +14,7 @@ import { Modal } from "@/components/modal";
 import { Badge, type BadgeTone } from "@/components/ui";
 import { api } from "@/lib/api";
 import type { PatientDetail } from "@/lib/catalog";
+import { consultationJourneyHref } from "@/lib/clinical-links";
 
 type Tab = "personal" | "timeline";
 
@@ -102,7 +103,11 @@ export function PatientQuickViewModal({
         provider: c.physician,
         status: c.status,
         summary: c.diagnosis,
-        href: `/patients/${detail.id}?consultationId=${c.id}`,
+        href:
+          c.href ||
+          (c.visitId
+            ? consultationJourneyHref(c.visitId)
+            : `/patients/${detail.id}?consultationId=${c.id}`),
       })),
     ];
   }, [detail]);
@@ -129,7 +134,7 @@ export function PatientQuickViewModal({
             {(
               [
                 { id: "personal", label: "Personal Data", icon: CreditCard },
-                { id: "timeline", label: "Visit Timeline", icon: History },
+                { id: "timeline", label: "Clinical History", icon: History },
               ] as const
             ).map((item) => {
               const active = tab === item.id;

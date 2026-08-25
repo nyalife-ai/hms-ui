@@ -162,7 +162,6 @@ export const ANALYTICS_TABS: Array<{
     roles: [
       "SUPER_ADMIN",
       "ADMIN",
-      "ACCOUNTANT",
       "DOCTOR",
       "NURSE",
       "RECEPTIONIST",
@@ -175,7 +174,6 @@ export const ANALYTICS_TABS: Array<{
     roles: [
       "SUPER_ADMIN",
       "ADMIN",
-      "ACCOUNTANT",
       "DOCTOR",
       "NURSE",
       "RECEPTIONIST",
@@ -185,25 +183,25 @@ export const ANALYTICS_TABS: Array<{
   {
     id: "laboratory",
     label: "Laboratory",
-    roles: ["SUPER_ADMIN", "ADMIN", "ACCOUNTANT", "LAB_TECHNICIAN", "DOCTOR"],
+    roles: ["SUPER_ADMIN", "ADMIN", "LAB_TECHNICIAN", "DOCTOR"],
     filters: ["doctor", "status"],
   },
   {
     id: "pharmacy",
     label: "Pharmacy",
-    roles: ["SUPER_ADMIN", "ADMIN", "ACCOUNTANT", "PHARMACIST"],
+    roles: ["SUPER_ADMIN", "ADMIN", "PHARMACIST"],
     filters: [],
   },
   {
     id: "ipd",
     label: "IPD",
-    roles: ["SUPER_ADMIN", "ADMIN", "ACCOUNTANT", "DOCTOR", "NURSE"],
+    roles: ["SUPER_ADMIN", "ADMIN", "DOCTOR", "NURSE"],
     filters: ["ward"],
   },
   {
     id: "radiology",
     label: "Radiology",
-    roles: ["SUPER_ADMIN", "ADMIN", "ACCOUNTANT", "RADIOLOGIST", "DOCTOR"],
+    roles: ["SUPER_ADMIN", "ADMIN", "RADIOLOGIST", "DOCTOR"],
     filters: ["doctor", "status"],
   },
   {
@@ -221,13 +219,13 @@ export const ANALYTICS_TABS: Array<{
   {
     id: "staff",
     label: "Staff",
-    roles: ["SUPER_ADMIN", "ADMIN", "ACCOUNTANT"],
+    roles: ["SUPER_ADMIN", "ADMIN"],
     filters: [],
   },
   {
     id: "follow-ups",
     label: "Follow-ups",
-    roles: ["SUPER_ADMIN", "ADMIN", "ACCOUNTANT", "DOCTOR", "RECEPTIONIST"],
+    roles: ["SUPER_ADMIN", "ADMIN", "DOCTOR", "RECEPTIONIST"],
     filters: ["status"],
   },
   {
