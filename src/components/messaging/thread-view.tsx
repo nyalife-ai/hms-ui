@@ -1,6 +1,15 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Download, Loader2, Paperclip, Reply, X } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  Loader2,
+  Paperclip,
+  Play,
+  Reply,
+  X,
+} from "lucide-react";
 import {
   useCallback,
   useEffect,
@@ -21,9 +30,16 @@ import {
   type ConversationListItem,
   type MessageAttachment,
 } from "@/lib/messaging";
-import { DeliveryTicks, MessageActions } from "./message-actions";
+import {
+  DeliveryTicks,
+  getMessageActions,
+  MessageActions,
+} from "./message-actions";
+import { VoiceNotePlayer } from "./voice-note-player";
 
 const SWIPE_REPLY_PX = 56;
+const LONG_PRESS_MS = 500;
+const LONG_PRESS_MOVE_PX = 10;
 
 function isImageMime(mime: string | null | undefined): boolean {
   return Boolean(mime?.startsWith("image/"));
@@ -34,8 +50,37 @@ function isVideoMime(mime: string | null | undefined): boolean {
 function isAudioMime(mime: string | null | undefined): boolean {
   return Boolean(mime?.startsWith("audio/"));
 }
-function isMediaMime(mime: string | null | undefined): boolean {
-  return isImageMime(mime) || isVideoMime(mime) || isAudioMime(mime);
+
+function isImageAttachment(
+  a: MessageAttachment,
+  messageType?: string,
+): boolean {
+  if (isImageMime(a.mimeType)) return true;
+  return !a.mimeType && messageType === "IMAGE";
+}
+function isVideoAttachment(
+  a: MessageAttachment,
+  messageType?: string,
+): boolean {
+  if (isVideoMime(a.mimeType)) return true;
+  return !a.mimeType && messageType === "VIDEO";
+}
+function isAudioAttachment(
+  a: MessageAttachment,
+  messageType?: string,
+): boolean {
+  if (isAudioMime(a.mimeType)) return true;
+  return !a.mimeType && messageType === "AUDIO";
+}
+function isMediaAttachment(
+  a: MessageAttachment,
+  messageType?: string,
+): boolean {
+  return (
+    isImageAttachment(a, messageType) ||
+    isVideoAttachment(a, messageType) ||
+    isAudioAttachment(a, messageType)
+  );
 }
 
 function usePrefersReducedMotion(): boolean {
@@ -50,9 +95,15 @@ function usePrefersReducedMotion(): boolean {
   return reduced;
 }
 
-function useAttachmentBlobUrls(attachments: MessageAttachment[]) {
+function useAttachmentBlobUrls(
+  attachments: MessageAttachment[],
+  messageType?: string,
+) {
   const [urls, setUrls] = useState<Record<string, string>>({});
+  const [failed, setFailed] = useState<Record<string, boolean>>({});
+  const [retryTick, setRetryTick] = useState<Record<string, number>>({});
   const cacheRef = useRef<Record<string, string>>({});
+  const createdBlobIdsRef = useRef<Set<string>>(new Set());
   const attachmentIdsKey = useMemo(
     () =>
       attachments
@@ -63,12 +114,33 @@ function useAttachmentBlobUrls(attachments: MessageAttachment[]) {
     [attachments],
   );
 
+  const retry = useCallback((id: string) => {
+    const existing = cacheRef.current[id];
+    if (existing && createdBlobIdsRef.current.has(id)) {
+      URL.revokeObjectURL(existing);
+      createdBlobIdsRef.current.delete(id);
+    }
+    delete cacheRef.current[id];
+    setUrls((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+    setFailed((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+    setRetryTick((prev) => ({ ...prev, [id]: (prev[id] ?? 0) + 1 }));
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
-    const media = attachments.filter((a) => isMediaMime(a.mimeType));
+    const media = attachments.filter((a) => isMediaAttachment(a, messageType));
 
     void (async () => {
       const next: Record<string, string> = { ...cacheRef.current };
+      const failNext: Record<string, boolean> = {};
       for (const a of media) {
         if (next[a.id]) continue;
         if (a.previewUrl) {
@@ -85,21 +157,42 @@ function useAttachmentBlobUrls(attachments: MessageAttachment[]) {
           }
           next[a.id] = url;
           cacheRef.current[a.id] = url;
+          createdBlobIdsRef.current.add(a.id);
+          failNext[a.id] = false;
         } catch {
-          // ignore per-attachment failures
+          failNext[a.id] = true;
         }
       }
-      if (!cancelled) setUrls({ ...next });
+      if (!cancelled) {
+        setUrls({ ...next });
+        setFailed((prev) => {
+          const merged = { ...prev };
+          for (const [id, v] of Object.entries(failNext)) {
+            if (v) merged[id] = true;
+            else delete merged[id];
+          }
+          return merged;
+        });
+      }
     })();
 
     return () => {
       cancelled = true;
     };
-    // attachmentIdsKey captures id set; attachments used for mime/previewUrl
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [attachmentIdsKey]);
+  }, [attachmentIdsKey, messageType, retryTick]);
 
-  return urls;
+  useEffect(() => {
+    return () => {
+      for (const id of createdBlobIdsRef.current) {
+        const url = cacheRef.current[id];
+        if (url) URL.revokeObjectURL(url);
+      }
+      createdBlobIdsRef.current.clear();
+    };
+  }, []);
+
+  return { urls, failed, retry };
 }
 
 async function openAttachment(id: string, fileName: string) {
@@ -143,7 +236,10 @@ function highlightMentions(
   const parts = body.split(re);
   return parts.map((part, i) => {
     const isMention = names.some(
-      (n) => part === n || part === `@${n}` || part.toLowerCase() === `@${n.toLowerCase()}`,
+      (n) =>
+        part === n ||
+        part === `@${n}` ||
+        part.toLowerCase() === `@${n.toLowerCase()}`,
     );
     if (!isMention) return <span key={i}>{part}</span>;
     return (
@@ -161,40 +257,48 @@ function highlightMentions(
   });
 }
 
-function ImageLightbox({
-  images,
+function MediaLightbox({
+  items,
   index,
   urls,
+  videoIds,
   onClose,
   onIndexChange,
 }: {
-  images: MessageAttachment[];
+  items: MessageAttachment[];
   index: number;
   urls: Record<string, string>;
+  videoIds: Set<string>;
   onClose: () => void;
   onIndexChange: (i: number) => void;
 }) {
   const touchStartX = useRef<number | null>(null);
-  const current = images[index];
+  const current = items[index];
   const src = current ? urls[current.id] : null;
+  const showVideo = Boolean(
+    current &&
+      (videoIds.has(current.id) ||
+        isVideoMime(current.mimeType) ||
+        /\.(mp4|webm|mov|m4v)$/i.test(current.fileName ?? "")),
+  );
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
       if (e.key === "ArrowLeft") onIndexChange(Math.max(0, index - 1));
       if (e.key === "ArrowRight")
-        onIndexChange(Math.min(images.length - 1, index + 1));
+        onIndexChange(Math.min(items.length - 1, index + 1));
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [index, images.length, onClose, onIndexChange]);
+  }, [index, items.length, onClose, onIndexChange]);
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
       role="dialog"
       aria-modal
-      aria-label="Image preview"
+      aria-label="Media preview"
       onClick={onClose}
       onTouchStart={(e) => {
         touchStartX.current = e.touches[0]?.clientX ?? null;
@@ -207,10 +311,19 @@ function ImageLightbox({
         const dx = end - start;
         if (Math.abs(dx) < 48) return;
         if (dx > 0) onIndexChange(Math.max(0, index - 1));
-        else onIndexChange(Math.min(images.length - 1, index + 1));
+        else onIndexChange(Math.min(items.length - 1, index + 1));
       }}
     >
-      {src ? (
+      {src && showVideo ? (
+        <video
+          src={src}
+          controls
+          playsInline
+          autoPlay
+          className="max-h-[90vh] max-w-[90vw] rounded-lg"
+          onClick={(e) => e.stopPropagation()}
+        />
+      ) : src ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={src}
@@ -220,9 +333,11 @@ function ImageLightbox({
         />
       ) : null}
 
-      <p className="absolute bottom-6 left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-3 py-1 text-xs text-white">
-        {index + 1} / {images.length}
-      </p>
+      {items.length > 1 ? (
+        <p className="absolute bottom-6 left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-3 py-1 text-xs text-white">
+          {index + 1} / {items.length}
+        </p>
+      ) : null}
 
       {index > 0 ? (
         <button
@@ -232,12 +347,12 @@ function ImageLightbox({
             e.stopPropagation();
             onIndexChange(index - 1);
           }}
-          aria-label="Previous image"
+          aria-label="Previous"
         >
           <ChevronLeft className="h-5 w-5" />
         </button>
       ) : null}
-      {index < images.length - 1 ? (
+      {index < items.length - 1 ? (
         <button
           type="button"
           className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-white/90 p-2 text-slate-700"
@@ -245,7 +360,7 @@ function ImageLightbox({
             e.stopPropagation();
             onIndexChange(index + 1);
           }}
-          aria-label="Next image"
+          aria-label="Next"
         >
           <ChevronRight className="h-5 w-5" />
         </button>
@@ -263,6 +378,39 @@ function ImageLightbox({
   );
 }
 
+function MediaFailState({
+  mine,
+  onRetry,
+  tall,
+}: {
+  mine: boolean;
+  onRetry: () => void;
+  tall?: boolean;
+}) {
+  return (
+    <div
+      className={`flex flex-col items-center justify-center gap-2 rounded-lg bg-black/10 px-3 ${
+        tall ? "h-28" : "h-10"
+      }`}
+    >
+      <span className={`text-xs ${mine ? "text-white/80" : "text-slate-500"}`}>
+        Failed to load
+      </span>
+      <button
+        type="button"
+        onClick={onRetry}
+        className={`rounded-lg px-2 py-1 text-xs font-medium ${
+          mine
+            ? "bg-white/20 text-white hover:bg-white/30"
+            : "bg-white text-brand-700 ring-1 ring-slate-200 hover:bg-brand-50"
+        }`}
+      >
+        Retry
+      </button>
+    </div>
+  );
+}
+
 function MessageBubble({
   message: m,
   mine,
@@ -272,6 +420,7 @@ function MessageBubble({
   onReact,
   onEdit,
   onDelete,
+  onForward,
   onJumpToMessage,
 }: {
   message: ChatMessage;
@@ -280,27 +429,71 @@ function MessageBubble({
   highlighted?: boolean;
   onReply: (message: ChatMessage) => void;
   onReact: (message: ChatMessage, reactionType: string) => void;
-  onEdit: (message: ChatMessage) => void;
+  onEdit: (message: ChatMessage, body: string) => void | Promise<void>;
   onDelete: (message: ChatMessage) => void;
+  onForward?: (message: ChatMessage) => void;
   onJumpToMessage: (parentId: string) => void;
 }) {
   const deleted = m.isDeleted;
   const attachments = m.attachments ?? [];
-  const images = attachments.filter((a) => isImageMime(a.mimeType));
-  const videos = attachments.filter((a) => isVideoMime(a.mimeType));
-  const audios = attachments.filter((a) => isAudioMime(a.mimeType));
+  const mt = m.messageType;
+  const images = attachments.filter((a) => isImageAttachment(a, mt));
+  const videos = attachments.filter((a) => isVideoAttachment(a, mt));
+  const audios = attachments.filter((a) => isAudioAttachment(a, mt));
   const docs = attachments.filter(
     (a) =>
-      !isImageMime(a.mimeType) &&
-      !isVideoMime(a.mimeType) &&
-      !isAudioMime(a.mimeType),
+      !isImageAttachment(a, mt) &&
+      !isVideoAttachment(a, mt) &&
+      !isAudioAttachment(a, mt),
   );
-  const blobUrls = useAttachmentBlobUrls(attachments);
+  const { urls: blobUrls, failed, retry } = useAttachmentBlobUrls(
+    attachments,
+    mt,
+  );
+  const lightboxItems = useMemo(() => [...images, ...videos], [images, videos]);
+  const videoIdSet = useMemo(() => new Set(videos.map((v) => v.id)), [videos]);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [swipeX, setSwipeX] = useState(0);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
+  const [useSheet, setUseSheet] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editDraft, setEditDraft] = useState(m.body ?? "");
+  const [editBusy, setEditBusy] = useState(false);
+
   const touchStart = useRef<{ x: number; y: number } | null>(null);
   const dominantAxis = useRef<"h" | "v" | null>(null);
+  const longPressTimer = useRef<number | null>(null);
+  const longPressOrigin = useRef<{ x: number; y: number } | null>(null);
+  const swipeStarted = useRef(false);
   const reducedMotion = usePrefersReducedMotion();
+
+  const hasCopyBody = Boolean(m.body?.trim()) || attachments.length > 0;
+  const actions = getMessageActions({
+    isOwn: mine,
+    deleted,
+    hasBody: hasCopyBody,
+    canForward: Boolean(onForward),
+  });
+
+  const clearLongPress = () => {
+    if (longPressTimer.current != null) {
+      window.clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+    longPressOrigin.current = null;
+  };
+
+  const openMenuAt = (x: number, y: number, sheet: boolean) => {
+    setMenuPos({ x, y });
+    setUseSheet(sheet);
+    setMenuOpen(true);
+  };
+
+  const closeMenu = useCallback(() => {
+    setMenuOpen(false);
+    setMenuPos(null);
+  }, []);
 
   const imageGridClass =
     images.length === 1
@@ -314,7 +507,24 @@ function MessageBubble({
     if (!t) return;
     touchStart.current = { x: t.clientX, y: t.clientY };
     dominantAxis.current = null;
+    swipeStarted.current = false;
     setSwipeX(0);
+
+    if (!deleted) {
+      clearLongPress();
+      longPressOrigin.current = { x: t.clientX, y: t.clientY };
+      longPressTimer.current = window.setTimeout(() => {
+        if (swipeStarted.current) return;
+        openMenuAt(t.clientX, t.clientY, true);
+        if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+          try {
+            navigator.vibrate(12);
+          } catch {
+            // ignore
+          }
+        }
+      }, LONG_PRESS_MS);
+    }
   };
 
   const onTouchMove = (e: TouchEvent) => {
@@ -323,26 +533,59 @@ function MessageBubble({
     if (!start || !t) return;
     const dx = t.clientX - start.x;
     const dy = t.clientY - start.y;
+
+    const origin = longPressOrigin.current;
+    if (origin) {
+      const move = Math.hypot(t.clientX - origin.x, t.clientY - origin.y);
+      if (move > LONG_PRESS_MOVE_PX) clearLongPress();
+    }
+
     if (!dominantAxis.current) {
       if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
       dominantAxis.current = Math.abs(dx) > Math.abs(dy) ? "h" : "v";
     }
-    if (dominantAxis.current !== "h") return;
-    const replyDx = mine ? Math.min(0, dx) : Math.max(0, dx);
-    setSwipeX(Math.max(-80, Math.min(80, replyDx)));
+    if (dominantAxis.current === "h") {
+      swipeStarted.current = true;
+      clearLongPress();
+      const replyDx = mine ? Math.min(0, dx) : Math.max(0, dx);
+      setSwipeX(Math.max(-80, Math.min(80, replyDx)));
+    }
   };
 
   const onTouchEnd = () => {
+    clearLongPress();
     const threshold = SWIPE_REPLY_PX;
     if (Math.abs(swipeX) >= threshold && !deleted) {
       onReply(m);
     }
     touchStart.current = null;
     dominantAxis.current = null;
+    swipeStarted.current = false;
     setSwipeX(0);
   };
 
+  const copyLabel = m.body?.trim()
+    ? m.body
+    : attachments[0]
+      ? attachments[0].fileName
+      : "";
+
   const replyPreview = m.parentPreview?.trim() || "Attachment";
+
+  const saveEdit = async () => {
+    const next = editDraft.trim();
+    if (!next || next === (m.body ?? "")) {
+      setEditing(false);
+      return;
+    }
+    setEditBusy(true);
+    try {
+      await onEdit(m, next);
+      setEditing(false);
+    } finally {
+      setEditBusy(false);
+    }
+  };
 
   return (
     <div
@@ -351,7 +594,15 @@ function MessageBubble({
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
-      onTouchCancel={onTouchEnd}
+      onTouchCancel={() => {
+        clearLongPress();
+        onTouchEnd();
+      }}
+      onContextMenu={(e) => {
+        if (deleted) return;
+        e.preventDefault();
+        openMenuAt(e.clientX, e.clientY, false);
+      }}
     >
       {Math.abs(swipeX) > 20 ? (
         <div
@@ -384,15 +635,26 @@ function MessageBubble({
       >
         {!deleted ? (
           <MessageActions
+            open={menuOpen}
+            pos={menuPos}
+            onClose={closeMenu}
             isOwn={mine}
+            useBottomSheet={useSheet}
+            actions={actions}
             handlers={{
               onReply: () => onReply(m),
               onReact: (r) => onReact(m, r),
               onCopy: () => {
-                if (m.body) void navigator.clipboard.writeText(m.body);
+                if (copyLabel) void navigator.clipboard.writeText(copyLabel);
               },
-              onEdit: mine ? () => onEdit(m) : undefined,
+              onEdit: mine
+                ? () => {
+                    setEditDraft(m.body ?? "");
+                    setEditing(true);
+                  }
+                : undefined,
               onDelete: mine ? () => onDelete(m) : undefined,
+              onForward: onForward ? () => onForward(m) : undefined,
             }}
           />
         ) : null}
@@ -419,6 +681,44 @@ function MessageBubble({
 
         {deleted ? (
           <p>This message was deleted</p>
+        ) : editing ? (
+          <div className="space-y-2">
+            <textarea
+              value={editDraft}
+              onChange={(e) => setEditDraft(e.target.value)}
+              rows={3}
+              className={`w-full rounded-lg border px-2 py-1.5 text-sm ${
+                mine
+                  ? "border-white/30 bg-white/15 text-white placeholder:text-white/50"
+                  : "border-slate-200 bg-white text-slate-700"
+              }`}
+              aria-label="Edit message"
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setEditing(false)}
+                className={`rounded-lg px-2 py-1 text-xs font-medium ${
+                  mine ? "bg-white/15 text-white" : "bg-white text-slate-600"
+                }`}
+                disabled={editBusy}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void saveEdit()}
+                disabled={editBusy || !editDraft.trim()}
+                className={`rounded-lg px-2 py-1 text-xs font-semibold ${
+                  mine
+                    ? "bg-white text-brand-700 disabled:opacity-40"
+                    : "bg-brand-500 text-white disabled:opacity-40"
+                }`}
+              >
+                {editBusy ? "Saving…" : "Save"}
+              </button>
+            </div>
+          </div>
         ) : (
           <>
             {m.body ? (
@@ -431,11 +731,17 @@ function MessageBubble({
               <div className={`mt-2 grid gap-1 ${imageGridClass}`}>
                 {images.map((a, idx) => {
                   const src = blobUrls[a.id];
+                  const isFailed = failed[a.id];
                   return (
                     <button
                       key={a.id}
                       type="button"
-                      onClick={() => src && setLightboxIndex(idx)}
+                      onClick={() => {
+                        if (src) {
+                          const li = lightboxItems.findIndex((x) => x.id === a.id);
+                          setLightboxIndex(li >= 0 ? li : idx);
+                        }
+                      }}
                       className="overflow-hidden rounded-xl bg-black/10"
                       aria-label={`View ${a.fileName}`}
                     >
@@ -445,6 +751,12 @@ function MessageBubble({
                           src={src}
                           alt={a.fileName}
                           className="max-h-56 w-full object-cover"
+                        />
+                      ) : isFailed ? (
+                        <MediaFailState
+                          mine={mine}
+                          onRetry={() => retry(a.id)}
+                          tall
                         />
                       ) : (
                         <div className="flex h-28 items-center justify-center">
@@ -461,14 +773,37 @@ function MessageBubble({
               <div className="mt-2 space-y-2">
                 {videos.map((a) => {
                   const src = blobUrls[a.id];
+                  const isFailed = failed[a.id];
                   return src ? (
-                    <video
+                    <button
                       key={a.id}
-                      controls
-                      playsInline
-                      preload="metadata"
-                      src={src}
-                      className="max-h-64 w-full rounded-lg"
+                      type="button"
+                      onClick={() => {
+                        const li = lightboxItems.findIndex((x) => x.id === a.id);
+                        if (li >= 0) setLightboxIndex(li);
+                      }}
+                      className="relative block w-full overflow-hidden rounded-lg bg-black/20"
+                      aria-label={`Play ${a.fileName}`}
+                    >
+                      <video
+                        src={src}
+                        playsInline
+                        preload="metadata"
+                        muted
+                        className="max-h-64 w-full pointer-events-none"
+                      />
+                      <span className="absolute inset-0 flex items-center justify-center bg-black/25">
+                        <span className="rounded-full bg-white/90 p-2 text-slate-800">
+                          <Play className="h-5 w-5 fill-current" />
+                        </span>
+                      </span>
+                    </button>
+                  ) : isFailed ? (
+                    <MediaFailState
+                      key={a.id}
+                      mine={mine}
+                      onRetry={() => retry(a.id)}
+                      tall
                     />
                   ) : (
                     <div
@@ -484,26 +819,18 @@ function MessageBubble({
 
             {audios.length ? (
               <div className="mt-2 space-y-2">
-                {audios.map((a) => {
-                  const src = blobUrls[a.id];
-                  return src ? (
-                    <audio
-                      key={a.id}
-                      controls
-                      preload="metadata"
-                      src={src}
-                      className="w-full max-w-xs"
-                    />
-                  ) : (
-                    <div
-                      key={a.id}
-                      className="flex h-10 items-center gap-2 rounded-lg bg-black/10 px-3"
-                    >
-                      <Loader2 className="h-3.5 w-3.5 animate-spin opacity-60" />
-                      <span className="text-xs opacity-70">{a.fileName}</span>
-                    </div>
-                  );
-                })}
+                {audios.map((a) => (
+                  <VoiceNotePlayer
+                    key={a.id}
+                    src={blobUrls[a.id]}
+                    cacheKey={a.id}
+                    sent={mine}
+                    fileName={a.fileName}
+                    loading={!blobUrls[a.id] && !failed[a.id]}
+                    failed={Boolean(failed[a.id])}
+                    onRetry={() => retry(a.id)}
+                  />
+                ))}
               </div>
             ) : null}
 
@@ -578,11 +905,12 @@ function MessageBubble({
         </div>
       </div>
 
-      {lightboxIndex != null && images[lightboxIndex] ? (
-        <ImageLightbox
-          images={images}
+      {lightboxIndex != null && lightboxItems[lightboxIndex] ? (
+        <MediaLightbox
+          items={lightboxItems}
           index={lightboxIndex}
           urls={blobUrls}
+          videoIds={videoIdSet}
           onClose={() => setLightboxIndex(null)}
           onIndexChange={setLightboxIndex}
         />
@@ -590,6 +918,8 @@ function MessageBubble({
     </div>
   );
 }
+
+const MANAGEABLE_TYPES = new Set(["GROUP", "DEPARTMENT", "TEAM"]);
 
 export function ThreadView({
   conversation,
@@ -608,8 +938,10 @@ export function ThreadView({
   onReact,
   onEdit,
   onDelete,
+  onForward,
   onMuteToggle,
   onJumpToMessage,
+  onOpenParticipants,
 }: {
   conversation: ConversationListItem;
   currentUserId?: string;
@@ -625,15 +957,18 @@ export function ThreadView({
   onLoadOlder?: () => void | Promise<void>;
   onReply: (message: ChatMessage) => void;
   onReact: (message: ChatMessage, reactionType: string) => void;
-  onEdit: (message: ChatMessage) => void;
+  onEdit: (message: ChatMessage, body: string) => void | Promise<void>;
   onDelete: (message: ChatMessage) => void;
+  onForward?: (message: ChatMessage) => void;
   onMuteToggle?: () => void;
   onJumpToMessage?: (messageId: string) => void;
+  onOpenParticipants?: () => void;
 }) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const stickToBottom = useRef(true);
   const title = conversationDisplayName(conversation, currentUserId);
+  const showParticipants = MANAGEABLE_TYPES.has(String(conversation.type));
 
   useEffect(() => {
     if (stickToBottom.current) {
@@ -696,11 +1031,21 @@ export function ThreadView({
         <Avatar name={title} size="sm" />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold text-slate-900">{title}</p>
-          <p className="truncate text-xs text-slate-400">
-            {conversation.type === "GROUP"
-              ? `${conversation.participants.length} participants`
-              : "Direct message"}
-          </p>
+          {showParticipants && onOpenParticipants ? (
+            <button
+              type="button"
+              onClick={onOpenParticipants}
+              className="truncate text-xs text-slate-400 hover:text-brand-700"
+            >
+              {conversation.participants.length} participants
+            </button>
+          ) : (
+            <p className="truncate text-xs text-slate-400">
+              {conversation.type === "DIRECT"
+                ? "Direct message"
+                : `${conversation.participants.length} participants`}
+            </p>
+          )}
         </div>
         {onMuteToggle ? (
           <button
@@ -790,6 +1135,7 @@ export function ThreadView({
                 onReact={onReact}
                 onEdit={onEdit}
                 onDelete={onDelete}
+                onForward={onForward}
                 onJumpToMessage={scrollToMessage}
               />
             </div>

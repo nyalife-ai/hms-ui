@@ -77,6 +77,59 @@ async function tryRefresh(): Promise<boolean> {
   }
 }
 
+const AUTH_SKIP_REFRESH_PREFIXES = [
+  "/auth/login",
+  "/auth/verify-login-otp",
+  "/auth/refresh",
+  "/auth/forgot-password",
+  "/auth/verify-reset-otp",
+  "/auth/reset-password",
+  "/auth/register",
+] as const;
+
+function shouldSkipRefresh(pathOrUrl: string): boolean {
+  try {
+    const path = pathOrUrl.startsWith("http")
+      ? new URL(pathOrUrl).pathname
+      : pathOrUrl;
+    return AUTH_SKIP_REFRESH_PREFIXES.some((p) => path.startsWith(p));
+  } catch {
+    return false;
+  }
+}
+
+async function refreshOnce(): Promise<boolean> {
+  if (!refreshPromise) {
+    refreshPromise = tryRefresh().finally(() => {
+      refreshPromise = null;
+    });
+  }
+  return refreshPromise;
+}
+
+/**
+ * Fetch with Bearer token + single 401 refresh/retry.
+ * Use for binary/multipart requests that cannot go through `api()`.
+ */
+export async function authenticatedFetch(
+  url: string,
+  init: RequestInit = {},
+  retry = true,
+): Promise<Response> {
+  const headers = new Headers(init.headers);
+  const token = getAccessToken();
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+
+  const res = await fetch(url, { ...init, headers });
+
+  if (res.status === 401 && retry && !shouldSkipRefresh(url)) {
+    const ok = await refreshOnce();
+    if (ok) return authenticatedFetch(url, init, false);
+  }
+
+  return res;
+}
+
 export async function api<T>(
   path: string,
   options: RequestInit = {},
@@ -94,21 +147,8 @@ export async function api<T>(
     headers,
   });
 
-  const skipRefresh =
-    path.startsWith("/auth/login") ||
-    path.startsWith("/auth/verify-login-otp") ||
-    path.startsWith("/auth/refresh") ||
-    path.startsWith("/auth/forgot-password") ||
-    path.startsWith("/auth/verify-reset-otp") ||
-    path.startsWith("/auth/reset-password") ||
-    path.startsWith("/auth/register");
-  if (res.status === 401 && retry && !skipRefresh) {
-    if (!refreshPromise) {
-      refreshPromise = tryRefresh().finally(() => {
-        refreshPromise = null;
-      });
-    }
-    const ok = await refreshPromise;
+  if (res.status === 401 && retry && !shouldSkipRefresh(path)) {
+    const ok = await refreshOnce();
     if (ok) return api<T>(path, options, false);
   }
 

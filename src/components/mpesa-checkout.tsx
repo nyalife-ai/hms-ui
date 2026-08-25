@@ -1,12 +1,39 @@
 "use client";
 
-import { Loader2, Smartphone, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { CheckCircle2, Loader2, Smartphone, X, XCircle } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { ReceiptModal, type ReceiptData } from "@/components/receipt-modal";
 
 const inputClass =
   "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+
+/** Poll cadence (ms) — backs off; stops on terminal status. */
+const POLL_DELAYS_MS = [0, 2000, 3000, 5000, 5000, 8000, 10000, 15000, 15000, 20000];
+
+type UiPhase =
+  | "IDLE"
+  | "PROCESSING"
+  | "QUEUED"
+  | "SENDING_STK"
+  | "WAITING_CUSTOMER"
+  | "SUCCESS"
+  | "FAILED"
+  | "TIMEOUT";
+
+type StatusPayload = {
+  status: string;
+  stage?: string;
+  paid?: boolean;
+  receiptId?: string;
+  message?: string;
+  failureReason?: string;
+  mode?: string;
+  checkoutId?: string;
+  paymentId?: string;
+  correlationId?: string;
+  timeline?: Array<{ stage: string; at: string; message?: string }>;
+};
 
 type Props = {
   visitId: string;
@@ -17,6 +44,51 @@ type Props = {
   onClose: () => void;
   onPaid: () => void;
 };
+
+function mapPhase(status: string, stage?: string): UiPhase {
+  if (status === "SUCCESS") return "SUCCESS";
+  if (status === "TIMEOUT") return "TIMEOUT";
+  if (status === "FAILED" || status === "CANCELLED") return "FAILED";
+  if (status === "QUEUED") return "QUEUED";
+  if (status === "PROCESSING") {
+    if (stage === "DARAJA_REQUEST_STARTED" || stage === "DARAJA_RESPONSE_RECEIVED") {
+      return "SENDING_STK";
+    }
+    return "PROCESSING";
+  }
+  if (status === "PENDING" || status === "FINALIZING") return "WAITING_CUSTOMER";
+  return "PROCESSING";
+}
+
+function phaseCopy(phase: UiPhase): { title: string; hint: string } {
+  switch (phase) {
+    case "PROCESSING":
+      return { title: "Processing payment…", hint: "Validating and preparing the request." };
+    case "QUEUED":
+      return {
+        title: "Payment request queued",
+        hint: "Waiting for the payment worker to pick up the job. This is not a successful payment.",
+      };
+    case "SENDING_STK":
+      return { title: "Sending STK Push…", hint: "Contacting Safaricom Daraja." };
+    case "WAITING_CUSTOMER":
+      return {
+        title: "STK Push sent — waiting for customer",
+        hint: "Ask the patient to enter their M-Pesa PIN on their phone.",
+      };
+    case "SUCCESS":
+      return { title: "Payment successful", hint: "Receipt is ready." };
+    case "TIMEOUT":
+      return {
+        title: "Payment timed out",
+        hint: "M-Pesa accepted the request, but the customer did not complete payment in time.",
+      };
+    case "FAILED":
+      return { title: "Payment failed", hint: "See the reason below, then fix and retry." };
+    default:
+      return { title: "M-Pesa checkout", hint: "" };
+  }
+}
 
 export function MpesaCheckoutModal({
   visitId,
@@ -31,45 +103,71 @@ export function MpesaCheckoutModal({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [checkoutId, setCheckoutId] = useState("");
-  const [status, setStatus] = useState<"IDLE" | "PENDING" | "SUCCESS" | "FAILED">("IDLE");
+  const [phase, setPhase] = useState<UiPhase>("IDLE");
   const [hint, setHint] = useState("");
   const [mode, setMode] = useState<string>("");
+  const [paymentId, setPaymentId] = useState("");
+  const [timeline, setTimeline] = useState<StatusPayload["timeline"]>([]);
+  const [showDetails, setShowDetails] = useState(false);
   const [receipt, setReceipt] = useState<ReceiptData | null>(null);
+  const pollGen = useRef(0);
 
-  useEffect(() => {
-    if (!checkoutId || status !== "PENDING") return;
-    let cancelled = false;
-    const tick = async () => {
-      try {
-        const data = await api<{
-          status: string;
-          paid?: boolean;
-          receiptId?: string;
-          message?: string;
-        }>(`/billing/checkout/${checkoutId}/status`);
-        if (cancelled) return;
-        if (data.status === "SUCCESS" && data.receiptId) {
-          setStatus("SUCCESS");
-          const r = await api<ReceiptData>(`/billing/receipts/${data.receiptId}`);
-          setReceipt(r);
-          onPaid();
-          return;
+  const stopPolling = useCallback(() => {
+    pollGen.current += 1;
+  }, []);
+
+  useEffect(() => () => stopPolling(), [stopPolling]);
+
+  const pollStatus = useCallback(
+    async (id: string, generation: number) => {
+      for (let i = 0; i < POLL_DELAYS_MS.length; i++) {
+        if (generation !== pollGen.current) return;
+        const delay = POLL_DELAYS_MS[i]!;
+        if (delay > 0) {
+          await new Promise((r) => setTimeout(r, delay));
         }
-        if (data.status === "FAILED" || data.status === "CANCELLED") {
-          setStatus("FAILED");
-          setError(data.message || "Payment was cancelled or failed. Try again.");
+        if (generation !== pollGen.current) return;
+        try {
+          const data = await api<StatusPayload>(`/billing/checkout/${id}/status`);
+          if (generation !== pollGen.current) return;
+          const next = mapPhase(data.status, data.stage);
+          setPhase(next);
+          setHint(data.message || phaseCopy(next).hint);
+          setMode(data.mode || "");
+          setPaymentId(data.paymentId || data.checkoutId || id);
+          setTimeline(data.timeline || []);
+          if (data.status === "SUCCESS" && data.receiptId) {
+            setPhase("SUCCESS");
+            const r = await api<ReceiptData>(`/billing/receipts/${data.receiptId}`);
+            setReceipt(r);
+            onPaid();
+            return;
+          }
+          if (
+            data.status === "FAILED" ||
+            data.status === "CANCELLED" ||
+            data.status === "TIMEOUT"
+          ) {
+            setPhase(data.status === "TIMEOUT" ? "TIMEOUT" : "FAILED");
+            setError(
+              data.failureReason ||
+                data.message ||
+                "Payment was cancelled or failed. Try again.",
+            );
+            return;
+          }
+        } catch {
+          // keep polling through transient errors
         }
-      } catch {
-        // keep polling
       }
-    };
-    void tick();
-    const id = window.setInterval(() => void tick(), 3000);
-    return () => {
-      cancelled = true;
-      window.clearInterval(id);
-    };
-  }, [checkoutId, status, onPaid]);
+      if (generation !== pollGen.current) return;
+      setPhase("TIMEOUT");
+      setError(
+        "Timed out waiting for payment status. Check Redis/worker logs with this Payment ID, or retry.",
+      );
+    },
+    [onPaid],
+  );
 
   const start = async () => {
     if (!phone.trim()) {
@@ -78,21 +176,45 @@ export function MpesaCheckoutModal({
     }
     setBusy(true);
     setError("");
+    setPhase("PROCESSING");
+    setHint(phaseCopy("PROCESSING").hint);
+    setTimeline([]);
     try {
       const data = await api<{
         ok: boolean;
         checkoutId: string;
+        paymentId?: string;
+        jobId?: string;
+        status?: string;
+        stage?: string;
         message?: string;
         mode?: string;
+        queued?: boolean;
+        paid?: boolean;
       }>("/billing/checkout/stk", {
         method: "POST",
         body: JSON.stringify({ visitId, phone, source }),
       });
+
+      if (!data.checkoutId) {
+        setPhase("FAILED");
+        setError(
+          "Payment was accepted by the API but no checkoutId was returned. Cannot track STK status.",
+        );
+        return;
+      }
+
       setCheckoutId(data.checkoutId);
+      setPaymentId(data.paymentId || data.checkoutId);
       setMode(data.mode || "");
-      setStatus("PENDING");
-      setHint(data.message || "Waiting for M-Pesa PIN…");
+      const next = mapPhase(data.status || "QUEUED", data.stage);
+      setPhase(next);
+      setHint(data.message || phaseCopy(next).hint);
+
+      const gen = ++pollGen.current;
+      void pollStatus(data.checkoutId, gen);
     } catch (err) {
+      setPhase("FAILED");
       setError(err instanceof Error ? err.message : "Could not start M-Pesa payment");
     } finally {
       setBusy(false);
@@ -110,12 +232,25 @@ export function MpesaCheckoutModal({
     );
   }
 
+  const copy = phaseCopy(phase);
+  const inFlight =
+    phase === "PROCESSING" ||
+    phase === "QUEUED" ||
+    phase === "SENDING_STK" ||
+    phase === "WAITING_CUSTOMER";
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
       <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-base font-semibold text-slate-800">M-Pesa checkout</h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
+          <button
+            onClick={() => {
+              stopPolling();
+              onClose();
+            }}
+            className="text-slate-400 hover:text-slate-600"
+          >
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -127,36 +262,87 @@ export function MpesaCheckoutModal({
         <p className="mt-1 text-[11px] text-slate-400">
           {source === "PHARMACY" ? "Pharmacy dispense payment" : "Reception outpatient bill"}
           {mode ? ` · ${mode}` : ""}
+          {paymentId ? ` · ID ${paymentId.slice(0, 8)}…` : ""}
         </p>
 
-        {status === "IDLE" || status === "FAILED" ? (
+        {phase === "IDLE" || phase === "FAILED" || phase === "TIMEOUT" ? (
           <div className="mt-4 space-y-3">
+            {(phase === "FAILED" || phase === "TIMEOUT") && (
+              <div className="rounded-xl bg-rose-50 px-3.5 py-3 text-left">
+                <div className="flex items-start gap-2">
+                  <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-rose-600" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-rose-900">{copy.title}</p>
+                    <p className="mt-1 text-[12px] text-rose-800/90 whitespace-pre-wrap">
+                      {error || hint || copy.hint}
+                    </p>
+                    <p className="mt-2 text-[11px] text-rose-700/80">
+                      Verify the phone number, confirm Redis/worker is running, then try again.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
             <div>
               <label className="text-xs font-semibold text-slate-600">M-Pesa phone</label>
               <input
                 className={`mt-1.5 ${inputClass}`}
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                placeholder="07XXXXXXXX or 2547XXXXXXXX"
+                placeholder="07XXXXXXXX, 01XXXXXXXX, or 2547XXXXXXXX"
                 inputMode="tel"
               />
             </div>
-            {error && <p className="text-[11px] font-medium text-rose-500">{error}</p>}
+            {phase === "IDLE" && error && (
+              <p className="text-[11px] font-medium text-rose-500">{error}</p>
+            )}
             <button
               onClick={start}
               disabled={busy}
               className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand-500 py-2.5 text-sm font-semibold text-white hover:bg-brand-600 disabled:opacity-50"
             >
-              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Smartphone className="h-4 w-4" />}
-              Send M-Pesa payment request
+              {busy ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Smartphone className="h-4 w-4" />
+              )}
+              {phase === "IDLE" ? "Send M-Pesa payment request" : "Try again"}
             </button>
           </div>
         ) : (
           <div className="mt-6 flex flex-col items-center gap-3 py-4 text-center">
-            <Loader2 className="h-8 w-8 animate-spin text-brand-500" />
-            <p className="text-sm font-medium text-slate-800">Waiting for patient PIN…</p>
-            <p className="text-[11px] text-slate-400">{hint}</p>
-            {error && <p className="text-[11px] font-medium text-rose-500">{error}</p>}
+            {phase === "SUCCESS" ? (
+              <CheckCircle2 className="h-8 w-8 text-emerald-500" />
+            ) : inFlight ? (
+              <Loader2 className="h-8 w-8 animate-spin text-brand-500" />
+            ) : (
+              <XCircle className="h-8 w-8 text-rose-500" />
+            )}
+            <p className="text-sm font-medium text-slate-800">{copy.title}</p>
+            <p className="text-[11px] text-slate-400">{hint || copy.hint}</p>
+            {checkoutId && (
+              <p className="text-[10px] text-slate-400">Payment ID: {checkoutId}</p>
+            )}
+            {timeline && timeline.length > 0 && (
+              <button
+                type="button"
+                className="text-[11px] font-medium text-brand-700 hover:underline"
+                onClick={() => setShowDetails((v) => !v)}
+              >
+                {showDetails ? "Hide details" : "View details"}
+              </button>
+            )}
+            {showDetails && timeline && (
+              <ol className="mt-1 max-h-40 w-full overflow-y-auto rounded-xl bg-slate-50 px-3 py-2 text-left text-[11px] text-slate-600">
+                {timeline.map((ev, idx) => (
+                  <li key={`${ev.at}-${idx}`} className="border-b border-slate-100 py-1.5 last:border-0">
+                    <span className="font-semibold text-slate-800">{ev.stage}</span>
+                    <span className="text-slate-400"> · {new Date(ev.at).toLocaleTimeString()}</span>
+                    {ev.message ? <div className="text-slate-500">{ev.message}</div> : null}
+                  </li>
+                ))}
+              </ol>
+            )}
           </div>
         )}
       </div>

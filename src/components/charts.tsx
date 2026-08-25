@@ -225,19 +225,35 @@ export function AnalyticsLineChart({
   data = [],
   valueKey = "value",
   previousKey,
+  lines,
   emptyLabel = "No data available for this period.",
 }: {
   data?: Array<Record<string, string | number | null>>;
   valueKey?: string;
   previousKey?: string;
+  /** Multiple current-period series overlaid on one chart. */
+  lines?: Array<{
+    dataKey: string;
+    name: string;
+    stroke?: string;
+    dashed?: boolean;
+  }>;
   emptyLabel?: string;
 }) {
-  const hasData = data.some((d) => Number(d[valueKey] ?? 0) !== 0);
+  const keysToCheck = lines?.length
+    ? lines.map((l) => l.dataKey)
+    : [valueKey, ...(previousKey ? [previousKey] : [])];
+  const hasData = data.some((d) =>
+    keysToCheck.some((k) => Number(d[k] ?? 0) !== 0),
+  );
   if (!data.length || !hasData) {
     return (
       <p className="px-4 py-16 text-center text-sm text-slate-400">{emptyLabel}</p>
     );
   }
+
+  const palette = ["#f02878", "#0d9488", "#2563eb", "#f59e0b"];
+
   return (
     <ResponsiveContainer width="100%" height={260}>
       <LineChart data={data} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
@@ -245,25 +261,42 @@ export function AnalyticsLineChart({
         <XAxis dataKey="period" tickLine={false} axisLine={false} tick={axisTick} />
         <YAxis tickLine={false} axisLine={false} tick={axisTick} />
         <Tooltip contentStyle={tooltipStyle} />
-        <Line
-          type="monotone"
-          dataKey={valueKey}
-          name="Current"
-          stroke="#f02878"
-          strokeWidth={2.5}
-          dot={false}
-        />
-        {previousKey ? (
-          <Line
-            type="monotone"
-            dataKey={previousKey}
-            name="Previous"
-            stroke="#94a3b8"
-            strokeWidth={2}
-            strokeDasharray="4 4"
-            dot={false}
-          />
-        ) : null}
+        {lines?.length ? (
+          lines.map((line, i) => (
+            <Line
+              key={line.dataKey}
+              type="monotone"
+              dataKey={line.dataKey}
+              name={line.name}
+              stroke={line.stroke ?? palette[i % palette.length]}
+              strokeWidth={2.5}
+              strokeDasharray={line.dashed ? "4 4" : undefined}
+              dot={false}
+            />
+          ))
+        ) : (
+          <>
+            <Line
+              type="monotone"
+              dataKey={valueKey}
+              name="Current"
+              stroke="#f02878"
+              strokeWidth={2.5}
+              dot={false}
+            />
+            {previousKey ? (
+              <Line
+                type="monotone"
+                dataKey={previousKey}
+                name="Previous"
+                stroke="#94a3b8"
+                strokeWidth={2}
+                strokeDasharray="4 4"
+                dot={false}
+              />
+            ) : null}
+          </>
+        )}
       </LineChart>
     </ResponsiveContainer>
   );

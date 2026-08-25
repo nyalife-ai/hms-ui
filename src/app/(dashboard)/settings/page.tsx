@@ -1,23 +1,13 @@
 "use client";
 
-import {
-  Building2,
-  MapPinned,
-  ShieldCheck,
-  Bell,
-} from "lucide-react";
+import { Building2, MapPinned } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { RoleGuard } from "@/components/role-guard";
-import { PushDeviceSettings } from "@/components/push-device-settings";
 import { Card, CardHeader, PageHeader, PrimaryButton } from "@/components/ui";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { buildListQuery, unwrapPage } from "@/lib/pagination";
-import {
-  fetchNotificationPreferences,
-  updateNotificationPreferences,
-} from "@/lib/notifications";
-import { unlockNotificationAudio } from "@/lib/notification-sound";
 
 const inputClass =
   "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
@@ -44,57 +34,27 @@ type SettingsResponse = {
   groups: Array<{ name: string; items: SettingItem[] }>;
 };
 
-type Section = "general" | "contact" | "security" | "notifications";
+type Section = "general" | "contact";
 
 function itemsToMap(items: SettingItem[]): Record<string, SettingItem> {
   return Object.fromEntries(items.map((i) => [i.key, i]));
 }
 
 export default function SettingsPage() {
-  const { user, changePassword, setTwoFactorEnabled } = useAuth();
+  const { user } = useAuth();
   const canEditSystem =
     user?.role === "ADMIN" || user?.role === "SUPER_ADMIN";
 
-  const [section, setSection] = useState<Section>("security");
+  const [section, setSection] = useState<Section>("general");
   const [general, setGeneral] = useState<Record<string, SettingItem>>({});
   const [about, setAbout] = useState<Record<string, SettingItem>>({});
   const [contact, setContact] = useState<Record<string, SettingItem>>({});
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
-
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [twoFactor, setTwoFactor] = useState(Boolean(user?.twoFactorEnabled));
-  const [didPickDefaultTab, setDidPickDefaultTab] = useState(false);
-  const [soundEnabled, setSoundEnabled] = useState(true);
   const [consultOptions, setConsultOptions] = useState<
     Array<{ code: string; label: string; price: string }>
   >([]);
-
-  useEffect(() => {
-    setTwoFactor(Boolean(user?.twoFactorEnabled));
-  }, [user?.twoFactorEnabled]);
-
-  useEffect(() => {
-    if (!user) return;
-    let cancelled = false;
-    void fetchNotificationPreferences()
-      .then((p) => {
-        if (!cancelled) setSoundEnabled(p.notificationSoundEnabled);
-      })
-      .catch(() => undefined);
-    return () => {
-      cancelled = true;
-    };
-  }, [user]);
-
-  useEffect(() => {
-    if (!user || didPickDefaultTab) return;
-    setSection(canEditSystem ? "general" : "security");
-    setDidPickDefaultTab(true);
-  }, [user, canEditSystem, didPickDefaultTab]);
 
   useEffect(() => {
     if (!canEditSystem) return;
@@ -122,7 +82,6 @@ export default function SettingsPage() {
             label: `${r.serviceCode} — ${r.serviceName} (KES ${Number(r.standardPrice).toLocaleString()})`,
             price: r.standardPrice,
           }));
-        // Ensure CONSULT appears even if search missed it
         if (!options.some((o) => o.code === "CONSULT")) {
           try {
             const all = unwrapPage<{
@@ -164,12 +123,13 @@ export default function SettingsPage() {
       try {
         const data = await api<SettingsResponse>("/ops/settings");
         if (cancelled) return;
-        for (const g of data.groups) {
-          const map = itemsToMap(g.items);
-          if (g.name === "general") setGeneral(map);
-          if (g.name === "about") setAbout(map);
-          if (g.name === "contact") setContact(map);
-        }
+        const byGroup = Object.fromEntries(
+          data.groups.map((g) => [g.name, itemsToMap(g.items)]),
+        );
+        setGeneral(byGroup.general ?? {});
+        setAbout(byGroup.about ?? {});
+        setContact(byGroup.contact ?? {});
+        setError("");
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : "Could not load settings");
@@ -186,7 +146,7 @@ export default function SettingsPage() {
     return new Set(
       raw
         .split(",")
-        .map((d) => d.trim())
+        .map((s) => s.trim())
         .filter(Boolean),
     );
   }, [general.working_days?.value]);
@@ -197,22 +157,24 @@ export default function SettingsPage() {
     value: string,
   ) => {
     const updater = (prev: Record<string, SettingItem>) => {
-      const current = prev[key] || {
-        key,
-        label: key,
-        value: "",
-        type: "text",
-        groupName: group,
+      const existing = prev[key];
+      return {
+        ...prev,
+        [key]: {
+          key,
+          label: existing?.label || key,
+          value,
+          type: existing?.type || "string",
+          groupName: existing?.groupName || group,
+        },
       };
-      return { ...prev, [key]: { ...current, value } };
     };
     if (group === "general") setGeneral(updater);
-    if (group === "about") setAbout(updater);
-    if (group === "contact") setContact(updater);
+    else if (group === "about") setAbout(updater);
+    else setContact(updater);
   };
 
   const saveGroup = async (group: "general" | "contact") => {
-    if (!canEditSystem) return;
     setBusy(true);
     setError("");
     setNotice("");
@@ -220,7 +182,10 @@ export default function SettingsPage() {
       const items =
         group === "general"
           ? Object.values(general)
-          : [...Object.values(about), ...Object.values(contact)];
+          : [
+              ...Object.values(about),
+              ...Object.values(contact),
+            ];
       const data = await api<SettingsResponse>("/ops/settings", {
         method: "PUT",
         body: JSON.stringify({
@@ -233,15 +198,19 @@ export default function SettingsPage() {
           })),
         }),
       });
-      for (const g of data.groups) {
-        const map = itemsToMap(g.items);
-        if (g.name === "general") setGeneral(map);
-        if (g.name === "about") setAbout(map);
-        if (g.name === "contact") setContact(map);
-      }
-      setNotice(group === "general" ? "General settings saved." : "Contact settings saved.");
+      const byGroup = Object.fromEntries(
+        data.groups.map((g) => [g.name, itemsToMap(g.items)]),
+      );
+      setGeneral(byGroup.general ?? {});
+      setAbout(byGroup.about ?? {});
+      setContact(byGroup.contact ?? {});
+      setNotice(
+        group === "general"
+          ? "General settings saved."
+          : "Contact settings saved.",
+      );
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save");
+      setError(err instanceof Error ? err.message : "Could not save settings");
     } finally {
       setBusy(false);
     }
@@ -264,74 +233,6 @@ export default function SettingsPage() {
       setError("");
     };
     reader.readAsDataURL(file);
-  };
-
-  const savePassword = async () => {
-    if (newPassword.length < 8) {
-      setError("New password must be at least 8 characters.");
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      setError("New password and confirmation do not match.");
-      return;
-    }
-    setBusy(true);
-    setError("");
-    setNotice("");
-    try {
-      await changePassword(currentPassword, newPassword);
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-      setNotice("Password updated. Please sign in again.");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not change password");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const toggleSound = async (enabled: boolean) => {
-    unlockNotificationAudio();
-    setBusy(true);
-    setError("");
-    setNotice("");
-    try {
-      const prefs = await updateNotificationPreferences({
-        notificationSoundEnabled: enabled,
-      });
-      setSoundEnabled(prefs.notificationSoundEnabled);
-      setNotice(
-        prefs.notificationSoundEnabled
-          ? "Notification sounds enabled."
-          : "Notification sounds disabled. Alerts still appear silently.",
-      );
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Could not update sound preference",
-      );
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const toggleTwoFactor = async (enabled: boolean) => {
-    setBusy(true);
-    setError("");
-    setNotice("");
-    try {
-      const me = await setTwoFactorEnabled(enabled);
-      setTwoFactor(Boolean(me.twoFactorEnabled));
-      setNotice(
-        enabled
-          ? "Two-factor authentication enabled. You will need an email code on next login."
-          : "Two-factor authentication disabled.",
-      );
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not update 2FA");
-    } finally {
-      setBusy(false);
-    }
   };
 
   const renderField = (
@@ -567,35 +468,39 @@ export default function SettingsPage() {
     <RoleGuard module="settings">
       <PageHeader title="Settings" subtitle="System configuration for NyaLife HMS" />
 
+      <p className="mb-5 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600 shadow-sm">
+        Personal profile, password, and 2FA are under{" "}
+        <Link href="/account" className="font-semibold text-brand-700 hover:underline">
+          My Account
+        </Link>
+        .
+      </p>
+
       <div className="mb-5 flex flex-wrap gap-2">
         {(
           [
-            { id: "general" as const, label: "General", icon: Building2, admin: true },
-            { id: "contact" as const, label: "Contact & about", icon: MapPinned, admin: true },
-            { id: "notifications" as const, label: "Notifications", icon: Bell, admin: false },
-            { id: "security" as const, label: "Security", icon: ShieldCheck, admin: false },
+            { id: "general" as const, label: "General", icon: Building2 },
+            { id: "contact" as const, label: "Contact & about", icon: MapPinned },
           ] as const
-        )
-          .filter((tab) => !tab.admin || canEditSystem)
-          .map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => {
-                setSection(tab.id);
-                setNotice("");
-                setError("");
-              }}
-              className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition ${
-                section === tab.id
-                  ? "bg-brand-500 text-white"
-                  : "bg-white text-slate-500 shadow-sm hover:bg-brand-50 hover:text-brand-700"
-              }`}
-            >
-              <tab.icon className="h-4 w-4" />
-              {tab.label}
-            </button>
-          ))}
+        ).map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => {
+              setSection(tab.id);
+              setNotice("");
+              setError("");
+            }}
+            className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition ${
+              section === tab.id
+                ? "bg-brand-500 text-white"
+                : "bg-white text-slate-500 shadow-sm hover:bg-brand-50 hover:text-brand-700"
+            }`}
+          >
+            <tab.icon className="h-4 w-4" />
+            {tab.label}
+          </button>
+        ))}
       </div>
 
       {notice && (
@@ -644,113 +549,6 @@ export default function SettingsPage() {
             </PrimaryButton>
           </div>
         </Card>
-      )}
-
-      {section === "notifications" && (
-        <Card>
-          <CardHeader
-            title="Notification sounds"
-            subtitle="Controls audio only. Notifications still arrive in the center when sound is off."
-          />
-          <div className="flex flex-wrap items-center justify-between gap-3 px-5 pb-5 sm:max-w-xl">
-            <div>
-              <p className="text-sm font-medium text-slate-800">
-                Enable notification sounds
-              </p>
-              <p className="mt-1 text-xs text-slate-500">
-                {soundEnabled ? "On — play a chime for new live alerts" : "Off — silent alerts only"}
-              </p>
-            </div>
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => void toggleSound(!soundEnabled)}
-              className={`rounded-full px-4 py-2 text-sm font-semibold transition disabled:opacity-50 ${
-                soundEnabled
-                  ? "bg-brand-500 text-white hover:bg-brand-600"
-                  : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-              }`}
-            >
-              {soundEnabled ? "On" : "Off"}
-            </button>
-          </div>
-        </Card>
-      )}
-
-      {section === "notifications" && (
-        <Card>
-          <CardHeader
-            title="Desktop / push alerts"
-            subtitle="Register this browser for FCM push. Deny is fine — in-app alerts still work."
-          />
-          <PushDeviceSettings />
-        </Card>
-      )}
-
-      {section === "security" && (
-        <div className="space-y-5">
-          <Card>
-            <CardHeader
-              title="Two-factor authentication"
-              subtitle="Require an email one-time code after password sign-in for this account"
-            />
-            <div className="flex flex-wrap items-center justify-between gap-3 px-5 pb-5 sm:max-w-xl">
-              <div>
-                <p className="text-sm font-medium text-slate-800">
-                  {twoFactor ? "Enabled" : "Disabled"}
-                </p>
-                <p className="mt-1 text-xs text-slate-500">
-                  Codes are sent to {user?.email || "your account email"}.
-                </p>
-              </div>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => void toggleTwoFactor(!twoFactor)}
-                className={`rounded-full px-4 py-2 text-sm font-semibold transition disabled:opacity-50 ${
-                  twoFactor
-                    ? "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                    : "bg-brand-500 text-white hover:bg-brand-600"
-                }`}
-              >
-                {twoFactor ? "Disable 2FA" : "Enable 2FA"}
-              </button>
-            </div>
-          </Card>
-
-          <Card>
-            <CardHeader
-              title="Change password"
-              subtitle="Updates the password for the signed-in account"
-            />
-            <div className="space-y-3 px-5 pb-5 sm:max-w-xl">
-              <input
-                className={inputClass}
-                type="password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                placeholder="Current password"
-              />
-              <input
-                className={inputClass}
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="New password"
-              />
-              <input
-                className={inputClass}
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Confirm new password"
-              />
-              <PrimaryButton disabled={busy} onClick={() => void savePassword()}>
-                {busy ? "Updating…" : "Update password"}
-              </PrimaryButton>
-            </div>
-          </Card>
-        </div>
       )}
     </RoleGuard>
   );

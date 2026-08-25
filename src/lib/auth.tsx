@@ -10,6 +10,9 @@ import {
 } from "react";
 import {
   api,
+  API_URL,
+  ApiError,
+  authenticatedFetch,
   clearTokens,
   getAccessToken,
   getRefreshToken,
@@ -57,7 +60,6 @@ interface AuthContextValue {
   verifyLoginOtp: (hash: string, otp: string) => Promise<void>;
   logout: () => Promise<void>;
   changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
-  setTwoFactorEnabled: (enabled: boolean) => Promise<SessionUser>;
   refreshMe: () => Promise<void>;
 }
 
@@ -197,17 +199,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   };
 
-  const setTwoFactorEnabled = async (enabled: boolean) => {
-    const me = await api<SessionUser>("/auth/me/two-factor", {
-      method: "PATCH",
-      body: JSON.stringify({ enabled }),
-    });
-    const next = normalizeUser(me);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-    setUser(next);
-    return next;
-  };
-
   const refreshMe = async () => {
     const me = await api<SessionUser>("/auth/me");
     const next = normalizeUser(me);
@@ -226,7 +217,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         verifyLoginOtp,
         logout,
         changePassword,
-        setTwoFactorEnabled,
         refreshMe,
       }}
     >
@@ -243,6 +233,80 @@ export function useAuth(): AuthContextValue {
 
 export function roleLabel(role: Role): string {
   return ROLE_LABELS[role];
+}
+
+export type MyProfile = {
+  firstName: string;
+  lastName: string;
+  phone: string | null;
+  email: string;
+  profileImage: string | null;
+  notificationSoundEnabled: boolean;
+};
+
+export type TwoFactorChallenge = {
+  hash: string;
+  expiresInMinutes: number;
+  channel: "email" | "sms";
+  maskedDestination: string;
+};
+
+export async function getMyProfile(): Promise<MyProfile> {
+  return api<MyProfile>("/auth/me/profile");
+}
+
+export async function updateMyProfile(patch: {
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  profileImage?: string;
+}): Promise<MyProfile> {
+  return api<MyProfile>("/auth/me/profile", {
+    method: "PATCH",
+    body: JSON.stringify(patch),
+  });
+}
+
+export async function uploadAvatar(file: File): Promise<MyProfile> {
+  const form = new FormData();
+  form.append("file", file);
+  const res = await authenticatedFetch(`${API_URL}/auth/me/profile/avatar`, {
+    method: "POST",
+    body: form,
+  });
+  if (!res.ok) {
+    let message = res.statusText;
+    try {
+      const body = (await res.json()) as { message?: string | string[] };
+      if (Array.isArray(body.message)) message = body.message.join(", ");
+      else if (body.message) message = body.message;
+    } catch {
+      // ignore
+    }
+    throw new ApiError(res.status, message);
+  }
+  return res.json() as Promise<MyProfile>;
+}
+
+export async function startTwoFactorChallenge(input: {
+  intent: "enable" | "disable";
+  channel: "email" | "sms";
+}): Promise<TwoFactorChallenge> {
+  return api<TwoFactorChallenge>("/auth/me/two-factor/challenge", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export async function confirmTwoFactorChallenge(input: {
+  hash: string;
+  otp: string;
+  intent: "enable" | "disable";
+}): Promise<SessionUser> {
+  return api<SessionUser>("/auth/me/two-factor/confirm", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
 }
 
 /** Demo account directory for login UI hints (emails only). */

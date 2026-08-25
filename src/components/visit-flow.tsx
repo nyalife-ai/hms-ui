@@ -18,14 +18,14 @@ export function PipelineStepper({
   const current = STAGE_META[visit.stage].step;
   const highlighted = activeStep ?? current;
   return (
-    <div className="flex items-center gap-1 overflow-x-auto py-1">
+    <div className="flex w-full min-w-0 items-center gap-1 overflow-x-auto py-1">
       {PIPELINE_STEPS.map((step, i) => {
         const idx = i + 1;
         const done = idx < current;
         const active = idx === highlighted;
         const clickable = Boolean(onStepClick);
         return (
-          <div key={step} className="flex items-center gap-1">
+          <div key={step} className="flex shrink-0 items-center gap-1">
             <div className="flex flex-col items-center gap-1">
               <button
                 type="button"
@@ -41,12 +41,17 @@ export function PipelineStepper({
               >
                 {done && idx !== highlighted ? <Check className="h-3 w-3" /> : idx}
               </button>
-              <span className={`whitespace-nowrap text-[9px] ${active ? "font-semibold text-brand-700" : "text-slate-400"}`}>
+              <span
+                className={`max-w-[3.25rem] truncate text-center text-[9px] sm:max-w-none sm:whitespace-nowrap ${
+                  active ? "font-semibold text-brand-700" : "text-slate-400"
+                }`}
+                title={step}
+              >
                 {step}
               </span>
             </div>
             {i < PIPELINE_STEPS.length - 1 && (
-              <span className={`mb-4 h-0.5 w-5 rounded-full ${done ? "bg-brand-400" : "bg-slate-100"}`} />
+              <span className={`mb-4 h-0.5 w-3 shrink-0 rounded-full sm:w-5 ${done ? "bg-brand-400" : "bg-slate-100"}`} />
             )}
           </div>
         );
@@ -108,7 +113,11 @@ export function VisitQueueList({
                   : `In at ${formatTime(v.checkedInAt)}`}
               </p>
             </div>
-            <Badge tone={STAGE_META[v.stage].tone}>{STAGE_META[v.stage].label}</Badge>
+            <span className="max-w-[40%] shrink-0 sm:max-w-[9rem]">
+              <Badge tone={STAGE_META[v.stage].tone}>
+                <span className="block truncate">{STAGE_META[v.stage].label}</span>
+              </Badge>
+            </span>
           </button>
           {trailing?.(v)}
         </li>
@@ -163,34 +172,44 @@ export function PaymentInfo({ visit }: { visit: Visit }) {
   const feeAmount = visit.billing?.consultFeeAmount ?? visit.billing?.total;
   const feeBlock =
     fee === "PAID" ? (
-      <div className="flex items-center gap-2.5 rounded-xl bg-emerald-50 px-3.5 py-3">
+      <div className="flex min-w-0 flex-wrap items-center gap-2.5 rounded-xl bg-emerald-50 px-3.5 py-3">
         <Check className="h-4 w-4 shrink-0 text-emerald-600" />
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium text-emerald-900">Consultation fee paid</p>
-          <p className="text-[11px] text-emerald-700/80">
+          <p className="truncate text-sm font-medium text-emerald-900">
+            Consultation fee paid
+          </p>
+          <p className="truncate text-[11px] text-emerald-700/80">
             {visit.billing?.invoiceNumber ? `${visit.billing.invoiceNumber} · ` : ""}
             {feeAmount != null ? `KES ${Number(feeAmount).toLocaleString()}` : ""}
             {visit.billing?.paymentChannel ? ` · ${visit.billing.paymentChannel}` : ""}
           </p>
         </div>
-        <Badge tone="green">Paid</Badge>
+        <span className="shrink-0">
+          <Badge tone="green">Paid</Badge>
+        </span>
       </div>
     ) : fee === "PENDING" ? (
-      <div className="flex items-center gap-2.5 rounded-xl bg-amber-50 px-3.5 py-3">
+      <div className="flex min-w-0 flex-wrap items-center gap-2.5 rounded-xl bg-amber-50 px-3.5 py-3">
         <Banknote className="h-4 w-4 shrink-0 text-amber-600" />
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium text-amber-900">Send patient to finance</p>
-          <p className="text-[11px] text-amber-800/80">
+          <p className="truncate text-sm font-medium text-amber-900">
+            Send patient to finance
+          </p>
+          <p className="truncate text-[11px] text-amber-800/80">
             Draft invoice {visit.billing?.invoiceNumber ?? ""}
             {feeAmount != null ? ` · KES ${Number(feeAmount).toLocaleString()}` : ""}
           </p>
         </div>
-        <Badge tone="amber">Unpaid</Badge>
+        <span className="shrink-0">
+          <Badge tone="amber">Unpaid</Badge>
+        </span>
       </div>
     ) : fee === "WAIVED" ? (
-      <div className="flex items-center gap-2.5 rounded-xl bg-[#f3f7f7] px-3.5 py-3">
+      <div className="flex min-w-0 flex-wrap items-center gap-2.5 rounded-xl bg-[#f3f7f7] px-3.5 py-3">
         <Banknote className="h-4 w-4 shrink-0 text-slate-400" />
-        <p className="text-sm font-medium text-slate-700">Consultation fee waived</p>
+        <p className="min-w-0 truncate text-sm font-medium text-slate-700">
+          Consultation fee waived
+        </p>
       </div>
     ) : null;
 
@@ -209,24 +228,28 @@ export function PaymentInfo({ visit }: { visit: Visit }) {
               ? "red"
               : "amber";
         return (
-          <div className="flex items-center gap-2.5 rounded-xl bg-[#f3f7f7] px-3.5 py-3">
+          <div className="flex min-w-0 flex-wrap items-center gap-2.5 rounded-xl bg-[#f3f7f7] px-3.5 py-3">
             <ShieldCheck className="h-4 w-4 shrink-0 text-brand-500" />
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-slate-700">{visit.payment.provider}</p>
-              <p className="text-[11px] text-slate-400">
+              <p className="truncate text-sm font-medium text-slate-700">
+                {visit.payment.provider}
+              </p>
+              <p className="truncate text-[11px] text-slate-400">
                 Policy {visit.payment.policyNumber}
                 {visit.payment.benefitBalance
                   ? ` · Balance KES ${visit.payment.benefitBalance.toLocaleString()}`
                   : ""}
               </p>
             </div>
-            <Badge tone={tone}>
-              {visit.payment.status === "APPROVED"
-                ? "Cover approved"
-                : visit.payment.status === "REJECTED"
-                  ? "Rejected"
-                  : "Pending"}
-            </Badge>
+            <span className="shrink-0">
+              <Badge tone={tone}>
+                {visit.payment.status === "APPROVED"
+                  ? "Cover approved"
+                  : visit.payment.status === "REJECTED"
+                    ? "Rejected"
+                    : "Pending"}
+              </Badge>
+            </span>
           </div>
         );
       })()

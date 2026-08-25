@@ -11,6 +11,7 @@ import {
   Receipt,
   MessageSquare,
   UserCog,
+  UserCircle,
   Settings,
   Stethoscope,
   Building2,
@@ -149,6 +150,12 @@ export const NAV_SECTIONS: NavSection[] = [
         ],
       },
       { label: "Messages", href: "/messages", icon: MessageSquare, module: "messages" },
+      {
+        label: "My Account",
+        href: "/account",
+        icon: UserCircle,
+        module: "account",
+      },
       {
         label: "Settings",
         href: "/settings",

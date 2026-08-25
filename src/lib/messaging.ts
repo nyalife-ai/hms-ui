@@ -2,7 +2,7 @@
  * Staff messaging API client — /messages/*
  */
 
-import { api, API_URL, ApiError, getAccessToken } from "./api";
+import { api, API_URL, ApiError, authenticatedFetch } from "./api";
 import { buildListQuery, unwrapPage, type Paginated } from "./pagination";
 
 export const ALLOWED_REACTIONS = [
@@ -38,7 +38,10 @@ export type DeliveryStatus = "SENT" | "DELIVERED" | "READ";
 export type ConversationParticipant = {
   userId: string;
   displayName: string;
+  /** Staff / app role (e.g. DOCTOR). */
   role: string;
+  /** Conversation membership role (ADMIN | MEMBER). */
+  participantRole?: string;
 };
 
 export type ConversationListItem = {
@@ -244,10 +247,7 @@ export function attachmentContentUrl(attachmentId: string): string {
 export async function fetchAttachmentBlobUrl(
   attachmentId: string,
 ): Promise<string> {
-  const headers = new Headers();
-  const token = getAccessToken();
-  if (token) headers.set("Authorization", `Bearer ${token}`);
-  const res = await fetch(attachmentContentUrl(attachmentId), { headers });
+  const res = await authenticatedFetch(attachmentContentUrl(attachmentId));
   if (!res.ok) throw new ApiError(res.status, await parseError(res));
   const blob = await res.blob();
   return URL.createObjectURL(blob);
@@ -297,17 +297,34 @@ export async function uploadAttachment(
   conversationId: string,
   file: File,
 ): Promise<AttachmentUploadRef> {
-  const headers = new Headers();
-  const token = getAccessToken();
-  if (token) headers.set("Authorization", `Bearer ${token}`);
   const form = new FormData();
   form.append("file", file);
-  const res = await fetch(
+  const res = await authenticatedFetch(
     `${API_URL}/messages/conversations/${conversationId}/attachments`,
-    { method: "POST", headers, body: form },
+    { method: "POST", body: form },
   );
   if (!res.ok) throw new ApiError(res.status, await parseError(res));
   return res.json() as Promise<AttachmentUploadRef>;
+}
+
+export function addConversationParticipants(
+  conversationId: string,
+  userIds: string[],
+): Promise<ConversationDetail> {
+  return api(`/messages/conversations/${conversationId}/participants`, {
+    method: "POST",
+    body: JSON.stringify({ userIds }),
+  });
+}
+
+export function removeConversationParticipant(
+  conversationId: string,
+  userId: string,
+): Promise<ConversationDetail> {
+  return api(
+    `/messages/conversations/${conversationId}/participants/${userId}`,
+    { method: "DELETE" },
+  );
 }
 
 export function downloadAttachment(

@@ -73,6 +73,8 @@ export const MODULE_ACCESS: Record<string, Role[]> = {
   messages: ALL_ROLES,
   staff: ["SUPER_ADMIN", "ADMIN"],
   settings: ["SUPER_ADMIN", "ADMIN"],
+  /** Self-service profile, password, 2FA, and personal prefs */
+  account: ALL_ROLES,
 };
 
 /**

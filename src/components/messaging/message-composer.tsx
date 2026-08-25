@@ -17,6 +17,7 @@ import {
 } from "@/lib/messaging";
 import { emitTyping } from "@/lib/realtime-client";
 import { EmojiPicker } from "./emoji-picker";
+import { VoiceNotePlayer } from "./voice-note-player";
 import {
   VoiceMicButton,
   VoiceRecorder,
@@ -284,8 +285,14 @@ export function MessageComposer({
         <div className="mb-2 flex items-center gap-2 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-xs text-slate-600">
           <Paperclip className="h-3.5 w-3.5 shrink-0" />
           <span className="min-w-0 flex-1 truncate">{file.name}</span>
-          {filePreviewUrl ? (
-            <audio controls src={filePreviewUrl} className="h-8 max-w-[10rem]" />
+          {filePreviewUrl && file.type.startsWith("audio/") ? (
+            <div className="min-w-0 max-w-[14rem] flex-1">
+              <VoiceNotePlayer
+                src={filePreviewUrl}
+                cacheKey={`composer-${file.name}-${file.size}`}
+                fileName={file.name}
+              />
+            </div>
           ) : null}
           <button
             type="button"

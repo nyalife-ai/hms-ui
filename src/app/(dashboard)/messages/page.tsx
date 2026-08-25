@@ -10,6 +10,8 @@ import {
   useState,
 } from "react";
 import { ConversationList } from "@/components/messaging/conversation-list";
+import { ForwardMessageModal } from "@/components/messaging/forward-message-modal";
+import { GroupMembersSheet } from "@/components/messaging/group-members-sheet";
 import { MessageComposer } from "@/components/messaging/message-composer";
 import { NewConversationModal } from "@/components/messaging/new-conversation-modal";
 import { ThreadView } from "@/components/messaging/thread-view";
@@ -220,6 +222,8 @@ export default function MessagesPage() {
   const [threadError, setThreadError] = useState<string | null>(null);
   const [replyTo, setReplyTo] = useState<{ id: string; preview: string } | null>(null);
   const [newOpen, setNewOpen] = useState(false);
+  const [membersOpen, setMembersOpen] = useState(false);
+  const [forwardMessage, setForwardMessage] = useState<ChatMessage | null>(null);
   const [connectionStatus, setConnectionStatus] =
     useState<RealtimeConnectionStatus>("disconnected");
   const [typingUsers, setTypingUsers] = useState<Record<string, string>>({});
@@ -779,18 +783,21 @@ export default function MessagesPage() {
     }
   };
 
-  const handleEdit = async (message: ChatMessage) => {
-    const next = window.prompt("Edit message", message.body ?? "");
-    if (next == null || next.trim() === (message.body ?? "")) return;
+  const handleEdit = async (message: ChatMessage, body: string) => {
+    const next = body.trim();
+    if (!next || next === (message.body ?? "")) return;
     try {
-      const updated = await editMessage(message.id, next.trim());
+      const updated = await editMessage(message.id, next);
       setMessages((prev) =>
         prev.map((m) =>
-          m.id === message.id ? { ...m, body: updated.body, editedAt: updated.editedAt } : m,
+          m.id === message.id
+            ? { ...m, body: updated.body, editedAt: updated.editedAt }
+            : m,
         ),
       );
     } catch (err) {
       setThreadError(err instanceof Error ? err.message : "Could not edit message");
+      throw err;
     }
   };
 
@@ -910,7 +917,9 @@ export default function MessagesPage() {
                   onReact={handleReact}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
+                  onForward={(m) => setForwardMessage(m)}
                   onMuteToggle={handleMute}
+                  onOpenParticipants={() => setMembersOpen(true)}
                 />
               </div>
               <MessageComposer
@@ -934,6 +943,38 @@ export default function MessagesPage() {
         open={newOpen}
         onClose={() => setNewOpen(false)}
         onCreated={(id) => {
+          void refreshConversations().then(() => selectConversation(id));
+        }}
+      />
+
+      <GroupMembersSheet
+        open={membersOpen}
+        onClose={() => setMembersOpen(false)}
+        conversation={active}
+        currentUserId={userId}
+        currentUserSystemRole={user?.role}
+        onUpdated={(conv) => {
+          const stillIn = conv.participants.some((p) => p.userId === userId);
+          if (!stillIn) {
+            setMembersOpen(false);
+            clearSelection();
+            void refreshConversations();
+            return;
+          }
+          setActive(conv);
+          setConversations((prev) =>
+            prev.map((c) => (c.id === conv.id ? { ...c, ...conv } : c)),
+          );
+        }}
+      />
+
+      <ForwardMessageModal
+        open={Boolean(forwardMessage)}
+        onClose={() => setForwardMessage(null)}
+        message={forwardMessage}
+        currentUserId={userId}
+        excludeConversationId={selectedId ?? undefined}
+        onForwarded={(id) => {
           void refreshConversations().then(() => selectConversation(id));
         }}
       />

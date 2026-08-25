@@ -4,6 +4,7 @@ import {
   Bell,
   Search,
   Settings,
+  UserCircle,
   ChevronDown,
   LogOut,
   Menu,
@@ -47,7 +48,8 @@ const SEARCH_ROUTES: Array<{ label: string; href: string; keywords: string }> = 
   { label: "Doctors", href: "/doctors", keywords: "clinicians" },
   { label: "Staff", href: "/staff", keywords: "roles employees" },
   { label: "Messages", href: "/messages", keywords: "chat conversation" },
-  { label: "Settings", href: "/settings", keywords: "hospital password" },
+  { label: "My Account", href: "/account", keywords: "profile password 2fa security" },
+  { label: "Settings", href: "/settings", keywords: "hospital system" },
   { label: "Dashboard", href: "/dashboard", keywords: "home overview" },
   {
     label: "Reports & Analytics",
@@ -458,6 +460,17 @@ export function Topbar() {
             </div>
           )}
         </div>
+
+        {canAccess(user.role, "account", user.permissions) && (
+          <button
+            type="button"
+            onClick={() => router.push("/account")}
+            className="hidden rounded-full bg-white p-2.5 text-slate-500 shadow-sm transition hover:bg-brand-50 sm:inline-flex"
+            aria-label="My Account"
+          >
+            <UserCircle className="h-4 w-4" />
+          </button>
+        )}
 
         {canAccess(user.role, "settings", user.permissions) && (
           <button

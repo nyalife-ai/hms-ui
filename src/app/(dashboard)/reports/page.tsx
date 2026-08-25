@@ -36,18 +36,30 @@ import {
   Table,
   cell,
 } from "@/components/ui";
+import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import {
   type AnalyticsDomain,
   type AnalyticsFilters,
   type AnalyticsPayload,
   type AnalyticsPreset,
+  type AnalyticsSeries,
+  type AnalyticsBreakdown,
+  type AnalyticsTable,
   PRESET_OPTIONS,
   exportAnalytics,
   fetchAnalytics,
   formatMetricValue,
   tabsForRole,
 } from "@/lib/analytics";
+import {
+  useDepartments,
+  useDoctors,
+  useWards,
+  type CatalogDoctor,
+  type CatalogDepartment,
+  type CatalogWard,
+} from "@/lib/catalog";
 import type { Role } from "@/lib/roles";
 
 const inputClass =
@@ -70,6 +82,13 @@ const KPI_ICONS: Record<string, LucideIcon> = {
   audit: Activity,
 };
 
+type PaymentMethodOption = {
+  id: string;
+  methodName: string;
+  methodCode: string;
+  isActive: boolean;
+};
+
 function iconForKey(key: string): LucideIcon {
   const prefix = key.split(".")[0];
   return KPI_ICONS[prefix] ?? BarChart3;
@@ -86,6 +105,33 @@ function formatUpdated(iso: string) {
   } catch {
     return iso;
   }
+}
+
+function formatCell(value: string | number | null | undefined) {
+  if (value === null || value === undefined) return "—";
+  if (typeof value === "number") return Number(value).toLocaleString();
+  return String(value);
+}
+
+/** Prefer overlay for billed+collected; otherwise stack up to 4 series cards. */
+function seriesChartBlocks(seriesList: AnalyticsSeries[]) {
+  const list = seriesList.slice(0, 4);
+  const billed = list.find((s) => /billed/i.test(s.key));
+  const collected = list.find((s) => /collected/i.test(s.key));
+  if (billed && collected) {
+    const rest = list.filter((s) => s !== billed && s !== collected);
+    return [
+      { kind: "overlay" as const, items: [billed, collected] },
+      ...rest.map((s) => ({ kind: "single" as const, items: [s] })),
+    ];
+  }
+  return list.map((s) => ({ kind: "single" as const, items: [s] }));
+}
+
+function seriesHasPrevious(s: AnalyticsSeries) {
+  return s.points.some(
+    (p) => p.previousValue !== null && p.previousValue !== undefined,
+  );
 }
 
 export default function ReportsAnalyticsPage() {
@@ -105,10 +151,21 @@ export default function ReportsAnalyticsPage() {
   const [granularity, setGranularity] =
     useState<AnalyticsFilters["granularity"]>("day");
   const [status, setStatus] = useState("");
+  const [doctorId, setDoctorId] = useState("");
+  const [wardId, setWardId] = useState("");
+  const [departmentId, setDepartmentId] = useState("");
+  const [paymentMethodId, setPaymentMethodId] = useState("");
   const [payload, setPayload] = useState<AnalyticsPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [exportBusy, setExportBusy] = useState(false);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethodOption[]>(
+    [],
+  );
+
+  const { data: doctors } = useDoctors();
+  const { data: wards } = useWards();
+  const { data: departments } = useDepartments();
 
   useEffect(() => {
     if (!tabs.find((t) => t.id === tab) && tabs[0]) {
@@ -117,6 +174,23 @@ export default function ReportsAnalyticsPage() {
   }, [tabs, tab]);
 
   const activeTab = tabs.find((t) => t.id === tab) ?? tabs[0];
+  const tabFilters = activeTab?.filters ?? [];
+
+  useEffect(() => {
+    if (!tabFilters.includes("paymentMethod")) return;
+    void api<PaymentMethodOption[]>("/billing/payment-methods?active=true")
+      .then(setPaymentMethods)
+      .catch(() => setPaymentMethods([]));
+  }, [tabFilters]);
+
+  useEffect(() => {
+    setDoctorId("");
+    setWardId("");
+    setDepartmentId("");
+    setPaymentMethodId("");
+    setStatus("");
+  }, [tab]);
+
   const filters = useMemo<AnalyticsFilters>(
     () => ({
       preset,
@@ -125,8 +199,23 @@ export default function ReportsAnalyticsPage() {
       compare,
       granularity,
       status: status || undefined,
+      doctorId: doctorId || undefined,
+      wardId: wardId || undefined,
+      departmentId: departmentId || undefined,
+      paymentMethodId: paymentMethodId || undefined,
     }),
-    [preset, from, to, compare, granularity, status],
+    [
+      preset,
+      from,
+      to,
+      compare,
+      granularity,
+      status,
+      doctorId,
+      wardId,
+      departmentId,
+      paymentMethodId,
+    ],
   );
 
   const load = useCallback(async () => {
@@ -161,8 +250,6 @@ export default function ReportsAnalyticsPage() {
       setExportBusy(false);
     }
   };
-
-  const showStatus = activeTab?.filters.includes("status");
 
   return (
     <RoleGuard module="reports">
@@ -250,7 +337,7 @@ export default function ReportsAnalyticsPage() {
             <option value="year">Yearly</option>
           </select>
         </label>
-        {showStatus && (
+        {tabFilters.includes("status") && (
           <label className="flex flex-col gap-1 text-xs font-medium text-slate-500">
             Status
             <input
@@ -259,6 +346,74 @@ export default function ReportsAnalyticsPage() {
               value={status}
               onChange={(e) => setStatus(e.target.value)}
             />
+          </label>
+        )}
+        {tabFilters.includes("doctor") && (
+          <label className="flex flex-col gap-1 text-xs font-medium text-slate-500">
+            Doctor
+            <select
+              className={inputClass}
+              value={doctorId}
+              onChange={(e) => setDoctorId(e.target.value)}
+            >
+              <option value="">All doctors</option>
+              {(doctors as CatalogDoctor[]).map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+        {tabFilters.includes("ward") && (
+          <label className="flex flex-col gap-1 text-xs font-medium text-slate-500">
+            Ward
+            <select
+              className={inputClass}
+              value={wardId}
+              onChange={(e) => setWardId(e.target.value)}
+            >
+              <option value="">All wards</option>
+              {(wards as CatalogWard[]).map((w) => (
+                <option key={w.id} value={w.id}>
+                  {w.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+        {tabFilters.includes("department") && (
+          <label className="flex flex-col gap-1 text-xs font-medium text-slate-500">
+            Department
+            <select
+              className={inputClass}
+              value={departmentId}
+              onChange={(e) => setDepartmentId(e.target.value)}
+            >
+              <option value="">All departments</option>
+              {(departments as CatalogDepartment[]).map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+        {tabFilters.includes("paymentMethod") && (
+          <label className="flex flex-col gap-1 text-xs font-medium text-slate-500">
+            Payment method
+            <select
+              className={inputClass}
+              value={paymentMethodId}
+              onChange={(e) => setPaymentMethodId(e.target.value)}
+            >
+              <option value="">All methods</option>
+              {paymentMethods.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.methodName}
+                </option>
+              ))}
+            </select>
           </label>
         )}
         <div className="ml-auto text-xs text-slate-400">
@@ -348,10 +503,11 @@ function DomainPanel({
   }
 
   const kpis = payload.kpis;
-  const primarySeries = payload.series[0];
-  const secondarySeries = payload.series[1];
-  const donut = payload.breakdowns.find((b) => b.rows.length <= 8);
-  const bar = payload.breakdowns.find((b) => b !== donut) ?? payload.breakdowns[0];
+  const seriesBlocks = seriesChartBlocks(payload.series);
+  const breakdowns = payload.breakdowns.slice(0, 4);
+  const noCharts =
+    payload.series.every((s) => !s.hasData) &&
+    payload.breakdowns.every((b) => !b.hasData);
 
   return (
     <div className="space-y-5">
@@ -388,98 +544,76 @@ function DomainPanel({
             })}
       </div>
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        {primarySeries && (
-          <Card className="p-4">
-            <CardHeader
-              title={primarySeries.label}
-              subtitle={`${payload.meta.from} → ${payload.meta.to}`}
-            />
-            <AnalyticsLineChart
-              data={primarySeries.points.map((p) => ({
-                period: p.period,
-                value: p.value,
-                previous: p.previousValue ?? null,
-              }))}
-              emptyLabel={
-                primarySeries.hasData
-                  ? undefined
-                  : "No data available for this period."
-              }
-            />
-          </Card>
-        )}
-        {secondarySeries && (
-          <Card className="p-4">
-            <CardHeader title={secondarySeries.label} />
-            <AnalyticsLineChart
-              data={secondarySeries.points.map((p) => ({
-                period: p.period,
-                value: p.value,
-              }))}
-              emptyLabel={
-                secondarySeries.hasData
-                  ? undefined
-                  : "No data available for this period."
-              }
-            />
-          </Card>
-        )}
-        {donut && (
-          <Card className="p-4">
-            <CardHeader title={donut.label} />
-            <AnalyticsDonutChart
-              data={donut.rows.map((r) => ({
-                name: r.name,
-                value: r.value,
-              }))}
-              emptyLabel={
-                donut.hasData ? undefined : "No data available for this period."
-              }
-            />
-          </Card>
-        )}
-        {bar && bar !== donut && (
-          <Card className="p-4">
-            <CardHeader title={bar.label} />
-            <AnalyticsBarChart
-              data={bar.rows.slice(0, 12).map((r) => ({
-                name: r.name.length > 14 ? `${r.name.slice(0, 12)}…` : r.name,
-                value: r.value,
-              }))}
-              emptyLabel={
-                bar.hasData ? undefined : "No data available for this period."
-              }
-            />
-          </Card>
-        )}
-      </div>
+      {noCharts ? (
+        <Card className="p-8 text-center text-sm text-slate-400">
+          No chart data available for this period.
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          {seriesBlocks.map((block) => {
+            if (block.kind === "overlay") {
+              const [a, b] = block.items;
+              const periods = a.points.map((p) => p.period);
+              const data = periods.map((period, i) => ({
+                period,
+                [a.key]: a.points[i]?.value ?? 0,
+                [b.key]: b.points[i]?.value ?? 0,
+              }));
+              const empty =
+                !a.hasData && !b.hasData
+                  ? "No data available for this period."
+                  : undefined;
+              return (
+                <Card key={`${a.key}+${b.key}`} className="p-4">
+                  <CardHeader
+                    title={`${a.label} vs ${b.label}`}
+                    subtitle={`${payload.meta.from} → ${payload.meta.to}`}
+                  />
+                  <AnalyticsLineChart
+                    data={data}
+                    lines={[
+                      { dataKey: a.key, name: a.label, stroke: "#f02878" },
+                      { dataKey: b.key, name: b.label, stroke: "#0d9488" },
+                    ]}
+                    emptyLabel={empty}
+                  />
+                </Card>
+              );
+            }
+
+            const s = block.items[0];
+            const showPrev = seriesHasPrevious(s);
+            return (
+              <Card key={s.key} className="p-4">
+                <CardHeader
+                  title={s.label}
+                  subtitle={`${payload.meta.from} → ${payload.meta.to}`}
+                />
+                <AnalyticsLineChart
+                  data={s.points.map((p) => ({
+                    period: p.period,
+                    value: p.value,
+                    previous: p.previousValue ?? null,
+                  }))}
+                  previousKey={showPrev ? "previous" : undefined}
+                  emptyLabel={
+                    s.hasData
+                      ? undefined
+                      : "No data available for this period."
+                  }
+                />
+              </Card>
+            );
+          })}
+
+          {breakdowns.map((b) => (
+            <BreakdownChart key={b.key} breakdown={b} />
+          ))}
+        </div>
+      )}
 
       {payload.tables.map((t) => (
-        <Card key={t.key} className="p-4">
-          <CardHeader title={t.label} subtitle="Exact values behind the charts" />
-          {!t.hasData ? (
-            <p className="px-2 py-8 text-center text-sm text-slate-400">
-              No data available for this period.
-            </p>
-          ) : (
-            <Table headers={t.columns}>
-              {t.rows.map((row, idx) => (
-                <tr key={idx}>
-                  {t.columns.map((c) => (
-                    <td key={c} className={cell}>
-                      {row[c] === null || row[c] === undefined
-                        ? "—"
-                        : typeof row[c] === "number"
-                          ? Number(row[c]).toLocaleString()
-                          : String(row[c])}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </Table>
-          )}
-        </Card>
+        <AnalyticsTableCard key={t.key} table={t} />
       ))}
 
       <details className="rounded-xl border border-slate-100 bg-white p-4 text-xs text-slate-500">
@@ -496,5 +630,90 @@ function DomainPanel({
         </ul>
       </details>
     </div>
+  );
+}
+
+function BreakdownChart({ breakdown }: { breakdown: AnalyticsBreakdown }) {
+  const useDonut = breakdown.rows.length <= 8;
+  return (
+    <Card className="p-4">
+      <CardHeader title={breakdown.label} />
+      {useDonut ? (
+        <AnalyticsDonutChart
+          data={breakdown.rows.map((r) => ({
+            name: r.name,
+            value: r.value,
+          }))}
+          emptyLabel={
+            breakdown.hasData
+              ? undefined
+              : "No data available for this period."
+          }
+        />
+      ) : (
+        <AnalyticsBarChart
+          data={breakdown.rows.slice(0, 12).map((r) => ({
+            name: r.name.length > 14 ? `${r.name.slice(0, 12)}…` : r.name,
+            value: r.value,
+          }))}
+          emptyLabel={
+            breakdown.hasData
+              ? undefined
+              : "No data available for this period."
+          }
+        />
+      )}
+    </Card>
+  );
+}
+
+function AnalyticsTableCard({ table }: { table: AnalyticsTable }) {
+  const previewCols = table.columns.slice(0, 3);
+
+  return (
+    <Card className="p-4">
+      <CardHeader title={table.label} subtitle="Exact values behind the charts" />
+      {!table.hasData ? (
+        <p className="px-2 py-8 text-center text-sm text-slate-400">
+          No data available for this period.
+        </p>
+      ) : (
+        <>
+          <ul className="space-y-2 md:hidden">
+            {table.rows.map((row, idx) => (
+              <li
+                key={idx}
+                className="rounded-xl border border-slate-100 bg-slate-50/80 px-3 py-2.5 text-sm"
+              >
+                {previewCols.map((c) => (
+                  <div
+                    key={c}
+                    className="flex items-baseline justify-between gap-3 py-0.5"
+                  >
+                    <span className="text-xs text-slate-400">{c}</span>
+                    <span className="min-w-0 truncate font-medium text-slate-800">
+                      {formatCell(row[c])}
+                    </span>
+                  </div>
+                ))}
+              </li>
+            ))}
+          </ul>
+          <div className="hidden md:block">
+            <Table headers={table.columns}>
+              {table.rows.map((row, idx) => (
+                <tr key={idx}>
+                  {table.columns.map((c) => (
+                    <td key={c} className={cell}>
+                      {formatCell(row[c])}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </Table>
+          </div>
+        </>
+      )}
+    </Card>
   );
 }

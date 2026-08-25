@@ -117,6 +117,8 @@ export default function TriagePage() {
   const [refreshBusy, setRefreshBusy] = useState(false);
   const [error, setError] = useState("");
   const [warnings, setWarnings] = useState<string[]>([]);
+  /** Below md: switch between queue and intake so the form doesn't bury the queue. */
+  const [mobilePane, setMobilePane] = useState<"queue" | "intake">("queue");
 
   useEffect(() => {
     void api<SymptomCatalogueResponse>("/visits/symptom-catalogue")
@@ -125,6 +127,10 @@ export default function TriagePage() {
   }, []);
 
   const selected = queue.find((v) => v.id === selectedId) ?? queue[0];
+
+  useEffect(() => {
+    if (selectedId) setMobilePane("intake");
+  }, [selectedId]);
 
   useEffect(() => {
     if (!selected) return;
@@ -308,14 +314,43 @@ export default function TriagePage() {
         }
       />
 
-      <div className="grid gap-5 lg:grid-cols-[320px_minmax(0,1fr)]">
-        <div className="space-y-4">
+      <div className="mb-3 flex gap-1 rounded-xl border border-slate-100 bg-white p-1 md:hidden">
+        {(
+          [
+            ["queue", `Queue (${queue.length})`],
+            ["intake", "Intake"],
+          ] as const
+        ).map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setMobilePane(id)}
+            className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium transition ${
+              mobilePane === id
+                ? "bg-brand-50 text-brand-700"
+                : "text-slate-500 hover:bg-slate-50"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <div className="grid min-w-0 gap-5 md:grid-cols-[minmax(0,280px)_minmax(0,1fr)] lg:grid-cols-[minmax(0,320px)_minmax(0,1fr)]">
+        <div
+          className={`min-w-0 space-y-4 ${
+            mobilePane === "queue" ? "block" : "hidden"
+          } md:block`}
+        >
           <Card>
             <CardHeader title="Waiting for triage" subtitle="Oldest check-in first" />
             <VisitQueueList
               visits={queue}
               selectedId={selected?.id}
-              onSelect={setSelectedId}
+              onSelect={(id) => {
+                setSelectedId(id);
+                setMobilePane("intake");
+              }}
               emptyMessage="No patients waiting for triage"
             />
           </Card>
@@ -331,18 +366,24 @@ export default function TriagePage() {
           )}
         </div>
 
-        <div>
+        <div
+          className={`min-w-0 pb-24 md:pb-0 ${
+            mobilePane === "intake" ? "block" : "hidden"
+          } md:block`}
+        >
           {!selected ? (
             <Card className="p-8 text-center text-sm text-slate-400">
               Select a patient to begin clinical triage intake
             </Card>
           ) : (
             <>
-              <Card className="mb-4 p-5">
-                <div className="flex items-start gap-3">
+              <Card className="mb-4 min-w-0 overflow-hidden p-5">
+                <div className="flex min-w-0 items-start gap-3">
                   <Avatar name={selected.patientName} />
                   <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-slate-900">{selected.patientName}</p>
+                    <p className="truncate font-semibold text-slate-900">
+                      {selected.patientName}
+                    </p>
                     <p className="text-xs text-slate-500">
                       {selected.mrn} · {selected.age} yrs · {selected.gender}
                     </p>
@@ -427,9 +468,9 @@ export default function TriagePage() {
                           key={idx}
                           className="rounded-xl border border-slate-100 p-3 space-y-2"
                         >
-                          <div className="flex gap-2">
+                          <div className="flex min-w-0 flex-wrap gap-2">
                             <select
-                              className={inputClass}
+                              className={`min-w-0 flex-1 ${inputClass}`}
                               value={s.symptomId}
                               onChange={(e) => {
                                 const item = catalogue?.symptoms.find(
@@ -783,7 +824,7 @@ export default function TriagePage() {
                   </div>
                   <div>
                     <FieldLabel>Allergies</FieldLabel>
-                    <div className="mt-1 flex gap-2">
+                    <div className="mt-1 flex flex-wrap gap-2">
                       <button
                         type="button"
                         className={`rounded-full border px-3 py-1 text-xs ${
@@ -1113,24 +1154,52 @@ export default function TriagePage() {
 
               {error && <p className="mb-3 text-sm text-rose-500">{error}</p>}
 
-              <button
-                type="button"
-                disabled={
-                  submitBusy ||
-                  !coreVitalsComplete ||
-                  !doctorReady ||
-                  !clinicalReady
-                }
-                onClick={() => void submit()}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand-500 py-3 text-sm font-semibold text-white shadow-sm hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-40"
+              <div className="hidden md:block">
+                <button
+                  type="button"
+                  disabled={
+                    submitBusy ||
+                    !coreVitalsComplete ||
+                    !doctorReady ||
+                    !clinicalReady
+                  }
+                  onClick={() => void submit()}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand-500 py-3 text-sm font-semibold text-white shadow-sm hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {submitBusy ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                  {submitBusy ? "Sending…" : "Complete triage & send to doctor"}
+                </button>
+              </div>
+
+              <div
+                className={`sticky bottom-0 z-30 -mx-1 border-t border-slate-200 bg-white/95 px-4 pt-3 backdrop-blur md:hidden ${
+                  mobilePane === "intake" ? "" : "hidden"
+                }`}
+                style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
               >
-                {submitBusy ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Send className="h-4 w-4" />
-                )}
-                {submitBusy ? "Sending…" : "Complete triage & send to doctor"}
-              </button>
+                <button
+                  type="button"
+                  disabled={
+                    submitBusy ||
+                    !coreVitalsComplete ||
+                    !doctorReady ||
+                    !clinicalReady
+                  }
+                  onClick={() => void submit()}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand-500 py-3 text-sm font-semibold text-white shadow-sm hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {submitBusy ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                  {submitBusy ? "Sending…" : "Complete triage & send to doctor"}
+                </button>
+              </div>
             </>
           )}
         </div>

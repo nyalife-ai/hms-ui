@@ -10,6 +10,8 @@ import {
   useState,
 } from "react";
 
+import { VoiceNotePlayer } from "./voice-note-player";
+
 function pickMimeType(): string | undefined {
   const candidates = [
     "audio/webm;codecs=opus",
@@ -279,7 +281,13 @@ export const VoiceRecorder = forwardRef<VoiceRecorderHandle, VoiceRecorderProps>
     if (phase === "preview" && previewUrl && previewFile) {
       return (
         <div className="mb-2 flex flex-wrap items-center gap-2 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
-          <audio controls src={previewUrl} className="h-8 min-w-0 flex-1" />
+          <div className="min-w-0 flex-1">
+            <VoiceNotePlayer
+              src={previewUrl}
+              cacheKey={`preview-${previewFile.name}-${previewFile.size}`}
+              fileName={previewFile.name}
+            />
+          </div>
           <button
             type="button"
             onClick={discardPreview}
