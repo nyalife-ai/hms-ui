@@ -28,7 +28,7 @@ import type { LabRequestDetail } from "@/lib/lab-types";
 import { statusLabel } from "@/lib/lab-types";
 
 const inputClass =
-  "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 const STATUS_TONE: Record<string, BadgeTone> = {
   PENDING: "amber",
@@ -242,7 +242,7 @@ export default function LabRequestDetailPage() {
 
   return (
     <RoleGuard modules={["laboratory", "consultations", "appointments"]}>
-      <div className="mb-2 text-[11px] font-medium uppercase tracking-wide text-slate-400">
+      <div className="mb-2 text-[11px] font-medium uppercase tracking-wide text-foreground-lighter">
         Home / Laboratory / Requests / {detail?.requestNumber ?? "…"}
       </div>
       <PageHeader
@@ -265,14 +265,14 @@ export default function LabRequestDetailPage() {
                 type="button"
                 disabled={busy}
                 onClick={() => void printReport()}
-                className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-brand-300"
+                className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-foreground hover:border-brand-300"
               >
                 <Printer className="h-3.5 w-3.5" /> Print PDF
               </button>
             )}
             <Link
               href="/laboratory/requests"
-              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-brand-300"
+              className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-foreground hover:border-brand-300"
             >
               <ArrowLeft className="h-3.5 w-3.5" /> Back
             </Link>
@@ -284,7 +284,7 @@ export default function LabRequestDetailPage() {
       {loading && (
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-28 animate-pulse rounded-2xl bg-slate-100" />
+            <div key={i} className="h-28 animate-pulse rounded-2xl bg-surface-200" />
           ))}
         </div>
       )}
@@ -301,18 +301,18 @@ export default function LabRequestDetailPage() {
               { label: "Phone", value: detail.patientPhone || "—", sub: detail.patientEmail || undefined },
             ].map((s) => (
               <Card key={s.label} className="p-4">
-                <p className="text-xs text-slate-400">{s.label}</p>
+                <p className="text-xs text-foreground-lighter">{s.label}</p>
                 <div className="mt-1 flex flex-wrap items-center gap-1.5">
                   {"badge" in s && s.badge ? (
                     <Badge tone={STATUS_TONE[s.badge] ?? "slate"}>{s.value}</Badge>
                   ) : "badgeP" in s && s.badgeP ? (
                     <Badge tone={PRIORITY_TONE[s.badgeP] ?? "slate"}>{s.value}</Badge>
                   ) : (
-                    <p className="text-sm font-semibold text-slate-900">{s.value}</p>
+                    <p className="text-sm font-semibold text-foreground">{s.value}</p>
                   )}
                 </div>
                 {"sub" in s && s.sub && (
-                  <p className="mt-1 text-[11px] text-slate-400">{s.sub}</p>
+                  <p className="mt-1 text-[11px] text-foreground-lighter">{s.sub}</p>
                 )}
               </Card>
             ))}
@@ -346,12 +346,12 @@ export default function LabRequestDetailPage() {
                   { k: "Request date", v: formatDay(detail.requestDate) },
                 ].map((row) => (
                   <div key={row.k}>
-                    <dt className="text-xs text-slate-400">{row.k}</dt>
-                    <dd className="mt-0.5 font-medium text-slate-800">{row.v}</dd>
+                    <dt className="text-xs text-foreground-lighter">{row.k}</dt>
+                    <dd className="mt-0.5 font-medium text-foreground">{row.v}</dd>
                   </div>
                 ))}
               </dl>
-              <div className="border-t border-slate-100 px-5 py-4">
+              <div className="border-t border-border px-5 py-4">
                 <FieldLabel optional>Clinical notes</FieldLabel>
                 <textarea
                   className={`${inputClass} min-h-[80px]`}
@@ -361,7 +361,7 @@ export default function LabRequestDetailPage() {
                   placeholder="Requested during consultation…"
                 />
               </div>
-              <div className="flex flex-wrap gap-2 border-t border-slate-100 px-5 py-3">
+              <div className="flex flex-wrap gap-2 border-t border-border px-5 py-3">
                 {detail.consultationId && (
                   <Link
                     href={`/consultations`}
@@ -383,28 +383,28 @@ export default function LabRequestDetailPage() {
               <CardHeader title="Investigation parameters" subtitle={category} />
               <div className="space-y-3 px-5 pb-5">
                 {detail.orderedTestTypes.length === 0 ? (
-                  <p className="text-sm text-slate-400">No panels linked on this request.</p>
+                  <p className="text-sm text-foreground-lighter">No panels linked on this request.</p>
                 ) : (
                   detail.orderedTestTypes.map((panel) => (
                     <div
                       key={panel.id}
-                      className="rounded-xl border border-slate-100 bg-slate-50/60 p-3"
+                      className="rounded-xl border border-border bg-surface-200/60 p-3"
                     >
-                      <p className="text-sm font-semibold text-slate-800">{panel.testName}</p>
-                      <p className="mt-0.5 text-xs text-slate-400">
+                      <p className="text-sm font-semibold text-foreground">{panel.testName}</p>
+                      <p className="mt-0.5 text-xs text-foreground-lighter">
                         Standard diagnostic investigation protocol.
                       </p>
-                      <div className="mt-2 grid grid-cols-3 gap-2 text-[11px] text-slate-500">
+                      <div className="mt-2 grid grid-cols-3 gap-2 text-[11px] text-foreground-light">
                         <div>
-                          <span className="block text-slate-400">Parameters</span>
+                          <span className="block text-foreground-lighter">Parameters</span>
                           {panel.parameters.length}
                         </div>
                         <div>
-                          <span className="block text-slate-400">Ref. range</span>
+                          <span className="block text-foreground-lighter">Ref. range</span>
                           {panel.parameters[0]?.normalReferenceRange || "—"}
                         </div>
                         <div>
-                          <span className="block text-slate-400">Units</span>
+                          <span className="block text-foreground-lighter">Units</span>
                           {panel.parameters[0]?.unitOfMeasurement || "—"}
                         </div>
                       </div>
@@ -462,17 +462,17 @@ export default function LabRequestDetailPage() {
                 </div>
               )}
               {detail.samples.length === 0 ? (
-                <p className="text-sm text-slate-400">No samples yet.</p>
+                <p className="text-sm text-foreground-lighter">No samples yet.</p>
               ) : (
                 <ul className="space-y-2">
                   {detail.samples.map((s) => (
                     <li
                       key={s.id}
-                      className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-100 px-3 py-2 text-sm"
+                      className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border px-3 py-2 text-sm"
                     >
                       <span>
-                        <span className="font-medium text-slate-800">{s.sampleId}</span>
-                        <span className="text-slate-400">
+                        <span className="font-medium text-foreground">{s.sampleId}</span>
+                        <span className="text-foreground-lighter">
                           {" "}
                           · {s.sampleType} · {formatWhen(s.collectedAt)}
                         </span>
@@ -495,18 +495,18 @@ export default function LabRequestDetailPage() {
             <CardHeader title="Investigation findings" subtitle="Data entry → observations → conclusion" />
             <div className="space-y-5 px-5 pb-5">
               <div>
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-foreground-lighter">
                   1 · Data entry
                 </p>
                 {detail.resultEntryParameters.length === 0 ? (
-                  <p className="text-sm text-slate-400">No parameters to enter.</p>
+                  <p className="text-sm text-foreground-lighter">No parameters to enter.</p>
                 ) : (
                   <div className="space-y-3">
                     {detail.resultEntryParameters.map((p) => (
-                      <div key={p.id} className="rounded-xl bg-slate-50 p-3">
-                        <p className="text-sm font-medium text-slate-800">
+                      <div key={p.id} className="rounded-xl bg-surface-200 p-3">
+                        <p className="text-sm font-medium text-foreground">
                           {p.parameterName}{" "}
-                          <span className="text-xs font-normal text-slate-400">
+                          <span className="text-xs font-normal text-foreground-lighter">
                             ({p.testName} · {p.unitOfMeasurement || "—"} · ref{" "}
                             {p.normalReferenceRange || "—"})
                           </span>
@@ -556,7 +556,7 @@ export default function LabRequestDetailPage() {
               </div>
 
               <div>
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-foreground-lighter">
                   2 · Observations
                 </p>
                 <textarea
@@ -569,7 +569,7 @@ export default function LabRequestDetailPage() {
               </div>
 
               <div>
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-foreground-lighter">
                   3 · Conclusion
                 </p>
                 <textarea
@@ -582,12 +582,12 @@ export default function LabRequestDetailPage() {
               </div>
 
               <div>
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-foreground-lighter">
                   4 · Evidence upload
                 </p>
                 <input
                   type="file"
-                  className="block w-full text-sm text-slate-500 file:mr-3 file:rounded-full file:border-0 file:bg-brand-50 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-brand-700"
+                  className="block w-full text-sm text-foreground-light file:mr-3 file:rounded-full file:border-0 file:bg-brand-50 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-brand-700"
                   onChange={(e) => {
                     const f = e.target.files?.[0];
                     setEvidenceName(f?.name ?? "");
@@ -595,7 +595,7 @@ export default function LabRequestDetailPage() {
                   disabled={detail.status === "CANCELLED"}
                 />
                 {evidenceName && (
-                  <p className="mt-1 text-xs text-slate-500">Attached: {evidenceName}</p>
+                  <p className="mt-1 text-xs text-foreground-light">Attached: {evidenceName}</p>
                 )}
               </div>
 
@@ -623,13 +623,13 @@ export default function LabRequestDetailPage() {
             />
             <div className="px-5 pb-5">
               {detail.results.length === 0 ? (
-                <p className="text-sm text-slate-400">None yet.</p>
+                <p className="text-sm text-foreground-lighter">None yet.</p>
               ) : (
                 <ul className="space-y-2">
                   {detail.results.map((r) => (
                     <li
                       key={r.id}
-                      className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-100 px-3 py-2 text-sm"
+                      className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border px-3 py-2 text-sm"
                     >
                       <span>
                         {r.parameterName}: {r.resultValue}
@@ -655,7 +655,7 @@ export default function LabRequestDetailPage() {
                 </ul>
               )}
               {detail.status === "COMPLETED" && (
-                <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-slate-100 pt-4">
+                <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-border pt-4">
                   {detail.releasedToDoctor ? (
                     <Badge tone="green">
                       Sent to doctor
@@ -672,7 +672,7 @@ export default function LabRequestDetailPage() {
                       {busy ? "Sending…" : "Send to Doctor"}
                     </PrimaryButton>
                   )}
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-foreground-lighter">
                     Completing verification marks the test done. Send to Doctor
                     makes results available on the consultation Lab Report.
                   </p>

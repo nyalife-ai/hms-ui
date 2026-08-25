@@ -227,7 +227,7 @@ function ImageLightbox({
       {index > 0 ? (
         <button
           type="button"
-          className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-white/90 p-2 text-slate-700"
+          className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-white/90 p-2 text-foreground"
           onClick={(e) => {
             e.stopPropagation();
             onIndexChange(index - 1);
@@ -240,7 +240,7 @@ function ImageLightbox({
       {index < images.length - 1 ? (
         <button
           type="button"
-          className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-white/90 p-2 text-slate-700"
+          className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-white/90 p-2 text-foreground"
           onClick={(e) => {
             e.stopPropagation();
             onIndexChange(index + 1);
@@ -253,7 +253,7 @@ function ImageLightbox({
 
       <button
         type="button"
-        className="absolute right-4 top-4 rounded-full bg-white/90 p-2 text-slate-700"
+        className="absolute right-4 top-4 rounded-full bg-white/90 p-2 text-foreground"
         onClick={onClose}
         aria-label="Close preview"
       >
@@ -370,10 +370,10 @@ function MessageBubble({
         }
         className={`relative max-w-[min(85%,32rem)] rounded-2xl px-3.5 py-2.5 text-sm transition-[box-shadow,background-color,transform] duration-500 ${
           deleted
-            ? "bg-slate-50 italic text-slate-400"
+            ? "bg-surface-200 italic text-foreground-lighter"
             : mine
               ? "bg-brand-500 text-white"
-              : "bg-[#eef4f4] text-slate-700"
+              : "bg-[#eef4f4] text-foreground"
         } ${m.pending ? "opacity-70" : ""} ${
           highlighted
             ? mine
@@ -398,7 +398,7 @@ function MessageBubble({
         ) : null}
 
         {!mine && !deleted ? (
-          <p className="mb-1 text-[11px] font-semibold text-slate-500">
+          <p className="mb-1 text-[11px] font-semibold text-foreground-light">
             {m.senderName}
           </p>
         ) : null}
@@ -410,7 +410,7 @@ function MessageBubble({
             className={`mb-2 w-full rounded-lg border-l-2 px-2 py-1 text-left text-xs ${
               mine
                 ? "border-white/50 bg-white/15 text-white/90"
-                : "border-brand-400 bg-white/70 text-slate-500"
+                : "border-brand-400 bg-white/70 text-foreground-light"
             }`}
           >
             {replyPreview}
@@ -551,7 +551,7 @@ function MessageBubble({
                         : "bg-white/10 text-white/90"
                       : mineReact
                         ? "bg-brand-100 text-brand-800 ring-1 ring-brand-200"
-                        : "bg-white text-slate-600 ring-1 ring-slate-100"
+                        : "bg-white text-foreground-light ring-1 ring-slate-100"
                   }`}
                 >
                   {r.reactionType} {r.count}
@@ -564,10 +564,10 @@ function MessageBubble({
         <div
           className={`mt-1 flex items-center justify-end gap-1 text-[10px] ${
             deleted
-              ? "text-slate-400"
+              ? "text-foreground-lighter"
               : mine
                 ? "text-white/70"
-                : "text-slate-400"
+                : "text-foreground-lighter"
           }`}
         >
           {m.editedAt && !deleted ? <span>edited</span> : null}
@@ -682,7 +682,7 @@ export function ThreadView({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <header className="flex shrink-0 items-center gap-3 border-b border-slate-100 px-4 py-3">
+      <header className="flex shrink-0 items-center gap-3 border-b border-border px-4 py-3">
         {onBack ? (
           <button
             type="button"
@@ -695,8 +695,8 @@ export function ThreadView({
         ) : null}
         <Avatar name={title} size="sm" />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-slate-900">{title}</p>
-          <p className="truncate text-xs text-slate-400">
+          <p className="truncate text-sm font-semibold text-foreground">{title}</p>
+          <p className="truncate text-xs text-foreground-lighter">
             {conversation.type === "GROUP"
               ? `${conversation.participants.length} participants`
               : "Direct message"}
@@ -706,7 +706,7 @@ export function ThreadView({
           <button
             type="button"
             onClick={onMuteToggle}
-            className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:border-brand-300 hover:text-brand-700"
+            className="rounded-full border border-border px-3 py-1.5 text-xs font-medium text-foreground-light hover:border-brand-300 hover:text-brand-700"
             aria-label={muted ? "Unmute conversation" : "Mute conversation"}
             title={muted ? "Unmute" : "Mute"}
           >
@@ -717,7 +717,7 @@ export function ThreadView({
           <button
             type="button"
             onClick={onBack}
-            className="hidden rounded-lg p-1.5 text-slate-400 hover:bg-slate-50 lg:inline-flex"
+            className="hidden rounded-lg p-1.5 text-foreground-lighter hover:bg-surface-200 lg:inline-flex"
             aria-label="Close conversation"
             title="Close"
           >
@@ -745,7 +745,7 @@ export function ThreadView({
             {Array.from({ length: 4 }).map((_, i) => (
               <div
                 key={i}
-                className={`h-12 w-2/3 animate-pulse rounded-2xl bg-slate-100 ${
+                className={`h-12 w-2/3 animate-pulse rounded-2xl bg-surface-200 ${
                   i % 2 ? "ml-auto" : ""
                 }`}
               />
@@ -760,7 +760,7 @@ export function ThreadView({
         ) : null}
 
         {!loading && messages.length === 0 && !error ? (
-          <p className="py-10 text-center text-sm text-slate-400">
+          <p className="py-10 text-center text-sm text-foreground-lighter">
             No messages yet — say hello to start the conversation.
           </p>
         ) : null}
@@ -775,7 +775,7 @@ export function ThreadView({
             <div key={m.clientMessageId ?? m.id}>
               {showDate ? (
                 <div className="my-3 flex justify-center">
-                  <span className="rounded-full bg-white px-3 py-1 text-[11px] font-medium text-slate-500 shadow-sm ring-1 ring-slate-100">
+                  <span className="rounded-full bg-white px-3 py-1 text-[11px] font-medium text-foreground-light shadow-sm ring-1 ring-slate-100">
                     {formatDateSeparator(m.createdAt)}
                   </span>
                 </div>
@@ -797,7 +797,7 @@ export function ThreadView({
         })}
 
         {typingLabel ? (
-          <p className="px-1 pt-2 text-xs text-slate-400">{typingLabel}</p>
+          <p className="px-1 pt-2 text-xs text-foreground-lighter">{typingLabel}</p>
         ) : null}
         <div ref={bottomRef} />
       </div>

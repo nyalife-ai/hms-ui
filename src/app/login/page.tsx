@@ -9,7 +9,7 @@ import { useAuth } from "@/lib/auth";
 type Step = "login" | "forgot" | "otp" | "reset" | "done";
 
 const inputClass =
-  "mt-1.5 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20";
+  "mt-1.5 w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm text-foreground outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20";
 
 export default function LoginPage() {
   const { user, loginWithPassword, loading } = useAuth();
@@ -180,11 +180,11 @@ export default function LoginPage() {
           <h1 className="mt-8 text-2xl font-bold tracking-tight text-brand-600">
             Stay on Top of Every Detail
           </h1>
-          <p className="mt-3 max-w-sm text-sm text-slate-500">
+          <p className="mt-3 max-w-sm text-sm text-foreground-light">
             Sign in with your staff account.
           </p>
         </div>
-        <p className="absolute bottom-6 text-xs text-slate-400">
+        <p className="absolute bottom-6 text-xs text-foreground-lighter">
           © 2026 NyaLife Health
         </p>
       </div>
@@ -194,10 +194,10 @@ export default function LoginPage() {
           <div className="mb-6 flex justify-center lg:hidden">
             <BrandLogo height={48} priority />
           </div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900">
+          <h2 className="text-2xl font-bold tracking-tight text-foreground">
             {title}
           </h2>
-          <p className="mt-2 text-sm text-slate-500">{subtitle}</p>
+          <p className="mt-2 text-sm text-foreground-light">{subtitle}</p>
 
           {step === "login" && (
             <form
@@ -205,7 +205,7 @@ export default function LoginPage() {
               className="mt-8 space-y-4 text-left"
             >
               <div>
-                <label className="text-sm font-medium text-slate-700" htmlFor="email">
+                <label className="text-sm font-medium text-foreground" htmlFor="email">
                   Email
                 </label>
                 <input
@@ -221,7 +221,7 @@ export default function LoginPage() {
               <div>
                 <div className="flex items-center justify-between">
                   <label
-                    className="text-sm font-medium text-slate-700"
+                    className="text-sm font-medium text-foreground"
                     htmlFor="password"
                   >
                     Password
@@ -267,7 +267,7 @@ export default function LoginPage() {
               className="mt-8 space-y-4 text-left"
             >
               <div>
-                <label className="text-sm font-medium text-slate-700" htmlFor="forgot-email">
+                <label className="text-sm font-medium text-foreground" htmlFor="forgot-email">
                   Work email
                 </label>
                 <input
@@ -290,7 +290,7 @@ export default function LoginPage() {
               </button>
               <button
                 type="button"
-                className="w-full text-xs font-semibold text-slate-500 hover:text-slate-700"
+                className="w-full text-xs font-semibold text-foreground-light hover:text-foreground"
                 onClick={() => {
                   clearAlerts();
                   setStep("login");
@@ -308,7 +308,7 @@ export default function LoginPage() {
             >
               {info && <p className="text-xs font-medium text-emerald-600">{info}</p>}
               <div>
-                <label className="text-sm font-medium text-slate-700" htmlFor="otp">
+                <label className="text-sm font-medium text-foreground" htmlFor="otp">
                   6-digit code
                 </label>
                 <input
@@ -335,7 +335,7 @@ export default function LoginPage() {
               <div className="flex justify-between text-xs font-semibold">
                 <button
                   type="button"
-                  className="text-slate-500 hover:text-slate-700"
+                  className="text-foreground-light hover:text-foreground"
                   onClick={() => {
                     clearAlerts();
                     setStep("forgot");
@@ -362,7 +362,7 @@ export default function LoginPage() {
             >
               {info && <p className="text-xs font-medium text-emerald-600">{info}</p>}
               <div>
-                <label className="text-sm font-medium text-slate-700" htmlFor="new-password">
+                <label className="text-sm font-medium text-foreground" htmlFor="new-password">
                   New password
                 </label>
                 <input
@@ -378,7 +378,7 @@ export default function LoginPage() {
               </div>
               <div>
                 <label
-                  className="text-sm font-medium text-slate-700"
+                  className="text-sm font-medium text-foreground"
                   htmlFor="confirm-password"
                 >
                   Confirm password

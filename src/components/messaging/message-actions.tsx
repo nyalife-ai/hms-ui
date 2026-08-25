@@ -71,7 +71,7 @@ export function MessageActions({
   };
 
   const itemClass =
-    "flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50";
+    "flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-foreground hover:bg-surface-200";
 
   return (
     <div
@@ -93,7 +93,7 @@ export function MessageActions({
       onTouchMove={clearLongPress}
       onTouchCancel={clearLongPress}
     >
-      <div className="pointer-events-none absolute -top-1 right-1 z-10 hidden gap-0.5 rounded-full border border-slate-200 bg-white p-0.5 shadow-sm opacity-0 transition group-hover:pointer-events-auto group-hover:opacity-100 sm:flex">
+      <div className="pointer-events-none absolute -top-1 right-1 z-10 hidden gap-0.5 rounded-full border border-border bg-white p-0.5 shadow-sm opacity-0 transition group-hover:pointer-events-auto group-hover:opacity-100 sm:flex">
         <IconBtn label="Reply" onClick={handlers.onReply}>
           <Reply className="h-3.5 w-3.5" />
         </IconBtn>
@@ -124,7 +124,7 @@ export function MessageActions({
       {open && pos ? (
         <div
           role="menu"
-          className="fixed z-[60] min-w-[168px] overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg"
+          className="fixed z-[60] min-w-[168px] overflow-hidden rounded-xl border border-border bg-white py-1 shadow-lg"
           style={{
             left: Math.min(pos.x, window.innerWidth - 190),
             top: Math.min(pos.y, window.innerHeight - 240),
@@ -137,7 +137,7 @@ export function MessageActions({
                   key={emoji}
                   type="button"
                   role="menuitem"
-                  className="rounded-lg px-2 py-1 text-lg hover:bg-slate-50"
+                  className="rounded-lg px-2 py-1 text-lg hover:bg-surface-200"
                   aria-label={`React with ${emoji}`}
                   onClick={() => {
                     handlers.onReact(emoji);
@@ -200,8 +200,8 @@ function IconBtn({
       aria-label={label}
       className={`rounded-full p-1.5 ${
         danger
-          ? "text-slate-500 hover:bg-rose-50 hover:text-rose-600"
-          : "text-slate-500 hover:bg-slate-50 hover:text-brand-600"
+          ? "text-foreground-light hover:bg-rose-50 hover:text-rose-600"
+          : "text-foreground-light hover:bg-surface-200 hover:text-brand-600"
       }`}
       onClick={(e) => {
         e.stopPropagation();
@@ -220,7 +220,7 @@ export function DeliveryTicks({
   status: string | null | undefined;
   light?: boolean;
 }) {
-  const muted = light ? "text-white/70" : "text-slate-400";
+  const muted = light ? "text-white/70" : "text-foreground-lighter";
   if (status === "READ") {
     return (
       <span title="Read" aria-label="Read" className="inline-flex">

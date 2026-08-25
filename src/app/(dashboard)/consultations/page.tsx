@@ -44,7 +44,7 @@ import {
 } from "@/lib/visits";
 
 const inputClass =
-  "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground placeholder:text-foreground-lighter focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 const DOCTOR_STAGES = ["WAITING_DOCTOR", "IN_CONSULTATION", "LAB_PENDING", "RESULTS_READY"] as const;
 const ACTIVE_CONSULT_STAGES = ["IN_CONSULTATION", "LAB_PENDING", "RESULTS_READY"] as const;
@@ -153,25 +153,25 @@ function SelectedList({
   onRemove: (id: string) => void;
 }) {
   if (items.length === 0) {
-    return <p className="mt-2 text-xs text-slate-400">{empty}</p>;
+    return <p className="mt-2 text-xs text-foreground-lighter">{empty}</p>;
   }
   return (
     <ul className="mt-2 space-y-1.5">
       {items.map((item) => (
         <li
           key={item.id}
-          className="flex items-center justify-between gap-2 rounded-xl bg-slate-50 px-3 py-2 text-sm"
+          className="flex items-center justify-between gap-2 rounded-xl bg-surface-200 px-3 py-2 text-sm"
         >
           <div className="min-w-0">
-            <p className="truncate font-medium text-slate-800">{item.label}</p>
+            <p className="truncate font-medium text-foreground">{item.label}</p>
             {item.meta && (
-              <p className="truncate text-[11px] text-slate-400">{item.meta}</p>
+              <p className="truncate text-[11px] text-foreground-lighter">{item.meta}</p>
             )}
           </div>
           <button
             type="button"
             onClick={() => onRemove(item.id)}
-            className="shrink-0 rounded-lg p-1.5 text-slate-300 hover:bg-white hover:text-rose-500"
+            className="shrink-0 rounded-lg p-1.5 text-foreground-muted hover:bg-white hover:text-rose-500"
             aria-label={`Remove ${item.label}`}
           >
             <Trash2 className="h-3.5 w-3.5" />
@@ -477,7 +477,7 @@ export default function ConsultationsPage() {
               subtitle="After you complete a consult they leave your queue — next desk is here"
             />
             {dispatched.length === 0 ? (
-              <p className="px-5 pb-5 text-sm text-slate-400">
+              <p className="px-5 pb-5 text-sm text-foreground-lighter">
                 No patients waiting at pharmacy or billing yet.
               </p>
             ) : (
@@ -490,10 +490,10 @@ export default function ConsultationsPage() {
                       className="flex items-start justify-between gap-3 px-3 py-3"
                     >
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-slate-800">
+                        <p className="truncate text-sm font-semibold text-foreground">
                           {v.patientName}
                         </p>
-                        <p className="text-xs text-slate-400">
+                        <p className="text-xs text-foreground-lighter">
                           {v.mrn}
                           {v.pharmacy?.prescriptionNumber
                             ? ` · Rx ${v.pharmacy.prescriptionNumber}`
@@ -514,9 +514,9 @@ export default function ConsultationsPage() {
                         </div>
                       </div>
                       <div className="flex shrink-0 items-start gap-1">
-                        <div className="flex flex-col items-end gap-1 text-[11px] text-slate-400">
+                        <div className="flex flex-col items-end gap-1 text-[11px] text-foreground-lighter">
                           <span>Next desk</span>
-                          <span className="font-medium text-slate-600">
+                          <span className="font-medium text-foreground-light">
                             {stops.join(" → ")}
                           </span>
                         </div>
@@ -561,7 +561,7 @@ export default function ConsultationsPage() {
                   <div className="flex items-center gap-2">
                     <Link
                       href={`/consultations/${selected.id}`}
-                      className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-brand-300"
+                      className="rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-foreground hover:border-brand-300"
                     >
                       Journey
                     </Link>
@@ -589,7 +589,7 @@ export default function ConsultationsPage() {
                       {selected.triagePriority || selected.triage?.priority}
                     </Badge>
                     {selected.triage?.priorityReason && (
-                      <span className="text-xs text-slate-500">
+                      <span className="text-xs text-foreground-light">
                         {selected.triage.priorityReason}
                       </span>
                     )}
@@ -619,7 +619,7 @@ export default function ConsultationsPage() {
                       type="button"
                       onClick={() => void persistNotes()}
                       disabled={savingNotes}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-border bg-white px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-surface-200 disabled:opacity-50"
                     >
                       <Save className="h-3.5 w-3.5" />
                       {savingNotes ? "Saving…" : "Save notes"}
@@ -628,7 +628,7 @@ export default function ConsultationsPage() {
                 />
                 <div className="px-5 pb-5">
                   {saveMsg && (
-                    <p className="mb-3 text-xs text-slate-500">{saveMsg}</p>
+                    <p className="mb-3 text-xs text-foreground-light">{saveMsg}</p>
                   )}
                   <ConsultationClinicalForm
                     value={clinical}
@@ -654,10 +654,10 @@ export default function ConsultationsPage() {
                     ))}
                   </ul>
                   {selected.labOrder.notes && (
-                    <p className="mt-3 text-xs text-slate-400">Notes to lab: {selected.labOrder.notes}</p>
+                    <p className="mt-3 text-xs text-foreground-lighter">Notes to lab: {selected.labOrder.notes}</p>
                   )}
                   {labReportLoading && (
-                    <p className="mt-3 text-xs text-slate-400">Checking for released results…</p>
+                    <p className="mt-3 text-xs text-foreground-lighter">Checking for released results…</p>
                   )}
                 </div>
               </Card>
@@ -680,7 +680,7 @@ export default function ConsultationsPage() {
                 <div className="px-5 pb-5">
                   <table className="w-full text-left text-sm">
                     <thead>
-                      <tr className="text-xs text-slate-400">
+                      <tr className="text-xs text-foreground-lighter">
                         <th className="pb-2 font-medium">Test</th>
                         <th className="pb-2 font-medium">Result</th>
                         <th className="pb-2 font-medium">Reference Range</th>
@@ -688,11 +688,11 @@ export default function ConsultationsPage() {
                     </thead>
                     <tbody>
                       {labReport.lines.map((t) => (
-                        <tr key={t.id} className="border-t border-slate-50">
-                          <td className="py-2.5 font-medium text-slate-800">
+                        <tr key={t.id} className="border-t border-border">
+                          <td className="py-2.5 font-medium text-foreground">
                             {t.parameterName ?? t.testName ?? "—"}
                             {t.testName && t.parameterName ? (
-                              <span className="block text-xs font-normal text-slate-400">
+                              <span className="block text-xs font-normal text-foreground-lighter">
                                 {t.testName}
                               </span>
                             ) : null}
@@ -701,7 +701,7 @@ export default function ConsultationsPage() {
                             {t.resultValue ?? "—"}
                             {t.unitOfMeasurement ? ` ${t.unitOfMeasurement}` : ""}
                           </td>
-                          <td className="py-2.5 text-slate-400">
+                          <td className="py-2.5 text-foreground-lighter">
                             {t.normalReferenceRange ?? "—"}
                           </td>
                         </tr>
@@ -709,7 +709,7 @@ export default function ConsultationsPage() {
                     </tbody>
                   </table>
                   {(labReport.observations || labReport.conclusion) && (
-                    <p className="mt-3 rounded-xl bg-[#f3f7f7] px-3.5 py-2.5 text-xs text-slate-500">
+                    <p className="mt-3 rounded-xl bg-[#f3f7f7] px-3.5 py-2.5 text-xs text-foreground-light">
                       {[labReport.observations, labReport.conclusion]
                         .filter(Boolean)
                         .join(" · ")}
@@ -739,7 +739,7 @@ export default function ConsultationsPage() {
                   action={<Badge tone="amber">Not released</Badge>}
                 />
                 <div className="px-5 pb-5">
-                  <p className="text-sm text-slate-500">
+                  <p className="text-sm text-foreground-light">
                     Results are not yet released to the consultation. Ask the laboratory
                     to use <span className="font-semibold">Send to Doctor</span> after
                     verification.
@@ -765,7 +765,7 @@ export default function ConsultationsPage() {
                 />
                 <div className="grid grid-cols-1 gap-5 px-5 pb-5 lg:grid-cols-3">
                   <div>
-                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-foreground-light">
                       Laboratory tests
                     </p>
                     <SearchablePicker
@@ -823,7 +823,7 @@ export default function ConsultationsPage() {
                   </div>
 
                   <div>
-                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-foreground-light">
                       Services & procedures
                     </p>
                     <SearchablePicker
@@ -852,7 +852,7 @@ export default function ConsultationsPage() {
                   </div>
 
                   <div>
-                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-foreground-light">
                       Surgeries
                     </p>
                     <SearchablePicker
@@ -880,7 +880,7 @@ export default function ConsultationsPage() {
                     />
                   </div>
                 </div>
-                <p className="px-5 pb-5 text-[11px] text-slate-400">
+                <p className="px-5 pb-5 text-[11px] text-foreground-lighter">
                   Selected services and surgeries are billed on the patient invoice when you complete the consultation.
                 </p>
               </Card>
@@ -893,8 +893,8 @@ export default function ConsultationsPage() {
                   subtitle="Search medications · choose frequency (OD / BD / TDS / QDS / PRN / STAT)"
                 />
                 <div className="space-y-4 px-5 pb-5">
-                  <div className="rounded-xl bg-slate-50 px-3.5 py-2.5 text-sm text-slate-600">
-                    <p className="text-xs font-semibold text-slate-500">Diagnosis for completion</p>
+                  <div className="rounded-xl bg-surface-200 px-3.5 py-2.5 text-sm text-foreground-light">
+                    <p className="text-xs font-semibold text-foreground-light">Diagnosis for completion</p>
                     <p className="mt-1 whitespace-pre-wrap">
                       {diagnosisText || "Add an impression / diagnosis in the clinical form above."}
                     </p>
@@ -902,7 +902,7 @@ export default function ConsultationsPage() {
 
                   <div>
                     <div className="mb-2 flex items-center justify-between gap-2">
-                      <label className="text-xs font-semibold text-slate-600">Prescriptions</label>
+                      <label className="text-xs font-semibold text-foreground-light">Prescriptions</label>
                       <button
                         type="button"
                         onClick={() => addPrescription()}
@@ -917,7 +917,7 @@ export default function ConsultationsPage() {
                       onSelect={(opt) => addPrescription({ id: opt.id, label: opt.label })}
                     />
                     {prescriptions.length === 0 && (
-                      <p className="mt-2 text-xs text-slate-400">No medication added — optional.</p>
+                      <p className="mt-2 text-xs text-foreground-lighter">No medication added — optional.</p>
                     )}
                     <div className="mt-2 space-y-2">
                       {prescriptions.map((p, i) => (
@@ -981,7 +981,7 @@ export default function ConsultationsPage() {
                             onClick={() =>
                               setPrescriptions(prescriptions.filter((_, idx) => idx !== i))
                             }
-                            className="self-center rounded-lg p-2 text-slate-300 hover:bg-white hover:text-rose-500"
+                            className="self-center rounded-lg p-2 text-foreground-muted hover:bg-white hover:text-rose-500"
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -991,7 +991,7 @@ export default function ConsultationsPage() {
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-slate-600">Follow-up date (optional)</label>
+                    <label className="text-xs font-semibold text-foreground-light">Follow-up date (optional)</label>
                     <input
                       type="date"
                       className={`mt-1.5 ${inputClass} sm:max-w-56`}
@@ -1010,7 +1010,7 @@ export default function ConsultationsPage() {
                       ? "Complete — send to Pharmacy & Billing"
                       : "Complete & Send to Billing"}
                   </button>
-                  <p className="text-center text-[11px] text-slate-400">
+                  <p className="text-center text-[11px] text-foreground-lighter">
                     Labs already sent stay on the lab desk. Services, surgeries, and meds bill on completion.
                   </p>
                 </div>
@@ -1018,7 +1018,7 @@ export default function ConsultationsPage() {
             )}
           </div>
         ) : (
-          <Card className="flex min-h-64 items-center justify-center p-10 text-sm text-slate-400">
+          <Card className="flex min-h-64 items-center justify-center p-10 text-sm text-foreground-lighter">
             Select a patient from your queue to begin.
           </Card>
         )}

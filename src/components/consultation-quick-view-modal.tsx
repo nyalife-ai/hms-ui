@@ -54,14 +54,14 @@ export function ConsultationQuickViewModal({
   }, [visit.id]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4 backdrop-blur-[1px]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4 backdrop-blur-[1px]">
       <div className="flex max-h-[90vh] w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-xl">
-        <aside className="flex w-[220px] shrink-0 flex-col border-r border-slate-100 bg-[#faf7f9]">
+        <aside className="flex w-[220px] shrink-0 flex-col border-r border-border bg-[#faf7f9]">
           <div className="px-4 pb-3 pt-5">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-brand-600">
               Consultation
             </p>
-            <h2 className="mt-1 text-base font-bold text-slate-900">
+            <h2 className="mt-1 text-base font-bold text-foreground">
               Visit: {firstName}
             </h2>
           </div>
@@ -84,11 +84,11 @@ export function ConsultationQuickViewModal({
                   className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm transition ${
                     active
                       ? "bg-white font-semibold text-brand-700 shadow-sm"
-                      : "font-medium text-slate-600 hover:bg-white/70"
+                      : "font-medium text-foreground-light hover:bg-white/70"
                   }`}
                 >
                   <Icon
-                    className={`h-4 w-4 ${active ? "text-brand-600" : "text-slate-400"}`}
+                    className={`h-4 w-4 ${active ? "text-brand-600" : "text-foreground-lighter"}`}
                   />
                   {item.label}
                 </button>
@@ -98,7 +98,7 @@ export function ConsultationQuickViewModal({
           <button
             type="button"
             onClick={onClose}
-            className="m-3 inline-flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-800"
+            className="m-3 inline-flex items-center gap-1 text-xs font-medium text-foreground-light hover:text-foreground"
           >
             <ChevronLeft className="h-3.5 w-3.5" /> Back to List
           </button>
@@ -109,7 +109,7 @@ export function ConsultationQuickViewModal({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="absolute right-4 top-4 text-slate-400 hover:text-slate-700"
+            className="absolute right-4 top-4 text-foreground-lighter hover:text-foreground"
           >
             <X className="h-4 w-4" />
           </button>
@@ -118,8 +118,8 @@ export function ConsultationQuickViewModal({
             <div className="space-y-4 pr-6">
               <div className="flex items-center justify-between gap-2">
                 <div>
-                  <p className="text-sm font-semibold text-slate-900">{visit.patientName}</p>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-sm font-semibold text-foreground">{visit.patientName}</p>
+                  <p className="text-xs text-foreground-lighter">
                     {visit.mrn} · {visit.age} yrs · {visit.gender}
                   </p>
                 </div>
@@ -130,20 +130,20 @@ export function ConsultationQuickViewModal({
               <PaymentInfo visit={visit} />
               {visit.reasonForVisit && (
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-foreground-lighter">
                     Reason for visit
                   </p>
-                  <p className="mt-2 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                  <p className="mt-2 rounded-xl bg-surface-200 px-4 py-3 text-sm text-foreground">
                     {visit.reasonForVisit}
                   </p>
                 </div>
               )}
               {visit.additionalNotes && (
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-foreground-lighter">
                     Reception notes
                   </p>
-                  <p className="mt-2 whitespace-pre-wrap rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                  <p className="mt-2 whitespace-pre-wrap rounded-xl bg-surface-200 px-4 py-3 text-sm text-foreground">
                     {visit.additionalNotes}
                   </p>
                 </div>
@@ -151,7 +151,7 @@ export function ConsultationQuickViewModal({
               <VitalsGrid visit={visit} />
               <Link
                 href={consultationJourneyHref(visit.id)}
-                className="inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-800 hover:border-brand-300 hover:text-brand-700"
+                className="inline-flex items-center justify-center rounded-xl border border-border px-4 py-2 text-sm font-semibold text-foreground hover:border-brand-300 hover:text-brand-700"
               >
                 View Full Records
               </Link>
@@ -160,21 +160,21 @@ export function ConsultationQuickViewModal({
 
           {tab === "clinical" && (
             <div className="pr-6">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-foreground-lighter">
                 Consultation data
               </p>
               {!clinical?.chiefComplaint &&
               !clinical?.impression &&
               !visit.diagnosis &&
               !clinical?.historyPresentIllness ? (
-                <div className="mt-4 flex min-h-48 flex-col items-center justify-center rounded-xl border border-slate-200 bg-slate-50 px-6 text-center">
-                  <FilePlus2 className="mb-3 h-10 w-10 text-slate-300" />
-                  <p className="text-sm font-semibold text-slate-700">
+                <div className="mt-4 flex min-h-48 flex-col items-center justify-center rounded-xl border border-border bg-surface-200 px-6 text-center">
+                  <FilePlus2 className="mb-3 h-10 w-10 text-foreground-muted" />
+                  <p className="text-sm font-semibold text-foreground">
                     No clinical notes recorded yet.
                   </p>
                 </div>
               ) : (
-                <div className="mt-4 space-y-3 text-sm text-slate-700">
+                <div className="mt-4 space-y-3 text-sm text-foreground">
                   {clinical?.chiefComplaint && (
                     <NoteBlock title="Chief complaint" text={clinical.chiefComplaint} />
                   )}
@@ -200,18 +200,18 @@ export function ConsultationQuickViewModal({
 
           {tab === "labs" && (
             <div className="pr-6">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-foreground-lighter">
                 Laboratory
               </p>
               {!visit.labOrder?.tests?.length && !(labReport?.lines.length) ? (
-                <div className="mt-4 flex min-h-48 flex-col items-center justify-center rounded-xl border border-slate-200 bg-slate-50 px-6 text-center">
-                  <FlaskConical className="mb-3 h-10 w-10 text-slate-300" />
-                  <p className="text-sm font-semibold text-slate-700">
+                <div className="mt-4 flex min-h-48 flex-col items-center justify-center rounded-xl border border-border bg-surface-200 px-6 text-center">
+                  <FlaskConical className="mb-3 h-10 w-10 text-foreground-muted" />
+                  <p className="text-sm font-semibold text-foreground">
                     No lab requests for this visit.
                   </p>
                 </div>
               ) : (
-                <ul className="mt-4 divide-y divide-slate-100 rounded-xl border border-slate-100">
+                <ul className="mt-4 divide-y divide-border rounded-xl border border-border">
                   {(labReport?.released && labReport.lines.length
                     ? labReport.lines.map((l) => ({
                         key: l.id,
@@ -233,8 +233,8 @@ export function ConsultationQuickViewModal({
                       className="flex items-start justify-between gap-3 px-4 py-3 text-sm"
                     >
                       <div>
-                        <p className="font-semibold text-slate-800">{row.name}</p>
-                        <p className="text-xs text-slate-400">{row.range}</p>
+                        <p className="font-semibold text-foreground">{row.name}</p>
+                        <p className="text-xs text-foreground-lighter">{row.range}</p>
                       </div>
                       <Badge tone={row.result ? "green" : "amber"}>
                         {row.result || (labReport?.released ? "Released" : "Pending")}
@@ -258,22 +258,22 @@ export function ConsultationQuickViewModal({
 
           {tab === "prescriptions" && (
             <div className="pr-6">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-foreground-lighter">
                 Medical orders
               </p>
               {!visit.prescriptions?.length ? (
-                <div className="mt-4 flex min-h-48 flex-col items-center justify-center rounded-xl border border-slate-200 bg-slate-50 px-6 text-center">
-                  <Pill className="mb-3 h-10 w-10 text-slate-300" />
-                  <p className="text-sm font-semibold text-slate-700">
+                <div className="mt-4 flex min-h-48 flex-col items-center justify-center rounded-xl border border-border bg-surface-200 px-6 text-center">
+                  <Pill className="mb-3 h-10 w-10 text-foreground-muted" />
+                  <p className="text-sm font-semibold text-foreground">
                     No prescriptions found for this visit.
                   </p>
                 </div>
               ) : (
-                <ul className="mt-4 divide-y divide-slate-100 rounded-xl border border-slate-100">
+                <ul className="mt-4 divide-y divide-border rounded-xl border border-border">
                   {visit.prescriptions.map((rx, i) => (
                     <li key={`${rx.medication}-${i}`} className="px-4 py-3 text-sm">
-                      <p className="font-semibold text-slate-800">{rx.medication}</p>
-                      <p className="text-xs text-slate-400">
+                      <p className="font-semibold text-foreground">{rx.medication}</p>
+                      <p className="text-xs text-foreground-lighter">
                         {[rx.dosage, rx.frequency, rx.duration].filter(Boolean).join(" · ")}
                       </p>
                     </li>
@@ -300,8 +300,8 @@ export function ConsultationQuickViewModal({
 
 function NoteBlock({ title, text }: { title: string; text: string }) {
   return (
-    <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 whitespace-pre-wrap">
-      <p className="mb-1 text-[10px] font-semibold uppercase text-slate-400">{title}</p>
+    <div className="rounded-xl border border-border bg-surface-200 px-4 py-3 whitespace-pre-wrap">
+      <p className="mb-1 text-[10px] font-semibold uppercase text-foreground-lighter">{title}</p>
       {text}
     </div>
   );

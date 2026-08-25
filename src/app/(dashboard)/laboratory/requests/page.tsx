@@ -30,7 +30,7 @@ import { statusLabel } from "@/lib/lab-types";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 
 const inputClass =
-  "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 const STATUS_TONE: Record<string, BadgeTone> = {
   PENDING: "amber",
@@ -253,7 +253,7 @@ export default function LabRequestsPage() {
 
   return (
     <RoleGuard module="laboratory">
-      <div className="mb-2 text-[11px] font-medium uppercase tracking-wide text-slate-400">
+      <div className="mb-2 text-[11px] font-medium uppercase tracking-wide text-foreground-lighter">
         Home / Laboratory / Requests
       </div>
       <PageHeader
@@ -267,14 +267,14 @@ export default function LabRequestsPage() {
         }
         action={
           <div className="flex flex-wrap items-center gap-2">
-            <div className="inline-flex rounded-full border border-slate-200 p-0.5">
+            <div className="inline-flex rounded-full border border-border p-0.5">
               <button
                 type="button"
                 onClick={() => setView("list")}
                 className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ${
                   view === "list"
                     ? "bg-brand-500 text-white"
-                    : "text-slate-600 hover:bg-slate-50"
+                    : "text-foreground-light hover:bg-surface-200"
                 }`}
               >
                 <List className="h-3.5 w-3.5" /> List
@@ -285,7 +285,7 @@ export default function LabRequestsPage() {
                 className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ${
                   view === "calendar"
                     ? "bg-brand-500 text-white"
-                    : "text-slate-600 hover:bg-slate-50"
+                    : "text-foreground-light hover:bg-surface-200"
                 }`}
               >
                 <CalendarDays className="h-3.5 w-3.5" /> Calendar
@@ -346,13 +346,13 @@ export default function LabRequestsPage() {
           <CardHeader title="Requests" subtitle={`${total.toLocaleString()} total`} />
           <Table headers={["Request", "Patient", "Doctor", "Priority", "Status", "Date", ""]}>
             {rows.map((r) => (
-              <tr key={r.id} className="hover:bg-slate-50/60">
-                <td className="px-5 py-3.5 font-medium text-slate-800">{r.requestNumber}</td>
-                <td className="px-5 py-3.5 text-slate-500">
+              <tr key={r.id} className="hover:bg-surface-200/60">
+                <td className="px-5 py-3.5 font-medium text-foreground">{r.requestNumber}</td>
+                <td className="px-5 py-3.5 text-foreground-light">
                   {r.patientName}
-                  <span className="block text-xs text-slate-400">{r.mrn}</span>
+                  <span className="block text-xs text-foreground-lighter">{r.mrn}</span>
                 </td>
-                <td className="px-5 py-3.5 text-slate-500">{r.requestingDoctor || "—"}</td>
+                <td className="px-5 py-3.5 text-foreground-light">{r.requestingDoctor || "—"}</td>
                 <td className="px-5 py-3.5">
                   <Badge tone={PRIORITY_TONE[r.priority] ?? "slate"}>{r.priority}</Badge>
                 </td>
@@ -361,14 +361,14 @@ export default function LabRequestsPage() {
                     {statusLabel(r.status)}
                   </Badge>
                 </td>
-                <td className="px-5 py-3.5 text-slate-500 text-xs">
+                <td className="px-5 py-3.5 text-foreground-light text-xs">
                   {r.requestDate.slice(0, 10)}
                 </td>
                 <td className="px-5 py-3.5">
                   <div className="flex gap-2">
                     <Link
                       href={`/laboratory/requests/${r.id}`}
-                      className="rounded-full border px-3 py-1 text-xs font-medium text-slate-700 hover:border-brand-300"
+                      className="rounded-full border px-3 py-1 text-xs font-medium text-foreground hover:border-brand-300"
                     >
                       Open
                     </Link>
@@ -392,11 +392,11 @@ export default function LabRequestsPage() {
 
       {view === "calendar" && (
         <Card className="overflow-hidden">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-4 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                className="rounded-full border border-slate-200 p-1.5 text-slate-500 hover:bg-slate-50"
+                className="rounded-full border border-border p-1.5 text-foreground-light hover:bg-surface-200"
                 onClick={() => {
                   if (calendarMode === "month") setCursor((c) => addMonths(c, -1));
                   else if (calendarMode === "week") setCursor((c) => addDays(c, -7));
@@ -407,7 +407,7 @@ export default function LabRequestsPage() {
               </button>
               <button
                 type="button"
-                className="rounded-full border border-slate-200 p-1.5 text-slate-500 hover:bg-slate-50"
+                className="rounded-full border border-border p-1.5 text-foreground-light hover:bg-surface-200"
                 onClick={() => {
                   if (calendarMode === "month") setCursor((c) => addMonths(c, 1));
                   else if (calendarMode === "week") setCursor((c) => addDays(c, 7));
@@ -416,7 +416,7 @@ export default function LabRequestsPage() {
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
-              <p className="text-sm font-semibold text-slate-800">
+              <p className="text-sm font-semibold text-foreground">
                 {calendarMode === "month"
                   ? formatMonthLabel(cursor)
                   : calendarMode === "week"
@@ -424,7 +424,7 @@ export default function LabRequestsPage() {
                     : selectedDate}
               </p>
             </div>
-            <div className="inline-flex rounded-full border border-slate-200 p-0.5">
+            <div className="inline-flex rounded-full border border-border p-0.5">
               {(["month", "week", "day"] as CalendarMode[]).map((mode) => (
                 <button
                   key={mode}
@@ -433,7 +433,7 @@ export default function LabRequestsPage() {
                   className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${
                     calendarMode === mode
                       ? "bg-brand-500 text-white"
-                      : "text-slate-600 hover:bg-slate-50"
+                      : "text-foreground-light hover:bg-surface-200"
                   }`}
                 >
                   {mode}
@@ -443,15 +443,15 @@ export default function LabRequestsPage() {
           </div>
 
           {calendarLoading && (
-            <p className="px-4 py-3 text-xs text-slate-400">Loading calendar…</p>
+            <p className="px-4 py-3 text-xs text-foreground-lighter">Loading calendar…</p>
           )}
 
           {calendarMode === "month" && (
-            <div className="grid grid-cols-7 gap-px bg-slate-100 p-px">
+            <div className="grid grid-cols-7 gap-px bg-surface-200 p-px">
               {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
                 <div
                   key={d}
-                  className="bg-slate-50 px-2 py-2 text-center text-[10px] font-semibold uppercase text-slate-400"
+                  className="bg-surface-200 px-2 py-2 text-center text-[10px] font-semibold uppercase text-foreground-lighter"
                 >
                   {d}
                 </div>
@@ -473,7 +473,7 @@ export default function LabRequestsPage() {
                       inMonth ? "" : "opacity-40"
                     } ${isSelected ? "ring-2 ring-inset ring-brand-400" : ""}`}
                   >
-                    <span className="text-xs font-semibold text-slate-700">
+                    <span className="text-xs font-semibold text-foreground">
                       {day.getDate()}
                     </span>
                     <div className="mt-1 space-y-0.5">
@@ -488,7 +488,7 @@ export default function LabRequestsPage() {
                         </Link>
                       ))}
                       {items.length > 3 && (
-                        <span className="text-[10px] text-slate-400">
+                        <span className="text-[10px] text-foreground-lighter">
                           +{items.length - 3} more
                         </span>
                       )}
@@ -506,8 +506,8 @@ export default function LabRequestsPage() {
                   const key = toYmd(day);
                   const items = byDate.get(key) ?? [];
                   return (
-                    <div key={key} className="rounded-xl border border-slate-100 p-2">
-                      <p className="text-xs font-semibold text-slate-700">
+                    <div key={key} className="rounded-xl border border-border p-2">
+                      <p className="text-xs font-semibold text-foreground">
                         {day.toLocaleDateString(undefined, {
                           weekday: "short",
                           month: "short",
@@ -519,16 +519,16 @@ export default function LabRequestsPage() {
                           <Link
                             key={r.id}
                             href={`/laboratory/requests/${r.id}`}
-                            className="block rounded-lg bg-slate-50 px-2 py-1.5 text-[11px] hover:bg-brand-50"
+                            className="block rounded-lg bg-surface-200 px-2 py-1.5 text-[11px] hover:bg-brand-50"
                           >
-                            <span className="font-semibold text-slate-800">
+                            <span className="font-semibold text-foreground">
                               {r.requestNumber}
                             </span>
-                            <span className="block text-slate-400">{r.patientName}</span>
+                            <span className="block text-foreground-lighter">{r.patientName}</span>
                           </Link>
                         ))}
                         {!items.length && (
-                          <p className="text-[11px] text-slate-300">No requests</p>
+                          <p className="text-[11px] text-foreground-muted">No requests</p>
                         )}
                       </div>
                     </div>
@@ -540,7 +540,7 @@ export default function LabRequestsPage() {
 
           {calendarMode === "day" && (
             <div className="p-4">
-              <p className="mb-3 text-sm font-semibold text-slate-800">
+              <p className="mb-3 text-sm font-semibold text-foreground">
                 {new Date(selectedDate + "T12:00:00").toLocaleDateString(undefined, {
                   weekday: "long",
                   month: "long",
@@ -559,7 +559,7 @@ export default function LabRequestsPage() {
                       className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
                         key === selectedDate
                           ? "bg-brand-500 text-white"
-                          : "bg-slate-100 text-slate-600"
+                          : "bg-surface-200 text-foreground-light"
                       }`}
                     >
                       {d.getDate()}
@@ -572,13 +572,13 @@ export default function LabRequestsPage() {
                   <li key={r.id}>
                     <Link
                       href={`/laboratory/requests/${r.id}`}
-                      className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-100 px-3 py-2.5 hover:border-brand-200"
+                      className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border px-3 py-2.5 hover:border-brand-200"
                     >
                       <div>
-                        <p className="text-sm font-semibold text-slate-800">
+                        <p className="text-sm font-semibold text-foreground">
                           {r.requestNumber}
                         </p>
-                        <p className="text-xs text-slate-400">
+                        <p className="text-xs text-foreground-lighter">
                           {r.patientName} · {r.mrn}
                         </p>
                       </div>
@@ -594,7 +594,7 @@ export default function LabRequestsPage() {
                   </li>
                 ))}
                 {(byDate.get(selectedDate) ?? []).length === 0 && (
-                  <p className="text-sm text-slate-400">No lab requests on this day.</p>
+                  <p className="text-sm text-foreground-lighter">No lab requests on this day.</p>
                 )}
               </ul>
             </div>
@@ -603,7 +603,7 @@ export default function LabRequestsPage() {
       )}
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
           <div className="w-full max-w-md space-y-3 rounded-2xl bg-white p-5 shadow-xl">
             <div className="flex justify-between">
               <h2 className="font-semibold">New lab request</h2>

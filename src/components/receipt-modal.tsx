@@ -177,22 +177,22 @@ export function ReceiptModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
       <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-base font-semibold text-slate-800">Payment receipt</h3>
+          <h3 className="text-base font-semibold text-foreground">Payment receipt</h3>
           <div className="flex gap-2">
             <button
               type="button"
               onClick={handlePrint}
-              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-brand-300"
+              className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-foreground hover:border-brand-300"
             >
               <Printer className="h-3.5 w-3.5" /> Print
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="text-slate-400 hover:text-slate-600"
+              className="text-foreground-lighter hover:text-foreground-light"
               aria-label="Close"
             >
               <X className="h-4 w-4" />
@@ -200,8 +200,8 @@ export function ReceiptModal({
           </div>
         </div>
 
-        <div className="space-y-4 text-slate-800">
-          <div className="flex items-center gap-3 border-b border-dashed border-slate-200 pb-3">
+        <div className="space-y-4 text-foreground">
+          <div className="flex items-center gap-3 border-b border-dashed border-border pb-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/logo-transparent.png"
@@ -211,10 +211,10 @@ export function ReceiptModal({
             <div>
               <p className="text-lg font-bold tracking-tight">{facilityName}</p>
               {facilityBits.length > 0 && (
-                <p className="text-xs text-slate-500">{facilityBits.join(" · ")}</p>
+                <p className="text-xs text-foreground-light">{facilityBits.join(" · ")}</p>
               )}
               <p className="mt-1 text-sm font-semibold">{receipt.receiptNumber}</p>
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[11px] text-foreground-lighter">
                 {new Date(receipt.issuedAt).toLocaleString()}
               </p>
             </div>
@@ -222,19 +222,19 @@ export function ReceiptModal({
 
           <div className="text-sm">
             <p>
-              <span className="text-slate-400">Patient</span>{" "}
+              <span className="text-foreground-lighter">Patient</span>{" "}
               <span className="font-semibold">{receipt.patient.name}</span>
             </p>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-foreground-light">
               {receipt.patient.mrn}
               {receipt.patient.phone ? ` · ${receipt.patient.phone}` : ""}
             </p>
           </div>
 
-          <ul className="space-y-1.5 border-y border-dashed border-slate-200 py-3 text-sm">
+          <ul className="space-y-1.5 border-y border-dashed border-border py-3 text-sm">
             {receipt.lineItems.map((line, i) => (
               <li key={i} className="flex justify-between gap-3">
-                <span className="text-slate-600">{line.description}</span>
+                <span className="text-foreground-light">{line.description}</span>
                 <span className="font-medium">KES {line.amount.toLocaleString()}</span>
               </li>
             ))}
@@ -243,7 +243,7 @@ export function ReceiptModal({
           {showContext ? (
             <div className="space-y-1 text-sm">
               {Number.isFinite(ctx.invoiceTotal) && (
-                <div className="flex justify-between text-slate-500">
+                <div className="flex justify-between text-foreground-light">
                   <span>
                     Invoice total
                     {ctx.invoiceNumber ? ` (${ctx.invoiceNumber})` : ""}
@@ -252,22 +252,22 @@ export function ReceiptModal({
                 </div>
               )}
               {Number.isFinite(ctx.previousPaid) && (ctx.previousPaid ?? 0) > 0 && (
-                <div className="flex justify-between text-slate-500">
+                <div className="flex justify-between text-foreground-light">
                   <span>Previous payments</span>
                   <span>KES {money(ctx.previousPaid)}</span>
                 </div>
               )}
-              <div className="flex justify-between text-slate-600">
+              <div className="flex justify-between text-foreground-light">
                 <span>This payment</span>
                 <span>KES {money(ctx.currentPayment ?? receipt.amount)}</span>
               </div>
               {Number.isFinite(ctx.balance) && (
-                <div className="flex justify-between text-slate-500">
+                <div className="flex justify-between text-foreground-light">
                   <span>Balance</span>
                   <span>KES {money(ctx.balance)}</span>
                 </div>
               )}
-              <div className="flex items-center justify-between border-t border-dashed border-slate-200 pt-2 text-base font-bold">
+              <div className="flex items-center justify-between border-t border-dashed border-border pt-2 text-base font-bold">
                 <span>Receipt total</span>
                 <span>KES {receipt.amount.toLocaleString()}</span>
               </div>
@@ -279,12 +279,12 @@ export function ReceiptModal({
             </div>
           )}
 
-          <div className="rounded-xl bg-[#f3f7f7] px-3 py-2.5 text-xs text-slate-600">
+          <div className="rounded-xl bg-[#f3f7f7] px-3 py-2.5 text-xs text-foreground-light">
             <p>
               Paid via <span className="font-semibold">{receipt.channel}</span>
               {mpesaRef ? ` · Ref ${mpesaRef}` : ""}
             </p>
-            <p className="mt-1 text-slate-400">Thank you for choosing {facilityName}.</p>
+            <p className="mt-1 text-foreground-lighter">Thank you for choosing {facilityName}.</p>
           </div>
         </div>
 

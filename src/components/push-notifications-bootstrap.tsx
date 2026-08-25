@@ -54,15 +54,15 @@ export function PushNotificationsBootstrap() {
 
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex justify-center px-4">
-      <div className="pointer-events-auto flex max-w-lg items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-lg">
+      <div className="pointer-events-auto flex max-w-lg items-start gap-3 rounded-2xl border border-border bg-white p-4 shadow-lg">
         <div className="mt-0.5 rounded-full bg-brand-50 p-2 text-brand-700">
           <Bell className="h-4 w-4" />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-slate-800">
+          <p className="text-sm font-semibold text-foreground">
             Enable desktop alerts?
           </p>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-xs text-foreground-light">
             Get live HMS alerts on this device. You can change this anytime in
             Settings → Notifications.
             {status === "unavailable"
@@ -81,7 +81,7 @@ export function PushNotificationsBootstrap() {
             <button
               type="button"
               onClick={dismiss}
-              className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-200"
+              className="inline-flex items-center gap-1 rounded-full bg-surface-200 px-3.5 py-1.5 text-xs font-semibold text-foreground-light hover:bg-slate-200"
             >
               <BellOff className="h-3.5 w-3.5" /> Not now
             </button>
@@ -90,7 +90,7 @@ export function PushNotificationsBootstrap() {
         <button
           type="button"
           onClick={dismiss}
-          className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+          className="rounded-full p-1 text-foreground-lighter hover:bg-surface-200 hover:text-foreground-light"
           aria-label="Dismiss"
         >
           <X className="h-4 w-4" />

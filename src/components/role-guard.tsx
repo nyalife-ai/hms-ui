@@ -35,8 +35,8 @@ export function RoleGuard({
         <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-50 text-rose-500">
           <ShieldAlert className="h-7 w-7" />
         </span>
-        <h2 className="mt-4 text-lg font-semibold text-slate-900">Access restricted</h2>
-        <p className="mt-1 max-w-sm text-sm text-slate-500">
+        <h2 className="mt-4 text-lg font-semibold text-foreground">Access restricted</h2>
+        <p className="mt-1 max-w-sm text-sm text-foreground-light">
           Your role does not have permission to view this module. Contact an
           administrator if you believe this is a mistake.
         </p>

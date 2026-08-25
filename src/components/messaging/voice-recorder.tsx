@@ -259,7 +259,7 @@ export const VoiceRecorder = forwardRef<VoiceRecorderHandle, VoiceRecorderProps>
           <button
             type="button"
             onClick={cancelRecording}
-            className="rounded-lg px-2 py-1 text-xs font-medium text-slate-500 hover:bg-white"
+            className="rounded-lg px-2 py-1 text-xs font-medium text-foreground-light hover:bg-white"
           >
             Cancel
           </button>
@@ -278,12 +278,12 @@ export const VoiceRecorder = forwardRef<VoiceRecorderHandle, VoiceRecorderProps>
 
     if (phase === "preview" && previewUrl && previewFile) {
       return (
-        <div className="mb-2 flex flex-wrap items-center gap-2 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
+        <div className="mb-2 flex flex-wrap items-center gap-2 rounded-xl border border-border bg-surface-200 px-3 py-2">
           <audio controls src={previewUrl} className="h-8 min-w-0 flex-1" />
           <button
             type="button"
             onClick={discardPreview}
-            className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-slate-500 hover:bg-white"
+            className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-foreground-light hover:bg-white"
             aria-label="Discard voice note"
           >
             <Trash2 className="h-3.5 w-3.5" />
@@ -321,7 +321,7 @@ export function VoiceMicButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="rounded-full border border-slate-200 p-2.5 text-slate-500 hover:border-brand-300 hover:text-brand-600 disabled:opacity-40"
+      className="rounded-full border border-border p-2.5 text-foreground-light hover:border-brand-300 hover:text-brand-600 disabled:opacity-40"
       aria-label="Record voice note"
       title="Voice note"
     >

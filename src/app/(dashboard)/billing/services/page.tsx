@@ -22,7 +22,7 @@ import { buildListQuery, toPageMeta, unwrapPage } from "@/lib/pagination";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 
 const inputClass =
-  "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 type ServiceRow = {
   id: string;
@@ -305,12 +305,12 @@ export default function BillingServicesPage() {
           ]}
         >
           {rows.map((s) => (
-            <tr key={s.id} className="hover:bg-slate-50/60">
-              <td className="px-5 py-3.5 font-semibold text-slate-800">{s.serviceCode}</td>
-              <td className="px-5 py-3.5 text-slate-700">
+            <tr key={s.id} className="hover:bg-surface-200/60">
+              <td className="px-5 py-3.5 font-semibold text-foreground">{s.serviceCode}</td>
+              <td className="px-5 py-3.5 text-foreground">
                 {s.serviceName}
                 {s.description && (
-                  <span className="block text-xs text-slate-400">{s.description}</span>
+                  <span className="block text-xs text-foreground-lighter">{s.description}</span>
                 )}
                 {triageFeeCode === s.serviceCode && (
                   <span className="mt-1 inline-block rounded-full bg-brand-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-brand-700">
@@ -318,8 +318,8 @@ export default function BillingServicesPage() {
                   </span>
                 )}
               </td>
-              <td className="px-5 py-3.5 text-slate-500">{s.category || "—"}</td>
-              <td className="px-5 py-3.5 text-slate-600">{formatKes(s.standardPrice)}</td>
+              <td className="px-5 py-3.5 text-foreground-light">{s.category || "—"}</td>
+              <td className="px-5 py-3.5 text-foreground-light">{formatKes(s.standardPrice)}</td>
               <td className="px-5 py-3.5">
                 <Badge tone={s.isActive ? "green" : "slate"}>
                   {s.isActive ? "Active" : "Inactive"}
@@ -343,7 +343,7 @@ export default function BillingServicesPage() {
                           type="button"
                           disabled={busy}
                           onClick={() => void setAsTriageFee(s)}
-                          className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600 hover:bg-brand-50 hover:text-brand-700 disabled:opacity-50"
+                          className="rounded-full bg-surface-200 px-2.5 py-1 text-[11px] font-semibold text-foreground-light hover:bg-brand-50 hover:text-brand-700 disabled:opacity-50"
                         >
                           Use for triage
                         </button>
@@ -355,20 +355,20 @@ export default function BillingServicesPage() {
           ))}
         </Table>
         {rows.length === 0 && !loading && (
-          <p className="px-5 pb-5 text-sm text-slate-400">No services found.</p>
+          <p className="px-5 pb-5 text-sm text-foreground-lighter">No services found.</p>
         )}
         <PaginationBar meta={meta} onPageChange={setPage} disabled={loading} />
       </Card>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
           <div className="max-h-[90vh] w-full max-w-md space-y-3 overflow-y-auto rounded-2xl bg-white p-5 shadow-xl">
             <div className="flex items-center justify-between">
-              <h2 className="font-semibold text-slate-900">
+              <h2 className="font-semibold text-foreground">
                 {editing ? "Edit service" : "Add service"}
               </h2>
               <button type="button" onClick={() => setOpen(false)}>
-                <X className="h-4 w-4 text-slate-400" />
+                <X className="h-4 w-4 text-foreground-lighter" />
               </button>
             </div>
             {!editing && (
@@ -416,7 +416,7 @@ export default function BillingServicesPage() {
                 onChange={(e) => setForm((f) => ({ ...f, standardPrice: e.target.value }))}
               />
             </div>
-            <label className="flex items-center gap-2 text-sm text-slate-600">
+            <label className="flex items-center gap-2 text-sm text-foreground-light">
               <input
                 type="checkbox"
                 checked={form.isActive}

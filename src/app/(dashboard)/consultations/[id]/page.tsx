@@ -27,7 +27,7 @@ import {
 } from "@/lib/visits";
 
 const inputClass =
-  "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground placeholder:text-foreground-lighter focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 const EMPTY_VITALS: Vitals = {
   temperature: "",
@@ -196,7 +196,7 @@ function JourneyInner() {
 
   return (
     <RoleGuard module="consultations">
-      <div className="mb-2 text-[11px] font-medium uppercase tracking-wide text-slate-400">
+      <div className="mb-2 text-[11px] font-medium uppercase tracking-wide text-foreground-lighter">
         Home / Consultations / Journey
       </div>
       <PageHeader
@@ -211,7 +211,7 @@ function JourneyInner() {
         action={
           <Link
             href="/consultations"
-            className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-brand-300"
+            className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-foreground hover:border-brand-300"
           >
             <ArrowLeft className="h-3.5 w-3.5" /> Queue
           </Link>
@@ -224,7 +224,7 @@ function JourneyInner() {
       {loading && !visit && (
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-24 animate-pulse rounded-2xl bg-slate-100" />
+            <div key={i} className="h-24 animate-pulse rounded-2xl bg-surface-200" />
           ))}
         </div>
       )}
@@ -251,7 +251,7 @@ function JourneyInner() {
               <div className="space-y-4 px-5 pb-5">
                 <PaymentInfo visit={visit} />
                 <div>
-                  <label className="text-xs font-medium text-slate-500">Reason for visit</label>
+                  <label className="text-xs font-medium text-foreground-light">Reason for visit</label>
                   <textarea
                     className={`${inputClass} mt-1 min-h-[72px]`}
                     value={reason}
@@ -260,7 +260,7 @@ function JourneyInner() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-slate-500">Reception notes</label>
+                  <label className="text-xs font-medium text-foreground-light">Reception notes</label>
                   <textarea
                     className={`${inputClass} mt-1 min-h-[72px]`}
                     value={notes}
@@ -290,7 +290,7 @@ function JourneyInner() {
                     <button
                       type="button"
                       disabled={busy}
-                      className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700"
+                      className="rounded-full border border-border px-4 py-2 text-sm font-semibold text-foreground"
                       onClick={() => void run(() => collectConsultFee(visit.id, "CASH"))}
                     >
                       Collect cash fee
@@ -299,7 +299,7 @@ function JourneyInner() {
                       <button
                         type="button"
                         disabled={busy}
-                        className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700"
+                        className="rounded-full border border-border px-4 py-2 text-sm font-semibold text-foreground"
                         onClick={() => void run(() => waiveConsultFee(visit.id))}
                       >
                         Waive fee
@@ -317,8 +317,8 @@ function JourneyInner() {
               <div className="space-y-4 px-5 pb-5">
                 {visit.vitals && <VitalsGrid visit={visit} />}
                 {visit.nurseName && (
-                  <p className="text-sm text-slate-500">
-                    Triaged by <span className="font-medium text-slate-800">{visit.nurseName}</span>
+                  <p className="text-sm text-foreground-light">
+                    Triaged by <span className="font-medium text-foreground">{visit.nurseName}</span>
                     {visit.doctorName ? ` · assigned to ${visit.doctorName}` : ""}
                   </p>
                 )}
@@ -337,7 +337,7 @@ function JourneyInner() {
                         ] as const
                       ).map(([key, label]) => (
                         <div key={key}>
-                          <label className="text-[10px] text-slate-400">{label}</label>
+                          <label className="text-[10px] text-foreground-lighter">{label}</label>
                           <input
                             className={inputClass}
                             value={vitals[key]}
@@ -394,7 +394,7 @@ function JourneyInner() {
                   </>
                 )}
                 {!visit.vitals && !editTriage && (
-                  <p className="text-sm text-slate-400">Vitals have not been recorded yet.</p>
+                  <p className="text-sm text-foreground-lighter">Vitals have not been recorded yet.</p>
                 )}
               </div>
             </Card>
@@ -408,12 +408,12 @@ function JourneyInner() {
               />
               <div className="space-y-4 px-5 pb-5">
                 {clinicalBits.length === 0 ? (
-                  <p className="text-sm text-slate-400">No clinical notes yet.</p>
+                  <p className="text-sm text-foreground-lighter">No clinical notes yet.</p>
                 ) : (
                   clinicalBits.map((b) => (
-                    <div key={b.title} className="rounded-xl bg-slate-50 px-4 py-3 text-sm">
-                      <p className="text-[10px] font-semibold uppercase text-slate-400">{b.title}</p>
-                      <p className="mt-1 whitespace-pre-wrap text-slate-700">{b.text}</p>
+                    <div key={b.title} className="rounded-xl bg-surface-200 px-4 py-3 text-sm">
+                      <p className="text-[10px] font-semibold uppercase text-foreground-lighter">{b.title}</p>
+                      <p className="mt-1 whitespace-pre-wrap text-foreground">{b.text}</p>
                     </div>
                   ))
                 )}
@@ -444,10 +444,10 @@ function JourneyInner() {
               <CardHeader title="Laboratory" subtitle="Orders and released results for this visit" />
               <div className="space-y-4 px-5 pb-5">
                 {!visit.labOrder?.tests?.length && !(labReport?.lines.length) ? (
-                  <p className="text-sm text-slate-400">No laboratory tests ordered yet.</p>
+                  <p className="text-sm text-foreground-lighter">No laboratory tests ordered yet.</p>
                 ) : null}
                 {visit.labOrder?.tests?.length ? (
-                  <ul className="divide-y divide-slate-100 rounded-xl border border-slate-100">
+                  <ul className="divide-y divide-border rounded-xl border border-border">
                     {visit.labOrder.tests.map((t) => {
                       const match = labReport?.lines.find(
                         (l) =>
@@ -460,8 +460,8 @@ function JourneyInner() {
                           className="flex items-center justify-between px-4 py-3 text-sm"
                         >
                           <div>
-                            <p className="font-medium text-slate-800">{t.name}</p>
-                            <p className="text-xs text-slate-400">{t.range}</p>
+                            <p className="font-medium text-foreground">{t.name}</p>
+                            <p className="text-xs text-foreground-lighter">{t.range}</p>
                           </div>
                           <Badge tone={match?.resultValue ? "green" : "amber"}>
                             {match?.resultValue
@@ -477,12 +477,12 @@ function JourneyInner() {
                 ) : null}
                 {labReport?.released && labReport.lines.length > 0 && (
                   <div>
-                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-foreground-lighter">
                       Released results
                     </p>
                     <table className="w-full text-left text-sm">
                       <thead>
-                        <tr className="text-xs text-slate-400">
+                        <tr className="text-xs text-foreground-lighter">
                           <th className="pb-2 font-medium">Parameter</th>
                           <th className="pb-2 font-medium">Result</th>
                           <th className="pb-2 font-medium">Reference</th>
@@ -490,15 +490,15 @@ function JourneyInner() {
                       </thead>
                       <tbody>
                         {labReport.lines.map((l) => (
-                          <tr key={l.id} className="border-t border-slate-50">
-                            <td className="py-2 font-medium text-slate-800">
+                          <tr key={l.id} className="border-t border-border">
+                            <td className="py-2 font-medium text-foreground">
                               {l.parameterName ?? l.testName ?? "—"}
                             </td>
                             <td className="py-2 font-semibold text-brand-700">
                               {l.resultValue ?? "—"}
                               {l.unitOfMeasurement ? ` ${l.unitOfMeasurement}` : ""}
                             </td>
-                            <td className="py-2 text-slate-400">
+                            <td className="py-2 text-foreground-lighter">
                               {l.normalReferenceRange ?? "—"}
                             </td>
                           </tr>
@@ -508,7 +508,7 @@ function JourneyInner() {
                   </div>
                 )}
                 {visit.labOrder?.notes && (
-                  <p className="text-xs text-slate-400">Notes: {visit.labOrder.notes}</p>
+                  <p className="text-xs text-foreground-lighter">Notes: {visit.labOrder.notes}</p>
                 )}
                 <Link
                   href={relatedLabsHref({
@@ -529,12 +529,12 @@ function JourneyInner() {
               <CardHeader title="Diagnosis" subtitle="Outcome, prescriptions, follow-up" />
               <div className="space-y-4 px-5 pb-5">
                 {visit.diagnosis && (
-                  <p className="rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-800">
+                  <p className="rounded-xl bg-surface-200 px-4 py-3 text-sm text-foreground">
                     {visit.diagnosis}
                   </p>
                 )}
                 {visit.prescriptions && visit.prescriptions.length > 0 && (
-                  <ul className="text-sm text-slate-600">
+                  <ul className="text-sm text-foreground-light">
                     {visit.prescriptions.map((p, i) => (
                       <li key={`${p.medication}-${i}`}>
                         {p.medication} — {[p.dosage, p.frequency, p.duration].filter(Boolean).join(" · ")}
@@ -543,7 +543,7 @@ function JourneyInner() {
                   </ul>
                 )}
                 {visit.followUpDate && (
-                  <p className="text-sm text-slate-500">Follow-up: {visit.followUpDate}</p>
+                  <p className="text-sm text-foreground-light">Follow-up: {visit.followUpDate}</p>
                 )}
                 {editDoctor &&
                   (visit.stage === "IN_CONSULTATION" || visit.stage === "RESULTS_READY") && (
@@ -596,11 +596,11 @@ function JourneyInner() {
                 {visit.billing ? (
                   <dl className="grid grid-cols-2 gap-3">
                     <div>
-                      <dt className="text-xs text-slate-400">Invoice</dt>
+                      <dt className="text-xs text-foreground-lighter">Invoice</dt>
                       <dd className="font-medium">{visit.billing.invoiceNumber || "—"}</dd>
                     </div>
                     <div>
-                      <dt className="text-xs text-slate-400">Amount</dt>
+                      <dt className="text-xs text-foreground-lighter">Amount</dt>
                       <dd className="font-medium">
                         {visit.billing.total != null
                           ? `KES ${Number(visit.billing.total).toLocaleString()}`
@@ -608,16 +608,16 @@ function JourneyInner() {
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-xs text-slate-400">Channel</dt>
+                      <dt className="text-xs text-foreground-lighter">Channel</dt>
                       <dd className="font-medium">{visit.billing.paymentChannel || visit.billing.mode}</dd>
                     </div>
                     <div>
-                      <dt className="text-xs text-slate-400">Consult fee</dt>
+                      <dt className="text-xs text-foreground-lighter">Consult fee</dt>
                       <dd className="font-medium">{visit.billing.consultFeeStatus || "—"}</dd>
                     </div>
                   </dl>
                 ) : (
-                  <p className="text-slate-400">No billing recorded yet.</p>
+                  <p className="text-foreground-lighter">No billing recorded yet.</p>
                 )}
                 {editBilling && (
                   <Link href="/billing" className="inline-flex font-semibold text-brand-700 hover:underline">
@@ -669,13 +669,13 @@ function JourneyInner() {
           {tab === "done" && (
             <Card>
               <CardHeader title="Done" subtitle="Visit closed" />
-              <div className="space-y-2 px-5 pb-5 text-sm text-slate-600">
+              <div className="space-y-2 px-5 pb-5 text-sm text-foreground-light">
                 <p>Checked in {formatTime(visit.checkedInAt)}</p>
                 <p>Stage: {STAGE_META[visit.stage].label}</p>
                 {visit.diagnosis && <p>Diagnosis: {visit.diagnosis}</p>}
                 {visit.billing?.invoiceNumber && <p>Invoice {visit.billing.invoiceNumber}</p>}
                 {visit.stage !== "COMPLETED" && (
-                  <p className="text-slate-400">This visit is still in the pipeline.</p>
+                  <p className="text-foreground-lighter">This visit is still in the pipeline.</p>
                 )}
               </div>
             </Card>
@@ -688,7 +688,7 @@ function JourneyInner() {
 
 export default function ConsultationJourneyPage() {
   return (
-    <Suspense fallback={<p className="text-sm text-slate-400">Loading journey…</p>}>
+    <Suspense fallback={<p className="text-sm text-foreground-lighter">Loading journey…</p>}>
       <JourneyInner />
     </Suspense>
   );

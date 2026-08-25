@@ -84,7 +84,7 @@ function RelatedLabsInner() {
 
   return (
     <RoleGuard modules={["consultations", "appointments", "laboratory"]}>
-      <div className="mb-2 text-[11px] font-medium uppercase tracking-wide text-slate-400">
+      <div className="mb-2 text-[11px] font-medium uppercase tracking-wide text-foreground-lighter">
         Home / Laboratory / Related requests
       </div>
       <PageHeader
@@ -99,7 +99,7 @@ function RelatedLabsInner() {
         action={
           <Link
             href={backHref}
-            className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-brand-300"
+            className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-foreground hover:border-brand-300"
           >
             <ArrowLeft className="h-3.5 w-3.5" /> Back
           </Link>
@@ -113,15 +113,15 @@ function RelatedLabsInner() {
         />
         <Table headers={["Request", "Patient", "Doctor", "Priority", "Status", "Date", ""]}>
           {rows.map((r) => (
-            <tr key={r.id} className="hover:bg-slate-50/60">
-              <td className="px-5 py-3.5 font-medium text-slate-800">
+            <tr key={r.id} className="hover:bg-surface-200/60">
+              <td className="px-5 py-3.5 font-medium text-foreground">
                 {r.requestNumber}
               </td>
-              <td className="px-5 py-3.5 text-slate-500">
+              <td className="px-5 py-3.5 text-foreground-light">
                 {r.patientName}
-                <span className="block text-xs text-slate-400">{r.mrn}</span>
+                <span className="block text-xs text-foreground-lighter">{r.mrn}</span>
               </td>
-              <td className="px-5 py-3.5 text-slate-500">{r.requestingDoctor || "—"}</td>
+              <td className="px-5 py-3.5 text-foreground-light">{r.requestingDoctor || "—"}</td>
               <td className="px-5 py-3.5">
                 <Badge tone={PRIORITY_TONE[r.priority] ?? "slate"}>{r.priority}</Badge>
               </td>
@@ -130,13 +130,13 @@ function RelatedLabsInner() {
                   {statusLabel(r.status)}
                 </Badge>
               </td>
-              <td className="px-5 py-3.5 text-xs text-slate-500">
+              <td className="px-5 py-3.5 text-xs text-foreground-light">
                 {r.requestDate.slice(0, 10)}
               </td>
               <td className="px-5 py-3.5">
                 <Link
                   href={`/laboratory/requests/${r.id}`}
-                  className="rounded-full border px-3 py-1 text-xs font-medium text-slate-700 hover:border-brand-300"
+                  className="rounded-full border px-3 py-1 text-xs font-medium text-foreground hover:border-brand-300"
                 >
                   Open
                 </Link>
@@ -145,7 +145,7 @@ function RelatedLabsInner() {
           ))}
         </Table>
         {!loading && rows.length === 0 && !error && (
-          <p className="px-5 py-10 text-center text-sm text-slate-400">
+          <p className="px-5 py-10 text-center text-sm text-foreground-lighter">
             No laboratory requests are linked to this appointment yet.
           </p>
         )}
@@ -156,7 +156,7 @@ function RelatedLabsInner() {
 
 export default function RelatedLabsPage() {
   return (
-    <Suspense fallback={<p className="text-sm text-slate-400">Loading…</p>}>
+    <Suspense fallback={<p className="text-sm text-foreground-lighter">Loading…</p>}>
       <RelatedLabsInner />
     </Suspense>
   );

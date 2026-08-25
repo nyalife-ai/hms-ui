@@ -19,7 +19,7 @@ import { buildListQuery, toPageMeta, unwrapPage } from "@/lib/pagination";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 
 const inputClass =
-  "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 type TaxRateRow = {
   id: string;
@@ -175,11 +175,11 @@ export default function BillingTaxRatesPage() {
         <CardHeader title="Tax rates" subtitle={`${total.toLocaleString()} records`} />
         <Table headers={["Code", "Name", "Rate %", "Liability account", "Status"]}>
           {rows.map((t) => (
-            <tr key={t.id} className="hover:bg-slate-50/60">
-              <td className="px-5 py-3.5 font-semibold text-slate-800">{t.taxCode}</td>
-              <td className="px-5 py-3.5 text-slate-700">{t.taxName}</td>
-              <td className="px-5 py-3.5 text-slate-600">{t.ratePercentage}</td>
-              <td className="px-5 py-3.5 text-slate-500">{t.liabilityAccountCode}</td>
+            <tr key={t.id} className="hover:bg-surface-200/60">
+              <td className="px-5 py-3.5 font-semibold text-foreground">{t.taxCode}</td>
+              <td className="px-5 py-3.5 text-foreground">{t.taxName}</td>
+              <td className="px-5 py-3.5 text-foreground-light">{t.ratePercentage}</td>
+              <td className="px-5 py-3.5 text-foreground-light">{t.liabilityAccountCode}</td>
               <td className="px-5 py-3.5">
                 <Badge tone={t.isActive ? "green" : "slate"}>
                   {t.isActive ? "Active" : "Inactive"}
@@ -189,18 +189,18 @@ export default function BillingTaxRatesPage() {
           ))}
         </Table>
         {rows.length === 0 && !loading && (
-          <p className="px-5 pb-5 text-sm text-slate-400">No tax rates found.</p>
+          <p className="px-5 pb-5 text-sm text-foreground-lighter">No tax rates found.</p>
         )}
         <PaginationBar meta={meta} onPageChange={setPage} disabled={loading} />
       </Card>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
           <div className="w-full max-w-md space-y-3 rounded-2xl bg-white p-5 shadow-xl">
             <div className="flex items-center justify-between">
-              <h2 className="font-semibold text-slate-900">Add tax rate</h2>
+              <h2 className="font-semibold text-foreground">Add tax rate</h2>
               <button type="button" onClick={() => setOpen(false)}>
-                <X className="h-4 w-4 text-slate-400" />
+                <X className="h-4 w-4 text-foreground-lighter" />
               </button>
             </div>
             <div>

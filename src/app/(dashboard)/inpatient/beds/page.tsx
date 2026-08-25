@@ -18,7 +18,7 @@ import { api } from "@/lib/api";
 import { buildListQuery, toPageMeta, unwrapPage } from "@/lib/pagination";
 
 const inputClass =
-  "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 type IpdWard = { id: string; name: string };
 type IpdBed = {
@@ -177,9 +177,9 @@ export default function IpdBedsPage() {
         <CardHeader title="Beds" subtitle={`${total.toLocaleString()} total`} />
         <Table headers={["Ward", "Bed", "Status", "Actions"]}>
           {beds.map((b) => (
-            <tr key={b.id} className="hover:bg-slate-50/60">
-              <td className="px-5 py-3.5 text-slate-700">{b.wardName}</td>
-              <td className="px-5 py-3.5 font-medium text-slate-800">{b.bedNumber}</td>
+            <tr key={b.id} className="hover:bg-surface-200/60">
+              <td className="px-5 py-3.5 text-foreground">{b.wardName}</td>
+              <td className="px-5 py-3.5 font-medium text-foreground">{b.bedNumber}</td>
               <td className="px-5 py-3.5">
                 <Badge
                   tone={
@@ -201,7 +201,7 @@ export default function IpdBedsPage() {
                     <button
                       type="button"
                       onClick={() => void setStatus(b.id, "MAINTENANCE")}
-                      className="rounded-full border border-slate-200 px-3 py-1 text-xs text-slate-600"
+                      className="rounded-full border border-border px-3 py-1 text-xs text-foreground-light"
                     >
                       Maintenance
                     </button>
@@ -210,7 +210,7 @@ export default function IpdBedsPage() {
                     <button
                       type="button"
                       onClick={() => void setStatus(b.id, "AVAILABLE")}
-                      className="rounded-full border border-slate-200 px-3 py-1 text-xs text-slate-600"
+                      className="rounded-full border border-border px-3 py-1 text-xs text-foreground-light"
                     >
                       Mark available
                     </button>
@@ -224,11 +224,11 @@ export default function IpdBedsPage() {
       </Card>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
           <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-base font-semibold text-slate-900">Add bed(s)</h2>
-              <button onClick={() => setOpen(false)} className="rounded-lg p-1 text-slate-400 hover:bg-slate-50">
+              <h2 className="text-base font-semibold text-foreground">Add bed(s)</h2>
+              <button onClick={() => setOpen(false)} className="rounded-lg p-1 text-foreground-lighter hover:bg-surface-200">
                 <X className="h-4 w-4" />
               </button>
             </div>

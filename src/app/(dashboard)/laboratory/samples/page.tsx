@@ -13,7 +13,7 @@ import {
 import { api } from "@/lib/api";
 
 const inputClass =
-  "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 const STATUS_TONE: Record<string, BadgeTone> = {
   REGISTERED: "amber",
@@ -107,15 +107,15 @@ export default function LabSamplesPage() {
         <CardHeader title="Samples" subtitle={`${rows.length} shown`} />
         <Table headers={["Sample", "Request", "Patient", "Type", "Collected", "Status", ""]}>
           {rows.map((s) => (
-            <tr key={s.id} className="hover:bg-slate-50/60">
-              <td className="px-5 py-3.5 font-medium text-slate-800">{s.sampleId}</td>
-              <td className="px-5 py-3.5 text-slate-500">{s.requestNumber}</td>
-              <td className="px-5 py-3.5 text-slate-500">
+            <tr key={s.id} className="hover:bg-surface-200/60">
+              <td className="px-5 py-3.5 font-medium text-foreground">{s.sampleId}</td>
+              <td className="px-5 py-3.5 text-foreground-light">{s.requestNumber}</td>
+              <td className="px-5 py-3.5 text-foreground-light">
                 {s.patientName}
-                <span className="block text-xs text-slate-400">{s.mrn}</span>
+                <span className="block text-xs text-foreground-lighter">{s.mrn}</span>
               </td>
-              <td className="px-5 py-3.5 text-slate-500">{s.sampleType}</td>
-              <td className="px-5 py-3.5 text-xs text-slate-500">
+              <td className="px-5 py-3.5 text-foreground-light">{s.sampleType}</td>
+              <td className="px-5 py-3.5 text-xs text-foreground-light">
                 {s.collectedAt.slice(0, 16).replace("T", " ")}
                 {s.collectedByName && (
                   <span className="block">{s.collectedByName}</span>
@@ -143,7 +143,7 @@ export default function LabSamplesPage() {
           ))}
         </Table>
         {rows.length === 0 && (
-          <p className="px-5 pb-5 text-sm text-slate-400">No samples match filters.</p>
+          <p className="px-5 pb-5 text-sm text-foreground-lighter">No samples match filters.</p>
         )}
       </Card>
     </RoleGuard>

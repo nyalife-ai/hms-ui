@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "../styles/typography.css";
 
 @theme {
   /*
@@ -26,16 +27,119 @@
   --color-accent-700: #0f6f7a;
   --color-accent-800: #125961;
   --color-accent-900: #134a50;
+
+  /*
+   * Studio-style semantic tokens remapped to NyaLife brand
+   */
+  --color-background: #faf7f9;
+  --color-foreground: #1a1220;
+  --color-foreground-light: #64748b;
+  --color-foreground-lighter: #94a3b8;
+  --color-foreground-muted: #cbd5e1;
+  --color-surface: #ffffff;
+  --color-surface-100: #ffffff;
+  --color-surface-200: #fff7fa;
+  --color-border: #f0d6e2;
+  --color-sidebar: #ffffff;
+  --shadow-xs: 0 1px 2px rgba(26, 18, 32, 0.04);
+  --shadow-sm: 0 1px 3px rgba(26, 18, 32, 0.06);
+
+  /*
+   * Studio Inter-optimized type scale + weight
+   * (from apps/studio/styles/globals.css — slightly reduced sizes, weight 450)
+   */
+  --text-xs: 0.75rem;
+  --text-sm: 0.8125rem;
+  --text-base: 0.9375rem;
+  --text-lg: 1rem;
+  --text-xl: 1.125rem;
+  --text-2xl: 1.375rem;
+  --text-3xl: 1.75rem;
+  --text-4xl: 2.125rem;
+  --text-5xl: 2.875rem;
+  --text-6xl: 3.625rem;
+  --text-7xl: 4.375rem;
+  --text-8xl: 5.875rem;
+  --text-9xl: 7.875rem;
+  --font-weight-normal: 450;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
 }
 
 @theme inline {
-  --font-sans: var(--font-jakarta);
+  /* next/font CSS variables from layout classNames */
+  --font-sans: var(--font-inter), system-ui, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-heading: var(--font-manrope), var(--font-inter), system-ui, sans-serif;
+  --font-mono: var(--font-source-code-pro), "Office Code Pro", Menlo, monospace;
+  --color-bg: var(--color-background);
+}
+
+:root {
+  --background: #faf7f9;
+  --foreground: #1a1220;
+  --foreground-light: #64748b;
+  --foreground-lighter: #94a3b8;
+  --foreground-muted: #cbd5e1;
+  --surface: #ffffff;
+  --surface-100: #ffffff;
+  --surface-200: #fff7fa;
+  --border: #f0d6e2;
+  --sidebar: #ffffff;
+}
+
+html {
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 body {
-  background: #faf7f9;
-  color: #1a1220;
-  font-family: var(--font-sans), system-ui, sans-serif;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  font-weight: 450;
+  /* Inter optical sharpening (opentype features) */
+  font-feature-settings: "cv11", "ss01", "ss03";
+  font-variation-settings: "opsz" 14;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-heading);
+  font-weight: 600;
+}
+
+code,
+kbd,
+pre,
+samp {
+  font-family: var(--font-source-code-pro), "Office Code Pro", Menlo, monospace;
+}
+
+/*
+ * Studio-like form controls sitewide — pages still using slate-* borders
+ * pick up denser, sharper inputs without per-file rewrites.
+ */
+@layer base {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+  select,
+  textarea {
+    border-color: var(--border);
+    background-color: var(--surface);
+    color: var(--foreground);
+    font-weight: 450;
+    border-radius: 0.375rem;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--foreground-lighter);
+  }
 }
 
 ::-webkit-scrollbar {

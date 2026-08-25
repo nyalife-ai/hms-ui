@@ -101,7 +101,7 @@ export default function IpdOverviewPage() {
             <button
               type="button"
               onClick={() => void load()}
-              className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:border-brand-300 hover:text-brand-700"
+              className="rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground-light hover:border-brand-300 hover:text-brand-700"
             >
               Refresh
             </button>
@@ -130,19 +130,19 @@ export default function IpdOverviewPage() {
           <Table headers={["Patient", "To", "Reason", "When"]}>
             {(data?.recentTransfers ?? []).map((t) => (
               <tr key={t.id}>
-                <td className="px-5 py-3 text-slate-700">{t.patientName}</td>
-                <td className="px-5 py-3 text-slate-500">
+                <td className="px-5 py-3 text-foreground">{t.patientName}</td>
+                <td className="px-5 py-3 text-foreground-light">
                   {t.newWard} · {t.newBed}
                 </td>
-                <td className="px-5 py-3 text-slate-500">{t.reason || "—"}</td>
-                <td className="px-5 py-3 text-slate-400 text-xs">
+                <td className="px-5 py-3 text-foreground-light">{t.reason || "—"}</td>
+                <td className="px-5 py-3 text-foreground-lighter text-xs">
                   {new Date(t.at).toLocaleString()}
                 </td>
               </tr>
             ))}
           </Table>
           {!data?.recentTransfers?.length && (
-            <p className="px-5 py-6 text-center text-sm text-slate-400">No recent transfers</p>
+            <p className="px-5 py-6 text-center text-sm text-foreground-lighter">No recent transfers</p>
           )}
         </Card>
         <Card>
@@ -150,17 +150,17 @@ export default function IpdOverviewPage() {
           <Table headers={["Patient", "MRN", "Diagnosis", "When"]}>
             {(data?.recentDischarges ?? []).map((d) => (
               <tr key={d.id}>
-                <td className="px-5 py-3 text-slate-700">{d.patientName}</td>
-                <td className="px-5 py-3 text-slate-500">{d.mrn}</td>
-                <td className="px-5 py-3 text-slate-500">{d.diagnosis || "—"}</td>
-                <td className="px-5 py-3 text-slate-400 text-xs">
+                <td className="px-5 py-3 text-foreground">{d.patientName}</td>
+                <td className="px-5 py-3 text-foreground-light">{d.mrn}</td>
+                <td className="px-5 py-3 text-foreground-light">{d.diagnosis || "—"}</td>
+                <td className="px-5 py-3 text-foreground-lighter text-xs">
                   {d.dischargedAt ? new Date(d.dischargedAt).toLocaleString() : "—"}
                 </td>
               </tr>
             ))}
           </Table>
           {!data?.recentDischarges?.length && (
-            <p className="px-5 py-6 text-center text-sm text-slate-400">No recent discharges</p>
+            <p className="px-5 py-6 text-center text-sm text-foreground-lighter">No recent discharges</p>
           )}
         </Card>
       </div>

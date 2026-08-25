@@ -27,7 +27,7 @@ import { useVisits } from "@/lib/visits";
 import type { InvoiceHit } from "@/components/invoice-search-select";
 
 const inputClass =
-  "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 type InvoiceRow = InvoiceHit & {
   invoiceDate: string;
@@ -289,20 +289,20 @@ export default function BillingInvoicesPage() {
           headers={["Invoice", "Patient", "Date", "Total", "Outstanding", "Status", ""]}
         >
           {rows.map((inv) => (
-            <tr key={inv.id} className="hover:bg-slate-50/60">
-              <td className="px-5 py-3.5 font-semibold text-slate-800">{inv.invoiceNumber}</td>
+            <tr key={inv.id} className="hover:bg-surface-200/60">
+              <td className="px-5 py-3.5 font-semibold text-foreground">{inv.invoiceNumber}</td>
               <td className="px-5 py-3.5">
                 <div className="flex items-center gap-3">
                   <Avatar name={inv.patientName} size="sm" />
                   <div>
-                    <p className="text-sm text-slate-700">{inv.patientName}</p>
-                    <p className="text-[11px] text-slate-400">{inv.patientMrn}</p>
+                    <p className="text-sm text-foreground">{inv.patientName}</p>
+                    <p className="text-[11px] text-foreground-lighter">{inv.patientMrn}</p>
                   </div>
                 </div>
               </td>
-              <td className="px-5 py-3.5 text-slate-500">{formatDate(inv.invoiceDate)}</td>
-              <td className="px-5 py-3.5 text-slate-600">{formatKes(inv.totalAmount)}</td>
-              <td className="px-5 py-3.5 text-slate-600">
+              <td className="px-5 py-3.5 text-foreground-light">{formatDate(inv.invoiceDate)}</td>
+              <td className="px-5 py-3.5 text-foreground-light">{formatKes(inv.totalAmount)}</td>
+              <td className="px-5 py-3.5 text-foreground-light">
                 {inv.status === "DRAFT" ? formatKes(inv.totalAmount) : formatKes(inv.outstanding)}
               </td>
               <td className="px-5 py-3.5">
@@ -357,18 +357,18 @@ export default function BillingInvoicesPage() {
           ))}
         </Table>
         {rows.length === 0 && !loading && (
-          <p className="px-5 pb-5 text-sm text-slate-400">No invoices found.</p>
+          <p className="px-5 pb-5 text-sm text-foreground-lighter">No invoices found.</p>
         )}
         <PaginationBar meta={meta} onPageChange={setPage} disabled={loading} />
       </Card>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
           <div className="w-full max-w-md space-y-3 rounded-2xl bg-white p-5 shadow-xl">
             <div className="flex items-center justify-between">
-              <h2 className="font-semibold text-slate-900">Create draft invoice</h2>
+              <h2 className="font-semibold text-foreground">Create draft invoice</h2>
               <button type="button" onClick={() => setOpen(false)}>
-                <X className="h-4 w-4 text-slate-400" />
+                <X className="h-4 w-4 text-foreground-lighter" />
               </button>
             </div>
             <div>

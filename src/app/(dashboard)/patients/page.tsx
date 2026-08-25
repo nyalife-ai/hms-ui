@@ -32,11 +32,11 @@ import {
   Avatar,
   Badge,
   Card,
-  PageHeader,
   PrimaryButton,
   StatCard,
   Table,
 } from "@/components/ui";
+import { PageLayout, ScaffoldContainer } from "@/components/studio";
 import { api } from "@/lib/api";
 import {
   usePaginatedCatalog,
@@ -214,25 +214,27 @@ export default function PatientsPage() {
   const meta = toPageMeta({ total, page, limit });
   const kpi = summary ?? { total: 0, female: 0, male: 0, recent7d: 0 };
   const inputClass =
-    "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+    "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
   return (
     <RoleGuard module="patients">
-      <div className="mb-2 text-[11px] font-medium uppercase tracking-wide text-slate-400">
-        Home / Patients / Patients Registry
-      </div>
-      <PageHeader
+      <PageLayout
         title="Patients"
         subtitle={
           loading ? "Loading patients…" : `${total.toLocaleString()} in the registry`
         }
-        action={
+        breadcrumbs={[
+          { label: "Home", href: "/dashboard" },
+          { label: "Patients" },
+          { label: "Patients Registry" },
+        ]}
+        primaryActions={
           <div className="flex flex-wrap items-center gap-2">
             {canImport && (
               <button
                 type="button"
                 onClick={() => setImportOpen(true)}
-                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-brand-50 hover:text-brand-700"
+                className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-4 py-2.5 text-sm font-semibold text-foreground shadow-sm transition hover:bg-brand-50 hover:text-brand-700"
               >
                 <Upload className="h-4 w-4" />
                 Import patients
@@ -243,8 +245,8 @@ export default function PatientsPage() {
             </PrimaryButton>
           </div>
         }
-      />
-
+      >
+        <ScaffoldContainer className="pt-6">
       <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           label="Total Patients"
@@ -325,24 +327,24 @@ export default function PatientsPage() {
         >
           {!loading &&
             items.map((p) => (
-              <tr key={p.id} className="transition hover:bg-slate-50/60">
+              <tr key={p.id} className="transition hover:bg-surface-200/60">
                 <td className="px-4 py-2.5">
                   <div className="flex items-center gap-3">
                     <Avatar name={p.name} size="sm" />
                     <button
                       type="button"
                       onClick={() => setQuickViewId(p.id)}
-                      className="cursor-pointer text-left font-medium text-slate-800 underline-offset-2 hover:text-brand-700 hover:underline"
+                      className="cursor-pointer text-left font-medium text-foreground underline-offset-2 hover:text-brand-700 hover:underline"
                     >
                       {p.name}
                     </button>
                   </div>
                 </td>
-                <td className="px-4 py-2.5 text-slate-500">{p.mrn}</td>
-                <td className="px-4 py-2.5 text-slate-500">{p.age || "—"}</td>
-                <td className="px-4 py-2.5 text-slate-500">{p.gender}</td>
-                <td className="px-4 py-2.5 text-slate-500">{p.phone}</td>
-                <td className="px-4 py-2.5 text-slate-500">{p.lastVisit}</td>
+                <td className="px-4 py-2.5 text-foreground-light">{p.mrn}</td>
+                <td className="px-4 py-2.5 text-foreground-light">{p.age || "—"}</td>
+                <td className="px-4 py-2.5 text-foreground-light">{p.gender}</td>
+                <td className="px-4 py-2.5 text-foreground-light">{p.phone}</td>
+                <td className="px-4 py-2.5 text-foreground-light">{p.lastVisit}</td>
                 <td className="px-4 py-2.5">
                   <Badge
                     tone={
@@ -379,7 +381,7 @@ export default function PatientsPage() {
             {[1, 2, 3, 4].map((i) => (
               <div
                 key={i}
-                className="h-10 animate-pulse rounded-xl bg-slate-100"
+                className="h-10 animate-pulse rounded-xl bg-surface-200"
               />
             ))}
           </div>
@@ -468,6 +470,8 @@ export default function PatientsPage() {
           }}
         />
       )}
+        </ScaffoldContainer>
+      </PageLayout>
     </RoleGuard>
   );
 }

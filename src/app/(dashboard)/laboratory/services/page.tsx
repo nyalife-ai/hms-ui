@@ -23,7 +23,7 @@ import { buildListQuery, toPageMeta, unwrapPage } from "@/lib/pagination";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 
 const inputClass =
-  "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 type ServiceRow = {
   id: string;
@@ -199,12 +199,12 @@ export default function LaboratoryServicesPage() {
         </div>
         <Table headers={["Code", "Name", "Category", "Kind", "Price (KES)", ""]}>
           {rows.map((r) => (
-            <tr key={r.id} className="hover:bg-slate-50/60">
-              <td className="px-5 py-3.5 font-semibold text-slate-800">
+            <tr key={r.id} className="hover:bg-surface-200/60">
+              <td className="px-5 py-3.5 font-semibold text-foreground">
                 {r.serviceCode}
               </td>
-              <td className="px-5 py-3.5 text-slate-700">{r.serviceName}</td>
-              <td className="px-5 py-3.5 text-slate-500">
+              <td className="px-5 py-3.5 text-foreground">{r.serviceName}</td>
+              <td className="px-5 py-3.5 text-foreground-light">
                 {r.category ?? "—"}
               </td>
               <td className="px-5 py-3.5">
@@ -212,7 +212,7 @@ export default function LaboratoryServicesPage() {
                   {r.kind === "surgery" ? "Surgery" : "Service"}
                 </Badge>
               </td>
-              <td className="px-5 py-3.5 text-slate-600">
+              <td className="px-5 py-3.5 text-foreground-light">
                 {Number(r.standardPrice).toLocaleString()}
               </td>
               <td className="px-5 py-3.5">
@@ -227,7 +227,7 @@ export default function LaboratoryServicesPage() {
           ))}
         </Table>
         {rows.length === 0 && !loading && (
-          <p className="px-5 pb-5 text-sm text-slate-400">
+          <p className="px-5 pb-5 text-sm text-foreground-lighter">
             No clinical services yet. Add vaccines, procedures, or surgeries.
           </p>
         )}
@@ -239,16 +239,16 @@ export default function LaboratoryServicesPage() {
       </Card>
 
       {open && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40 p-4">
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-foreground/40 p-4">
           <div className="w-full max-w-lg rounded-2xl bg-white p-5 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-base font-semibold text-slate-900">
+              <h2 className="text-base font-semibold text-foreground">
                 {editing ? "Edit service" : "Add service / procedure / surgery"}
               </h2>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-50"
+                className="rounded-lg p-1.5 text-foreground-lighter hover:bg-surface-200"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -293,7 +293,7 @@ export default function LaboratoryServicesPage() {
                     </option>
                   ))}
                 </select>
-                <p className="mt-1 text-[11px] text-slate-400">
+                <p className="mt-1 text-[11px] text-foreground-lighter">
                   Choose <strong>Surgery</strong> for the doctor surgeries
                   picker.
                 </p>
@@ -327,7 +327,7 @@ export default function LaboratoryServicesPage() {
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600"
+                  className="rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground-light"
                 >
                   Cancel
                 </button>

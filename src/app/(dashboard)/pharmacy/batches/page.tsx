@@ -12,7 +12,7 @@ import { buildListQuery, toPageMeta, unwrapPage } from "@/lib/pagination";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 
 const inputClass =
-  "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 type Batch = {
   id: string;
@@ -279,7 +279,7 @@ export default function PharmacyBatchesPage() {
             setPage(1);
           }}
         />
-        <label className="flex items-center gap-2 text-sm text-slate-600">
+        <label className="flex items-center gap-2 text-sm text-foreground-light">
           <input
             type="checkbox"
             checked={expiredOnly}
@@ -295,14 +295,14 @@ export default function PharmacyBatchesPage() {
         <CardHeader title="On-hand batches" subtitle={`${total.toLocaleString()} lots`} />
         <Table headers={["Medication", "Batch", "Qty", "Expiry", "Supplier", ""]}>
           {rows.map((b) => (
-            <tr key={b.id} className="hover:bg-slate-50/60">
-              <td className="px-5 py-3.5 font-medium text-slate-800">{b.medicationName}</td>
-              <td className="px-5 py-3.5 text-slate-500">{b.batchNumber}</td>
-              <td className="px-5 py-3.5 text-slate-500">{b.quantityOnHand}</td>
+            <tr key={b.id} className="hover:bg-surface-200/60">
+              <td className="px-5 py-3.5 font-medium text-foreground">{b.medicationName}</td>
+              <td className="px-5 py-3.5 text-foreground-light">{b.batchNumber}</td>
+              <td className="px-5 py-3.5 text-foreground-light">{b.quantityOnHand}</td>
               <td className="px-5 py-3.5">
                 <Badge tone={b.expired ? "red" : "green"}>{b.expiryDate}</Badge>
               </td>
-              <td className="px-5 py-3.5 text-slate-500">{b.supplierName || "—"}</td>
+              <td className="px-5 py-3.5 text-foreground-light">{b.supplierName || "—"}</td>
               <td className="px-5 py-3.5">
                 <div className="flex justify-end gap-0.5">
                   <TableAction icon={Eye} label="View" onClick={() => void openDetail(b)} />
@@ -370,12 +370,12 @@ export default function PharmacyBatchesPage() {
       </Card>
 
       {createOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
           <div className="max-h-[90vh] w-full max-w-md space-y-3 overflow-y-auto rounded-2xl bg-white p-5 shadow-xl">
             <div className="flex items-center justify-between">
-              <h2 className="font-semibold text-slate-900">Receive lot</h2>
+              <h2 className="font-semibold text-foreground">Receive lot</h2>
               <button type="button" onClick={() => setCreateOpen(false)}>
-                <X className="h-4 w-4 text-slate-400" />
+                <X className="h-4 w-4 text-foreground-lighter" />
               </button>
             </div>
             <div>
@@ -484,15 +484,15 @@ export default function PharmacyBatchesPage() {
       )}
 
       {edit && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
           <div className="w-full max-w-md space-y-3 rounded-2xl bg-white p-5 shadow-xl">
             <div className="flex items-center justify-between">
-              <h2 className="font-semibold text-slate-900">Edit {edit.batchNumber}</h2>
+              <h2 className="font-semibold text-foreground">Edit {edit.batchNumber}</h2>
               <button type="button" onClick={() => setEdit(null)}>
-                <X className="h-4 w-4 text-slate-400" />
+                <X className="h-4 w-4 text-foreground-lighter" />
               </button>
             </div>
-            <p className="text-xs text-slate-400">Quantity is changed via adjust / damage / return / expiry.</p>
+            <p className="text-xs text-foreground-lighter">Quantity is changed via adjust / damage / return / expiry.</p>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <FieldLabel optional>Unit cost</FieldLabel>
@@ -531,15 +531,15 @@ export default function PharmacyBatchesPage() {
       )}
 
       {stock && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
           <div className="w-full max-w-md space-y-3 rounded-2xl bg-white p-5 shadow-xl">
-            <h2 className="font-semibold text-slate-900">
+            <h2 className="font-semibold text-foreground">
               {stock.kind === "damage" && "Record damage"}
               {stock.kind === "adjust" && "Adjust stock"}
               {stock.kind === "return" && "Return to stock"}
               {stock.kind === "expiry" && "Write off expired stock"}
             </h2>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-foreground-light">
               {stock.batch.medicationName} · {stock.batch.batchNumber} · on hand{" "}
               {stock.batch.quantityOnHand}
             </p>
@@ -564,7 +564,7 @@ export default function PharmacyBatchesPage() {
               <PrimaryButton disabled={busy} onClick={() => void submitStock()}>
                 {busy ? "Saving…" : "Confirm"}
               </PrimaryButton>
-              <button type="button" className="text-sm text-slate-500" onClick={() => setStock(null)}>
+              <button type="button" className="text-sm text-foreground-light" onClick={() => setStock(null)}>
                 Cancel
               </button>
             </div>
@@ -573,40 +573,40 @@ export default function PharmacyBatchesPage() {
       )}
 
       {detail && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
           <div className="max-h-[90vh] w-full max-w-lg space-y-3 overflow-y-auto rounded-2xl bg-white p-5 shadow-xl">
             <div className="flex items-center justify-between">
-              <h2 className="font-semibold text-slate-900">{detail.batchNumber}</h2>
+              <h2 className="font-semibold text-foreground">{detail.batchNumber}</h2>
               <button type="button" onClick={() => setDetail(null)}>
-                <X className="h-4 w-4 text-slate-400" />
+                <X className="h-4 w-4 text-foreground-lighter" />
               </button>
             </div>
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-foreground-light">
               {detail.medicationName} · {detail.quantityOnHand} on hand · exp {detail.expiryDate}
               {detail.expired ? " · expired" : ""}
             </p>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-foreground-light">
               Cost KES {Number(detail.unitCost || 0).toLocaleString()} · Sell KES{" "}
               {Number(detail.sellingPrice || 0).toLocaleString()}
               {detail.manufacturingDate ? ` · mfg ${detail.manufacturingDate}` : ""}
               {detail.supplierName ? ` · ${detail.supplierName}` : ""}
               {detail.createdByName ? ` · received by ${detail.createdByName}` : ""}
             </p>
-            {detail.notes && <p className="text-sm text-slate-600">{detail.notes}</p>}
+            {detail.notes && <p className="text-sm text-foreground-light">{detail.notes}</p>}
             <div>
-              <p className="mb-2 text-[11px] font-semibold uppercase text-slate-400">Ledger</p>
+              <p className="mb-2 text-[11px] font-semibold uppercase text-foreground-lighter">Ledger</p>
               {movements.length === 0 ? (
-                <p className="text-sm text-slate-400">No movements on this lot.</p>
+                <p className="text-sm text-foreground-lighter">No movements on this lot.</p>
               ) : (
                 <ul className="space-y-1 text-sm">
                   {movements.map((m) => (
                     <li key={m.id} className="rounded-xl bg-[#f3f7f7] px-3 py-2">
-                      <span className="font-medium text-slate-700">{m.movementType}</span>
-                      <span className="text-slate-500">
+                      <span className="font-medium text-foreground">{m.movementType}</span>
+                      <span className="text-foreground-light">
                         {" "}
                         {m.quantityChange} · {new Date(m.createdAt).toLocaleString()}
                       </span>
-                      {m.notes ? <span className="block text-xs text-slate-400">{m.notes}</span> : null}
+                      {m.notes ? <span className="block text-xs text-foreground-lighter">{m.notes}</span> : null}
                     </li>
                   ))}
                 </ul>

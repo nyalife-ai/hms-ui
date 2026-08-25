@@ -26,6 +26,7 @@ import { useAuth } from "@/lib/auth";
 import { type Role } from "@/lib/roles";
 import { useDashboardSummary, type DashboardSummary } from "@/lib/catalog";
 import { Avatar, Badge, Card, CardHeader, StatCard, Table, cell, type BadgeTone } from "@/components/ui";
+import { PageLayout, ScaffoldContainer } from "@/components/studio";
 import { AgeStagesChart, DepartmentsDonut, RevenueLineChart } from "@/components/charts";
 import {
   AgendaCard,
@@ -320,7 +321,7 @@ function WorkspaceCard({ role }: { role: Role }) {
           <Link
             key={item.href}
             href={item.href}
-            className="flex items-center gap-3 rounded-xl bg-slate-50 px-3 py-3 text-sm font-medium text-slate-700 transition hover:bg-brand-50 hover:text-brand-700"
+            className="flex items-center gap-3 rounded-lg bg-surface-200 px-3 py-3 text-sm font-medium text-foreground transition hover:bg-brand-50 hover:text-brand-700"
           >
             <item.icon className="h-4 w-4 shrink-0 text-brand-600" />
             {item.label}
@@ -353,21 +354,21 @@ function AppointmentsTable({
       />
       <Table headers={["Name", "Doctor (+ Specialty)", "Appointment Type", "Date & Time", "Status"]}>
         {appointments.map((a) => (
-          <tr key={a.id} className="transition hover:bg-slate-50/60">
+          <tr key={a.id} className="transition hover:bg-surface-200/60">
             <td className={cell}>
               <div className="flex items-center gap-3">
                 <Avatar name={a.patient} size="sm" />
-                <span className="font-semibold text-slate-800">{a.patient}</span>
+                <span className="font-semibold text-foreground">{a.patient}</span>
               </div>
             </td>
             <td className={cell}>
-              <span className="block text-slate-700">{a.doctor}</span>
-              <span className="text-xs text-slate-400">{a.department}</span>
+              <span className="block text-foreground">{a.doctor}</span>
+              <span className="text-xs text-foreground-lighter">{a.department}</span>
             </td>
-            <td className={`${cell} text-slate-500`}>{a.type}</td>
+            <td className={`${cell} text-foreground-light`}>{a.type}</td>
             <td className={cell}>
-              <span className="block text-slate-700">{a.date}</span>
-              <span className="text-xs text-slate-400">{a.time}</span>
+              <span className="block text-foreground">{a.date}</span>
+              <span className="text-xs text-foreground-lighter">{a.time}</span>
             </td>
             <td className={cell}>
               <Badge tone={APPOINTMENT_TONES[a.status]}>{a.status}</Badge>
@@ -426,13 +427,10 @@ export default function DashboardPage() {
         : "Patient appointments";
 
   return (
+    <PageLayout title={copy.title} subtitle={copy.subtitle(firstName)}>
+      <ScaffoldContainer className="pb-8 pt-6">
     <div className="grid grid-cols-1 gap-6 2xl:grid-cols-[1fr_320px]">
       <div className="min-w-0 space-y-5">
-        <div className="rounded-2xl bg-brand-50 px-5 py-4">
-          <h1 className="text-xl font-bold tracking-tight text-brand-800">{copy.title}</h1>
-          <p className="mt-0.5 text-sm text-brand-600/80">{copy.subtitle(firstName)}</p>
-        </div>
-
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <RoleStats role={role} summary={summary} />
         </div>
@@ -457,14 +455,14 @@ export default function DashboardPage() {
               </div>
               <ul className="grid grid-cols-2 gap-x-3 gap-y-2 px-5 pb-5">
                 {deptDistribution.length === 0 ? (
-                  <li className="col-span-2 text-[11px] text-slate-400">No specialty volume yet.</li>
+                  <li className="col-span-2 text-[11px] text-foreground-lighter">No specialty volume yet.</li>
                 ) : (
                   deptDistribution.map((d) => (
                     <li key={d.name} className="flex items-center gap-2 text-[11px]">
                       <span className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ background: d.color }} />
                       <span className="min-w-0">
-                        <span className="block truncate font-medium text-slate-700">{d.name}</span>
-                        <span className="text-slate-400">{d.value.toLocaleString()} appointments</span>
+                        <span className="block truncate font-medium text-foreground">{d.name}</span>
+                        <span className="text-foreground-lighter">{d.value.toLocaleString()} appointments</span>
                       </span>
                     </li>
                   ))
@@ -489,7 +487,7 @@ export default function DashboardPage() {
                 <CardHeader title="Live reports" />
                 <ul className="space-y-1 px-3 pb-4">
                   {reports.length === 0 ? (
-                    <li className="px-2 py-4 text-sm text-slate-400">No operational alerts right now.</li>
+                    <li className="px-2 py-4 text-sm text-foreground-lighter">No operational alerts right now.</li>
                   ) : (
                     reports.map((report) => {
                       const href = reportHref(report.source, role);
@@ -503,8 +501,8 @@ export default function DashboardPage() {
                               <AlertCircle className="h-4 w-4" />
                             </span>
                             <div className="min-w-0 flex-1">
-                              <p className="text-xs font-semibold leading-snug text-slate-800">{report.title}</p>
-                              <p className="mt-0.5 text-[11px] text-slate-400">
+                              <p className="text-xs font-semibold leading-snug text-foreground">{report.title}</p>
+                              <p className="mt-0.5 text-[11px] text-foreground-lighter">
                                 {report.source} · {report.time}
                               </p>
                             </div>
@@ -534,5 +532,7 @@ export default function DashboardPage() {
         <RecentActivityCard />
       </div>
     </div>
+      </ScaffoldContainer>
+    </PageLayout>
   );
 }

@@ -46,7 +46,7 @@ export function DoctorSearchSelect({
   return (
     <div className="relative">
       <input
-        className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20"
+        className="w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20"
         placeholder={selectedLabel || placeholder}
         value={open ? query : selectedLabel || query}
         disabled={disabled}
@@ -63,11 +63,11 @@ export function DoctorSearchSelect({
       {open && (
         <ul
           id={listId}
-          className="absolute z-30 mt-1 max-h-56 w-full overflow-y-auto rounded-xl border border-slate-100 bg-white py-1 shadow-lg"
+          className="absolute z-30 mt-1 max-h-56 w-full overflow-y-auto rounded-xl border border-border bg-white py-1 shadow-lg"
         >
-          {loading && <li className="px-3 py-2 text-xs text-slate-400">Searching…</li>}
+          {loading && <li className="px-3 py-2 text-xs text-foreground-lighter">Searching…</li>}
           {!loading && hits.length === 0 && (
-            <li className="px-3 py-2 text-xs text-slate-400">No matching doctors.</li>
+            <li className="px-3 py-2 text-xs text-foreground-lighter">No matching doctors.</li>
           )}
           {hits.map((d) => (
             <li key={d.id}>
@@ -82,8 +82,8 @@ export function DoctorSearchSelect({
                   setOpen(false);
                 }}
               >
-                <span className="text-sm font-medium text-slate-800">{d.name}</span>
-                <span className="text-[11px] text-slate-400">{d.specialty}</span>
+                <span className="text-sm font-medium text-foreground">{d.name}</span>
+                <span className="text-[11px] text-foreground-lighter">{d.specialty}</span>
               </button>
             </li>
           ))}

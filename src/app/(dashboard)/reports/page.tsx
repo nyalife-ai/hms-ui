@@ -51,7 +51,7 @@ import {
 import type { Role } from "@/lib/roles";
 
 const inputClass =
-  "rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "rounded-xl border border-border bg-white px-3 py-2 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 const KPI_ICONS: Record<string, LucideIcon> = {
   patients: Users,
@@ -182,8 +182,8 @@ export default function ReportsAnalyticsPage() {
         }
       />
 
-      <div className="mb-4 flex flex-wrap items-end gap-3 rounded-2xl border border-slate-100 bg-white p-4">
-        <label className="flex flex-col gap-1 text-xs font-medium text-slate-500">
+      <div className="mb-4 flex flex-wrap items-end gap-3 rounded-2xl border border-border bg-white p-4">
+        <label className="flex flex-col gap-1 text-xs font-medium text-foreground-light">
           Date range
           <select
             className={inputClass}
@@ -199,7 +199,7 @@ export default function ReportsAnalyticsPage() {
         </label>
         {preset === "custom" && (
           <>
-            <label className="flex flex-col gap-1 text-xs font-medium text-slate-500">
+            <label className="flex flex-col gap-1 text-xs font-medium text-foreground-light">
               From
               <input
                 type="date"
@@ -208,7 +208,7 @@ export default function ReportsAnalyticsPage() {
                 onChange={(e) => setFrom(e.target.value)}
               />
             </label>
-            <label className="flex flex-col gap-1 text-xs font-medium text-slate-500">
+            <label className="flex flex-col gap-1 text-xs font-medium text-foreground-light">
               To
               <input
                 type="date"
@@ -219,7 +219,7 @@ export default function ReportsAnalyticsPage() {
             </label>
           </>
         )}
-        <label className="flex flex-col gap-1 text-xs font-medium text-slate-500">
+        <label className="flex flex-col gap-1 text-xs font-medium text-foreground-light">
           Comparison
           <select
             className={inputClass}
@@ -234,7 +234,7 @@ export default function ReportsAnalyticsPage() {
             <option value="none">None</option>
           </select>
         </label>
-        <label className="flex flex-col gap-1 text-xs font-medium text-slate-500">
+        <label className="flex flex-col gap-1 text-xs font-medium text-foreground-light">
           Granularity
           <select
             className={inputClass}
@@ -251,7 +251,7 @@ export default function ReportsAnalyticsPage() {
           </select>
         </label>
         {showStatus && (
-          <label className="flex flex-col gap-1 text-xs font-medium text-slate-500">
+          <label className="flex flex-col gap-1 text-xs font-medium text-foreground-light">
             Status
             <input
               className={inputClass}
@@ -261,7 +261,7 @@ export default function ReportsAnalyticsPage() {
             />
           </label>
         )}
-        <div className="ml-auto text-xs text-slate-400">
+        <div className="ml-auto text-xs text-foreground-lighter">
           {payload?.meta.generatedAt
             ? `Last updated: ${formatUpdated(payload.meta.generatedAt)}`
             : loading
@@ -275,7 +275,7 @@ export default function ReportsAnalyticsPage() {
         </div>
       </div>
 
-      <div className="mb-5 flex gap-1 overflow-x-auto border-b border-slate-100 pb-px">
+      <div className="mb-5 flex gap-1 overflow-x-auto border-b border-border pb-px">
         {tabs.map((t) => {
           const active = t.id === tab;
           return (
@@ -286,7 +286,7 @@ export default function ReportsAnalyticsPage() {
               className={`whitespace-nowrap rounded-t-xl px-4 py-2.5 text-sm font-medium transition ${
                 active
                   ? "bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-100"
-                  : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
+                  : "text-foreground-light hover:bg-surface-200 hover:text-foreground"
               }`}
             >
               {t.label}
@@ -302,7 +302,7 @@ export default function ReportsAnalyticsPage() {
       )}
 
       {!activeTab ? (
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-foreground-light">
           No analytics tabs are available for your role.
         </p>
       ) : (
@@ -334,14 +334,14 @@ function DomainPanel({
             <StatCardSkeleton key={i} />
           ))}
         </div>
-        <div className="h-72 animate-pulse rounded-2xl border border-slate-100 bg-slate-50" />
+        <div className="h-72 animate-pulse rounded-2xl border border-border bg-surface-200" />
       </div>
     );
   }
 
   if (!payload) {
     return (
-      <Card className="p-8 text-center text-sm text-slate-500">
+      <Card className="p-8 text-center text-sm text-foreground-light">
         Unable to load {domainLabel} analytics.
       </Card>
     );
@@ -459,7 +459,7 @@ function DomainPanel({
         <Card key={t.key} className="p-4">
           <CardHeader title={t.label} subtitle="Exact values behind the charts" />
           {!t.hasData ? (
-            <p className="px-2 py-8 text-center text-sm text-slate-400">
+            <p className="px-2 py-8 text-center text-sm text-foreground-lighter">
               No data available for this period.
             </p>
           ) : (
@@ -482,14 +482,14 @@ function DomainPanel({
         </Card>
       ))}
 
-      <details className="rounded-xl border border-slate-100 bg-white p-4 text-xs text-slate-500">
-        <summary className="cursor-pointer font-medium text-slate-700">
+      <details className="rounded-xl border border-border bg-white p-4 text-xs text-foreground-light">
+        <summary className="cursor-pointer font-medium text-foreground">
           Metric definitions
         </summary>
         <ul className="mt-3 space-y-2">
           {kpis.map((k) => (
             <li key={k.key}>
-              <span className="font-semibold text-slate-700">{k.label}:</span>{" "}
+              <span className="font-semibold text-foreground">{k.label}:</span>{" "}
               {k.definition}
             </li>
           ))}

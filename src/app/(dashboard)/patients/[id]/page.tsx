@@ -215,7 +215,7 @@ export default function PatientProfilePage() {
 
   return (
     <RoleGuard module="patients">
-      <div className="mb-2 text-[11px] font-medium uppercase tracking-wide text-slate-400">
+      <div className="mb-2 text-[11px] font-medium uppercase tracking-wide text-foreground-lighter">
         Home / Patients / {detail?.mrn ?? "Patient"}
       </div>
       <PageHeader
@@ -238,7 +238,7 @@ export default function PatientProfilePage() {
             )}
             <Link
               href="/patients"
-              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-brand-300"
+              className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-foreground hover:border-brand-300"
             >
               Back to registry
             </Link>
@@ -262,13 +262,13 @@ export default function PatientProfilePage() {
       {loading && (
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-28 animate-pulse rounded-2xl bg-slate-100" />
+            <div key={i} className="h-28 animate-pulse rounded-2xl bg-surface-200" />
           ))}
         </div>
       )}
 
       {!loading && !error && !detail && (
-        <Card className="p-8 text-center text-sm text-slate-500">
+        <Card className="p-8 text-center text-sm text-foreground-light">
           No patient found for this id.
         </Card>
       )}
@@ -321,21 +321,21 @@ export default function PatientProfilePage() {
                 action={<Avatar name={detail.name} size="sm" />}
               />
               <div className="space-y-2 px-5 pb-5 text-sm">
-                <p className="text-base font-bold text-slate-900">{detail.name}</p>
-                <p className="text-xs text-slate-400">PAT-ID: {detail.mrn}</p>
-                <p className="text-xs text-slate-400">REF: {detail.referenceCode}</p>
+                <p className="text-base font-bold text-foreground">{detail.name}</p>
+                <p className="text-xs text-foreground-lighter">PAT-ID: {detail.mrn}</p>
+                <p className="text-xs text-foreground-lighter">REF: {detail.referenceCode}</p>
                 <p className="pt-2">
-                  <span className="text-xs text-slate-400">Phone</span>
+                  <span className="text-xs text-foreground-lighter">Phone</span>
                   <br />
                   <span className="font-medium">{detail.phone || "—"}</span>
                 </p>
                 <p>
-                  <span className="text-xs text-slate-400">Email</span>
+                  <span className="text-xs text-foreground-lighter">Email</span>
                   <br />
                   <span className="font-medium">{detail.email || "—"}</span>
                 </p>
                 <p>
-                  <span className="text-xs text-slate-400">Address</span>
+                  <span className="text-xs text-foreground-lighter">Address</span>
                   <br />
                   <span className="font-medium">
                     {[detail.address, detail.city, detail.country, detail.postalCode]
@@ -344,12 +344,12 @@ export default function PatientProfilePage() {
                   </span>
                 </p>
                 <p>
-                  <span className="text-xs text-slate-400">Date of birth</span>
+                  <span className="text-xs text-foreground-lighter">Date of birth</span>
                   <br />
                   <span className="font-medium">{detail.dateOfBirth || "—"}</span>
                 </p>
                 <p>
-                  <span className="text-xs text-slate-400">Registered</span>
+                  <span className="text-xs text-foreground-lighter">Registered</span>
                   <br />
                   <span className="font-medium">
                     {formatDate(detail.registeredAt)}
@@ -362,26 +362,26 @@ export default function PatientProfilePage() {
               <CardHeader title="Emergency & clinical" />
               <div className="space-y-2 px-5 pb-5 text-sm">
                 <p>
-                  <span className="text-xs text-slate-400">Next of kin</span>
+                  <span className="text-xs text-foreground-lighter">Next of kin</span>
                   <br />
                   <span className="font-semibold">
                     {detail.emergencyContact?.name || "Not specified"}
                   </span>
                 </p>
                 <p>
-                  <span className="text-xs text-slate-400">Contact line</span>
+                  <span className="text-xs text-foreground-lighter">Contact line</span>
                   <br />
                   <span className="font-medium">
                     {detail.emergencyContact?.phone || "—"}
                   </span>
                 </p>
                 <p>
-                  <span className="text-xs text-slate-400">Allergies</span>
+                  <span className="text-xs text-foreground-lighter">Allergies</span>
                   <br />
                   <span className="font-medium">{detail.allergies || "—"}</span>
                 </p>
                 <p>
-                  <span className="text-xs text-slate-400">Chronic diseases</span>
+                  <span className="text-xs text-foreground-lighter">Chronic diseases</span>
                   <br />
                   <span className="font-medium">
                     {detail.chronicDiseases || "—"}
@@ -389,7 +389,7 @@ export default function PatientProfilePage() {
                 </p>
                 {(detail.insurance?.length ?? 0) > 0 && (
                   <div className="pt-2">
-                    <span className="text-xs text-slate-400">Insurance</span>
+                    <span className="text-xs text-foreground-lighter">Insurance</span>
                     <ul className="mt-1 space-y-1">
                       {detail.insurance!.map((pol) => (
                         <li key={pol.id} className="text-sm font-medium">
@@ -410,7 +410,7 @@ export default function PatientProfilePage() {
                   <button
                     type="button"
                     onClick={() => setVitalsOpen(true)}
-                    className="text-slate-400 hover:text-brand-700"
+                    className="text-foreground-lighter hover:text-brand-700"
                     aria-label="View vitals history"
                   >
                     <Eye className="h-4 w-4" />
@@ -418,19 +418,19 @@ export default function PatientProfilePage() {
                 }
               />
               <div className="space-y-2 px-5 pb-5 text-sm">
-                <p className="text-xs font-semibold text-slate-500">
+                <p className="text-xs font-semibold text-foreground-light">
                   Physical profile
                 </p>
                 <div className="grid grid-cols-2 gap-2">
                   <p>
-                    <span className="text-xs text-slate-400">Height</span>
+                    <span className="text-xs text-foreground-lighter">Height</span>
                     <br />
                     {detail.physical.height != null
                       ? `${detail.physical.height} cm`
                       : "—"}
                   </p>
                   <p>
-                    <span className="text-xs text-slate-400">Weight</span>
+                    <span className="text-xs text-foreground-lighter">Weight</span>
                     <br />
                     {detail.physical.weight != null
                       ? `${detail.physical.weight} kg`
@@ -438,22 +438,22 @@ export default function PatientProfilePage() {
                   </p>
                 </div>
                 <p>
-                  <span className="text-xs text-slate-400">Blood group</span>
+                  <span className="text-xs text-foreground-lighter">Blood group</span>
                   <br />
                   {detail.bloodGroup || "—"}
                 </p>
                 <p>
-                  <span className="text-xs text-slate-400">Occupation</span>
+                  <span className="text-xs text-foreground-lighter">Occupation</span>
                   <br />
                   {detail.occupation || "—"}
                 </p>
                 <p>
-                  <span className="text-xs text-slate-400">Marital status</span>
+                  <span className="text-xs text-foreground-lighter">Marital status</span>
                   <br />
                   {detail.maritalStatus || "—"}
                 </p>
                 <p>
-                  <span className="text-xs text-slate-400">Prescriptions</span>{" "}
+                  <span className="text-xs text-foreground-lighter">Prescriptions</span>{" "}
                   <span className="font-semibold">
                     {detail.counts.prescriptions}
                   </span>
@@ -475,7 +475,7 @@ export default function PatientProfilePage() {
                 </button>
               }
             />
-            <div className="px-5 pb-5 text-sm text-slate-600">
+            <div className="px-5 pb-5 text-sm text-foreground-light">
               {!detail.latestVitals ? (
                 <EmptyState
                   icon={HeartPulse}
@@ -515,7 +515,7 @@ export default function PatientProfilePage() {
                       {detail.latestVitals.weight ?? "—"}
                     </span>
                   </p>
-                  <p className="text-xs text-slate-400 sm:col-span-3">
+                  <p className="text-xs text-foreground-lighter sm:col-span-3">
                     Measured {formatDate(detail.latestVitals.measuredAt)}
                     {detail.latestVitals.source
                       ? ` · ${detail.latestVitals.source}`
@@ -546,9 +546,9 @@ export default function PatientProfilePage() {
               ).map((item) => (
                 <tr
                   key={`${item.kind}-${item.id}`}
-                  className="hover:bg-slate-50/60"
+                  className="hover:bg-surface-200/60"
                 >
-                  <td className="px-4 py-2.5 font-medium text-slate-800">
+                  <td className="px-4 py-2.5 font-medium text-foreground">
                     {item.kind === "consultation" ? (
                       <button
                         type="button"
@@ -563,17 +563,17 @@ export default function PatientProfilePage() {
                       </Link>
                     )}
                     {item.summary ? (
-                      <p className="text-xs font-normal text-slate-400">
+                      <p className="text-xs font-normal text-foreground-lighter">
                         {item.summary}
                       </p>
                     ) : null}
                   </td>
-                  <td className="px-4 py-2.5 text-slate-500">
+                  <td className="px-4 py-2.5 text-foreground-light">
                     {item.date}
                     <br />
                     <span className="text-xs">{item.time}</span>
                   </td>
-                  <td className="px-4 py-2.5 text-slate-600">{item.provider}</td>
+                  <td className="px-4 py-2.5 text-foreground-light">{item.provider}</td>
                   <td className="px-4 py-2.5">
                     <Badge tone={STATUS_TONES[item.status] ?? "slate"}>
                       {item.status.replace(/_/g, " ")}
@@ -623,15 +623,15 @@ export default function PatientProfilePage() {
               ]}
             >
               {detail.consultations.map((c) => (
-                <tr key={c.id} className="hover:bg-slate-50/60">
-                  <td className="px-4 py-2.5 font-medium text-slate-800">
+                <tr key={c.id} className="hover:bg-surface-200/60">
+                  <td className="px-4 py-2.5 font-medium text-foreground">
                     {c.id.slice(0, 8).toUpperCase()}
                   </td>
-                  <td className="px-4 py-2.5 text-slate-500">
+                  <td className="px-4 py-2.5 text-foreground-light">
                     {new Date(c.date).toLocaleString()}
                   </td>
-                  <td className="px-4 py-2.5 text-slate-600">{c.physician}</td>
-                  <td className="px-4 py-2.5 text-slate-600">{c.diagnosis}</td>
+                  <td className="px-4 py-2.5 text-foreground-light">{c.physician}</td>
+                  <td className="px-4 py-2.5 text-foreground-light">{c.diagnosis}</td>
                   <td className="px-4 py-2.5">
                     <Badge tone={STATUS_TONES[c.status] ?? "slate"}>
                       {c.status}
@@ -705,10 +705,10 @@ export default function PatientProfilePage() {
               return (
                 <li
                   key={v.id}
-                  className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm"
+                  className="rounded-xl border border-border bg-surface-200 px-4 py-3 text-sm"
                 >
                   <div className="flex flex-wrap items-start justify-between gap-2">
-                    <p className="font-semibold text-slate-800">
+                    <p className="font-semibold text-foreground">
                       {when.date}
                       {when.time ? ` · ${when.time}` : ""}
                     </p>
@@ -719,7 +719,7 @@ export default function PatientProfilePage() {
                       ) : null}
                     </div>
                   </div>
-                  <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-slate-600 sm:grid-cols-3">
+                  <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-foreground-light sm:grid-cols-3">
                     <p>
                       Temp{" "}
                       <span className="font-semibold">
@@ -770,10 +770,10 @@ export default function PatientProfilePage() {
                     </p>
                   </div>
                   {v.notes ? (
-                    <p className="mt-2 text-xs text-slate-500">{v.notes}</p>
+                    <p className="mt-2 text-xs text-foreground-light">{v.notes}</p>
                   ) : null}
                   {v.recordedBy ? (
-                    <p className="mt-1 text-[11px] text-slate-400">
+                    <p className="mt-1 text-[11px] text-foreground-lighter">
                       Recorded by {v.recordedBy}
                     </p>
                   ) : null}
@@ -808,14 +808,14 @@ export default function PatientProfilePage() {
                   <li key={a.id}>
                     <Link
                       href={`/appointments/${a.id}`}
-                      className="block rounded-xl border border-slate-100 px-3 py-2 text-sm hover:border-brand-200"
+                      className="block rounded-xl border border-border px-3 py-2 text-sm hover:border-brand-200"
                     >
                       <span className="font-semibold">{a.appointmentNumber}</span>
-                      <span className="text-slate-500">
+                      <span className="text-foreground-light">
                         {" "}
                         · {a.date} {a.time}
                       </span>
-                      <p className="text-xs text-slate-400">
+                      <p className="text-xs text-foreground-lighter">
                         {a.provider} · {a.status}
                       </p>
                     </Link>
@@ -840,11 +840,11 @@ export default function PatientProfilePage() {
                 {scheduledFollowUps.map((f) => (
                   <li
                     key={f.id}
-                    className="rounded-xl border border-slate-100 px-3 py-2 text-sm"
+                    className="rounded-xl border border-border px-3 py-2 text-sm"
                   >
                     <span className="font-semibold">{f.date}</span>
                     <Badge tone="blue">Follow-up</Badge>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-foreground-light">
                       {f.reason || "Follow-up"}
                       {f.provider ? ` · ${f.provider}` : ""}
                       {f.status ? ` · ${f.status}` : ""}
@@ -864,11 +864,11 @@ export default function PatientProfilePage() {
         size="md"
       >
         {!activeConsultation ? (
-          <p className="text-sm text-slate-400">Consultation not found.</p>
+          <p className="text-sm text-foreground-lighter">Consultation not found.</p>
         ) : (
           <dl className="space-y-3 text-sm">
             <div>
-              <dt className="text-[10px] uppercase tracking-wide text-slate-400">
+              <dt className="text-[10px] uppercase tracking-wide text-foreground-lighter">
                 Date
               </dt>
               <dd className="font-medium">
@@ -876,13 +876,13 @@ export default function PatientProfilePage() {
               </dd>
             </div>
             <div>
-              <dt className="text-[10px] uppercase tracking-wide text-slate-400">
+              <dt className="text-[10px] uppercase tracking-wide text-foreground-lighter">
                 Physician
               </dt>
               <dd className="font-medium">{activeConsultation.physician}</dd>
             </div>
             <div>
-              <dt className="text-[10px] uppercase tracking-wide text-slate-400">
+              <dt className="text-[10px] uppercase tracking-wide text-foreground-lighter">
                 Status
               </dt>
               <dd>
@@ -892,7 +892,7 @@ export default function PatientProfilePage() {
               </dd>
             </div>
             <div>
-              <dt className="text-[10px] uppercase tracking-wide text-slate-400">
+              <dt className="text-[10px] uppercase tracking-wide text-foreground-lighter">
                 Chief complaint
               </dt>
               <dd className="font-medium">
@@ -900,44 +900,44 @@ export default function PatientProfilePage() {
               </dd>
             </div>
             <div>
-              <dt className="text-[10px] uppercase tracking-wide text-slate-400">
+              <dt className="text-[10px] uppercase tracking-wide text-foreground-lighter">
                 Primary diagnosis
               </dt>
               <dd className="font-medium">{activeConsultation.diagnosis}</dd>
             </div>
             {activeConsultation.historyPresentIllness ? (
               <div>
-                <dt className="text-[10px] uppercase tracking-wide text-slate-400">
+                <dt className="text-[10px] uppercase tracking-wide text-foreground-lighter">
                   History of present illness
                 </dt>
-                <dd className="whitespace-pre-wrap text-slate-700">
+                <dd className="whitespace-pre-wrap text-foreground">
                   {activeConsultation.historyPresentIllness}
                 </dd>
               </div>
             ) : null}
             {activeConsultation.physicalExamination ? (
               <div>
-                <dt className="text-[10px] uppercase tracking-wide text-slate-400">
+                <dt className="text-[10px] uppercase tracking-wide text-foreground-lighter">
                   Physical examination
                 </dt>
-                <dd className="whitespace-pre-wrap text-slate-700">
+                <dd className="whitespace-pre-wrap text-foreground">
                   {activeConsultation.physicalExamination}
                 </dd>
               </div>
             ) : null}
             {activeConsultation.treatmentPlan ? (
               <div>
-                <dt className="text-[10px] uppercase tracking-wide text-slate-400">
+                <dt className="text-[10px] uppercase tracking-wide text-foreground-lighter">
                   Treatment plan
                 </dt>
-                <dd className="whitespace-pre-wrap text-slate-700">
+                <dd className="whitespace-pre-wrap text-foreground">
                   {activeConsultation.treatmentPlan}
                 </dd>
               </div>
             ) : null}
             {(activeConsultation.diagnoses?.length ?? 0) > 0 && (
               <div>
-                <dt className="text-[10px] uppercase tracking-wide text-slate-400">
+                <dt className="text-[10px] uppercase tracking-wide text-foreground-lighter">
                   Diagnoses
                 </dt>
                 <dd>
@@ -954,20 +954,20 @@ export default function PatientProfilePage() {
             )}
             {activeConsultation.notes ? (
               <div>
-                <dt className="text-[10px] uppercase tracking-wide text-slate-400">
+                <dt className="text-[10px] uppercase tracking-wide text-foreground-lighter">
                   Doctor notes
                 </dt>
-                <dd className="whitespace-pre-wrap text-slate-700">
+                <dd className="whitespace-pre-wrap text-foreground">
                   {activeConsultation.notes}
                 </dd>
               </div>
             ) : null}
             {activeConsultation.followUpInstructions ? (
               <div>
-                <dt className="text-[10px] uppercase tracking-wide text-slate-400">
+                <dt className="text-[10px] uppercase tracking-wide text-foreground-lighter">
                   Follow-up instructions
                 </dt>
-                <dd className="whitespace-pre-wrap text-slate-700">
+                <dd className="whitespace-pre-wrap text-foreground">
                   {activeConsultation.followUpInstructions}
                 </dd>
               </div>

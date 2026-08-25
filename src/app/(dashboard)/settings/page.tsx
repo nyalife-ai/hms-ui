@@ -20,7 +20,7 @@ import {
 import { unlockNotificationAudio } from "@/lib/notification-sound";
 
 const inputClass =
-  "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 const WEEKDAYS = [
   "Monday",
@@ -358,21 +358,21 @@ export default function SettingsPage() {
     if (key === "logo") {
       return (
         <div key={key} className="space-y-2">
-          <label className="text-sm font-medium text-slate-700">{label}</label>
+          <label className="text-sm font-medium text-foreground">{label}</label>
           {value ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={value}
               alt="Clinic logo"
-              className="h-16 w-auto rounded-lg border border-slate-200 bg-white object-contain p-1"
+              className="h-16 w-auto rounded-lg border border-border bg-white object-contain p-1"
             />
           ) : (
-            <p className="text-xs text-slate-400">No logo uploaded yet.</p>
+            <p className="text-xs text-foreground-lighter">No logo uploaded yet.</p>
           )}
           <input
             type="file"
             accept="image/*"
-            className="block w-full text-sm text-slate-600"
+            className="block w-full text-sm text-foreground-light"
             onChange={(e) => onLogoFile(e.target.files?.[0] ?? null)}
           />
         </div>
@@ -383,13 +383,13 @@ export default function SettingsPage() {
       const on = value === "true" || value === "1" || value === "";
       return (
         <div key={key} className="space-y-1.5">
-          <label className="text-sm font-medium text-slate-700">{label}</label>
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3">
+          <label className="text-sm font-medium text-foreground">{label}</label>
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-surface-200 px-3.5 py-3">
             <div>
-              <p className="text-sm font-medium text-slate-800">
+              <p className="text-sm font-medium text-foreground">
                 {on ? "Enabled — auto-invoice on cash check-in" : "Disabled — free consultation"}
               </p>
-              <p className="mt-0.5 text-xs text-slate-500">
+              <p className="mt-0.5 text-xs text-foreground-light">
                 When on, front desk check-in creates a draft consult fee and sends the patient to finance.
                 Turn off for free-consultation days.
               </p>
@@ -401,7 +401,7 @@ export default function SettingsPage() {
               }
               className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
                 on
-                  ? "bg-slate-200 text-slate-700 hover:bg-slate-300"
+                  ? "bg-slate-200 text-foreground hover:bg-slate-300"
                   : "bg-brand-500 text-white hover:bg-brand-600"
               }`}
             >
@@ -415,7 +415,7 @@ export default function SettingsPage() {
     if (key === "consultation_fee_service_code") {
       return (
         <div key={key} className="space-y-1.5">
-          <label className="text-sm font-medium text-slate-700">{label}</label>
+          <label className="text-sm font-medium text-foreground">{label}</label>
           <select
             className={inputClass}
             value={value}
@@ -430,7 +430,7 @@ export default function SettingsPage() {
               </option>
             ))}
           </select>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-foreground-light">
             Used when charging the triage consultation fee. Edit prices on Billing → Fee schedule.
           </p>
         </div>
@@ -440,7 +440,7 @@ export default function SettingsPage() {
     if (key === "working_days") {
       return (
         <div key={key} className="space-y-2">
-          <label className="text-sm font-medium text-slate-700">{label}</label>
+          <label className="text-sm font-medium text-foreground">{label}</label>
           <div className="flex flex-wrap gap-2">
             {WEEKDAYS.map((day) => {
               const on = workingDays.has(day);
@@ -458,7 +458,7 @@ export default function SettingsPage() {
                   className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
                     on
                       ? "bg-brand-500 text-white"
-                      : "bg-slate-100 text-slate-600 hover:bg-brand-50"
+                      : "bg-surface-200 text-foreground-light hover:bg-brand-50"
                   }`}
                 >
                   {day.slice(0, 3)}
@@ -473,7 +473,7 @@ export default function SettingsPage() {
     if (isTextarea) {
       return (
         <div key={key} className="space-y-1.5">
-          <label className="text-sm font-medium text-slate-700">{label}</label>
+          <label className="text-sm font-medium text-foreground">{label}</label>
           <textarea
             className={`${inputClass} min-h-28 resize-y`}
             value={value}
@@ -486,13 +486,13 @@ export default function SettingsPage() {
     if (isColor) {
       return (
         <div key={key} className="space-y-1.5">
-          <label className="text-sm font-medium text-slate-700">{label}</label>
+          <label className="text-sm font-medium text-foreground">{label}</label>
           <div className="flex items-center gap-3">
             <input
               type="color"
               value={value || "#058b7c"}
               onChange={(e) => setValue(group, key, e.target.value)}
-              className="h-10 w-14 cursor-pointer rounded border border-slate-200 bg-white"
+              className="h-10 w-14 cursor-pointer rounded border border-border bg-white"
             />
             <input
               className={inputClass}
@@ -514,7 +514,7 @@ export default function SettingsPage() {
 
     return (
       <div key={key} className="space-y-1.5">
-        <label className="text-sm font-medium text-slate-700">{label}</label>
+        <label className="text-sm font-medium text-foreground">{label}</label>
         <input
           className={inputClass}
           type={inputType}
@@ -589,7 +589,7 @@ export default function SettingsPage() {
               className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition ${
                 section === tab.id
                   ? "bg-brand-500 text-white"
-                  : "bg-white text-slate-500 shadow-sm hover:bg-brand-50 hover:text-brand-700"
+                  : "bg-white text-foreground-light shadow-sm hover:bg-brand-50 hover:text-brand-700"
               }`}
             >
               <tab.icon className="h-4 w-4" />
@@ -654,10 +654,10 @@ export default function SettingsPage() {
           />
           <div className="flex flex-wrap items-center justify-between gap-3 px-5 pb-5 sm:max-w-xl">
             <div>
-              <p className="text-sm font-medium text-slate-800">
+              <p className="text-sm font-medium text-foreground">
                 Enable notification sounds
               </p>
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="mt-1 text-xs text-foreground-light">
                 {soundEnabled ? "On — play a chime for new live alerts" : "Off — silent alerts only"}
               </p>
             </div>
@@ -668,7 +668,7 @@ export default function SettingsPage() {
               className={`rounded-full px-4 py-2 text-sm font-semibold transition disabled:opacity-50 ${
                 soundEnabled
                   ? "bg-brand-500 text-white hover:bg-brand-600"
-                  : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                  : "bg-surface-200 text-foreground hover:bg-slate-200"
               }`}
             >
               {soundEnabled ? "On" : "Off"}
@@ -696,10 +696,10 @@ export default function SettingsPage() {
             />
             <div className="flex flex-wrap items-center justify-between gap-3 px-5 pb-5 sm:max-w-xl">
               <div>
-                <p className="text-sm font-medium text-slate-800">
+                <p className="text-sm font-medium text-foreground">
                   {twoFactor ? "Enabled" : "Disabled"}
                 </p>
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-1 text-xs text-foreground-light">
                   Codes are sent to {user?.email || "your account email"}.
                 </p>
               </div>
@@ -709,7 +709,7 @@ export default function SettingsPage() {
                 onClick={() => void toggleTwoFactor(!twoFactor)}
                 className={`rounded-full px-4 py-2 text-sm font-semibold transition disabled:opacity-50 ${
                   twoFactor
-                    ? "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                    ? "bg-surface-200 text-foreground hover:bg-slate-200"
                     : "bg-brand-500 text-white hover:bg-brand-600"
                 }`}
               >

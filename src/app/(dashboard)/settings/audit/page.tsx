@@ -24,7 +24,7 @@ import { api } from "@/lib/api";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 
 const inputClass =
-  "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 type ChangedField = { field: string; from: unknown; to: unknown };
 
@@ -196,7 +196,7 @@ export default function AuditLogsPage() {
             <button
               type="button"
               onClick={() => void load()}
-              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 hover:border-brand-300 hover:text-brand-700"
+              className="inline-flex items-center gap-1.5 rounded-full border border-border bg-white px-3 py-1.5 text-xs font-semibold text-foreground-light hover:border-brand-300 hover:text-brand-700"
             >
               <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
               Refresh
@@ -207,7 +207,7 @@ export default function AuditLogsPage() {
           <div className="xl:col-span-2">
             <FieldLabel>Search</FieldLabel>
             <div className="relative mt-1.5">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground-lighter" />
               <input
                 className={`${inputClass} pl-9`}
                 value={search}
@@ -289,7 +289,7 @@ export default function AuditLogsPage() {
         <div className="overflow-x-auto px-5 pb-5">
           <table className="w-full min-w-[720px] text-left text-sm">
             <thead>
-              <tr className="border-b border-slate-100 text-[11px] uppercase tracking-wide text-slate-400">
+              <tr className="border-b border-border text-[11px] uppercase tracking-wide text-foreground-lighter">
                 <th className="py-2 pr-3 font-semibold">When</th>
                 <th className="py-2 pr-3 font-semibold">Action</th>
                 <th className="py-2 pr-3 font-semibold">Entity</th>
@@ -301,15 +301,15 @@ export default function AuditLogsPage() {
             <tbody>
               {loading && (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-slate-400">
+                  <td colSpan={6} className="py-8 text-center text-foreground-lighter">
                     Loading audit events…
                   </td>
                 </tr>
               )}
               {!loading && items.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="py-10 text-center text-slate-400">
-                    <Shield className="mx-auto mb-2 h-8 w-8 text-slate-300" />
+                  <td colSpan={6} className="py-10 text-center text-foreground-lighter">
+                    <Shield className="mx-auto mb-2 h-8 w-8 text-foreground-muted" />
                     No audit events match these filters.
                   </td>
                 </tr>
@@ -318,9 +318,9 @@ export default function AuditLogsPage() {
                 items.map((row) => (
                   <tr
                     key={row.id}
-                    className="border-b border-slate-50 last:border-0 hover:bg-brand-50/40"
+                    className="border-b border-border last:border-0 hover:bg-brand-50/40"
                   >
-                    <td className="py-3 pr-3 text-slate-600 whitespace-nowrap">
+                    <td className="py-3 pr-3 text-foreground-light whitespace-nowrap">
                       {formatWhen(row.createdAt)}
                     </td>
                     <td className="py-3 pr-3">
@@ -329,20 +329,20 @@ export default function AuditLogsPage() {
                       </Badge>
                     </td>
                     <td className="py-3 pr-3">
-                      <p className="font-medium text-slate-800">{row.entityType}</p>
-                      <p className="font-mono text-[10px] text-slate-400">
+                      <p className="font-medium text-foreground">{row.entityType}</p>
+                      <p className="font-mono text-[10px] text-foreground-lighter">
                         {row.entityId.slice(0, 8)}…
                       </p>
                     </td>
                     <td className="py-3 pr-3">
-                      <p className="text-slate-700">
+                      <p className="text-foreground">
                         {row.userName || row.userEmail || "System / unknown"}
                       </p>
                       {row.userName && row.userEmail && (
-                        <p className="text-[11px] text-slate-400">{row.userEmail}</p>
+                        <p className="text-[11px] text-foreground-lighter">{row.userEmail}</p>
                       )}
                     </td>
-                    <td className="py-3 pr-3 text-slate-500">
+                    <td className="py-3 pr-3 text-foreground-light">
                       {row.changedFieldCount > 0 ? (
                         <span className="inline-flex items-center gap-1">
                           <Filter className="h-3.5 w-3.5 text-brand-500" />
@@ -357,7 +357,7 @@ export default function AuditLogsPage() {
                       <button
                         type="button"
                         onClick={() => void openDetail(row.id)}
-                        className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-brand-700 hover:border-brand-300 hover:bg-brand-50"
+                        className="inline-flex items-center gap-1 rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-brand-700 hover:border-brand-300 hover:bg-brand-50"
                       >
                         <Eye className="h-3.5 w-3.5" />
                         Details
@@ -368,8 +368,8 @@ export default function AuditLogsPage() {
             </tbody>
           </table>
 
-          <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
-            <p className="text-xs text-slate-400">
+          <div className="mt-4 flex items-center justify-between border-t border-border pt-3">
+            <p className="text-xs text-foreground-lighter">
               Page {page} of {pageCount}
             </p>
             <div className="flex gap-2">
@@ -377,7 +377,7 @@ export default function AuditLogsPage() {
                 type="button"
                 disabled={page <= 1 || loading}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 disabled:opacity-40"
+                className="inline-flex items-center gap-1 rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-foreground-light disabled:opacity-40"
               >
                 <ChevronLeft className="h-3.5 w-3.5" /> Prev
               </button>
@@ -385,7 +385,7 @@ export default function AuditLogsPage() {
                 type="button"
                 disabled={page >= pageCount || loading}
                 onClick={() => setPage((p) => p + 1)}
-                className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 disabled:opacity-40"
+                className="inline-flex items-center gap-1 rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-foreground-light disabled:opacity-40"
               >
                 Next <ChevronRight className="h-3.5 w-3.5" />
               </button>
@@ -395,39 +395,39 @@ export default function AuditLogsPage() {
       </Card>
 
       {(detail || detailLoading) && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
           <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white p-5 shadow-xl">
             <div className="mb-4 flex items-start justify-between gap-3">
               <div>
-                <h2 className="text-lg font-semibold text-slate-900">Audit detail</h2>
-                <p className="text-xs text-slate-400">
+                <h2 className="text-lg font-semibold text-foreground">Audit detail</h2>
+                <p className="text-xs text-foreground-lighter">
                   Sensitive fields (email, phone, OTP, tokens) are masked in storage.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setDetail(null)}
-                className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                className="rounded-full p-1 text-foreground-lighter hover:bg-surface-200 hover:text-foreground"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
             {detailLoading && !detail && (
-              <p className="py-10 text-center text-sm text-slate-400">Loading…</p>
+              <p className="py-10 text-center text-sm text-foreground-lighter">Loading…</p>
             )}
 
             {detail && (
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
                   <div>
-                    <p className="text-[11px] font-semibold uppercase text-slate-400">
+                    <p className="text-[11px] font-semibold uppercase text-foreground-lighter">
                       When
                     </p>
-                    <p className="text-slate-700">{formatWhen(detail.createdAt)}</p>
+                    <p className="text-foreground">{formatWhen(detail.createdAt)}</p>
                   </div>
                   <div>
-                    <p className="text-[11px] font-semibold uppercase text-slate-400">
+                    <p className="text-[11px] font-semibold uppercase text-foreground-lighter">
                       Action
                     </p>
                     <Badge tone={ACTION_TONE[detail.action] ?? "slate"}>
@@ -435,51 +435,51 @@ export default function AuditLogsPage() {
                     </Badge>
                   </div>
                   <div>
-                    <p className="text-[11px] font-semibold uppercase text-slate-400">
+                    <p className="text-[11px] font-semibold uppercase text-foreground-lighter">
                       Entity
                     </p>
-                    <p className="font-medium text-slate-800">{detail.entityType}</p>
-                    <p className="break-all font-mono text-[10px] text-slate-400">
+                    <p className="font-medium text-foreground">{detail.entityType}</p>
+                    <p className="break-all font-mono text-[10px] text-foreground-lighter">
                       {detail.entityId}
                     </p>
                   </div>
                   <div>
-                    <p className="text-[11px] font-semibold uppercase text-slate-400">
+                    <p className="text-[11px] font-semibold uppercase text-foreground-lighter">
                       Actor
                     </p>
-                    <p className="text-slate-700">
+                    <p className="text-foreground">
                       {detail.userName || detail.userEmail || "System / unknown"}
                     </p>
                     {detail.userEmail && (
-                      <p className="text-[11px] text-slate-400">{detail.userEmail}</p>
+                      <p className="text-[11px] text-foreground-lighter">{detail.userEmail}</p>
                     )}
                   </div>
                   <div>
-                    <p className="text-[11px] font-semibold uppercase text-slate-400">
+                    <p className="text-[11px] font-semibold uppercase text-foreground-lighter">
                       IP
                     </p>
-                    <p className="text-slate-700">{detail.ipAddress || "—"}</p>
+                    <p className="text-foreground">{detail.ipAddress || "—"}</p>
                   </div>
                   <div className="col-span-2 sm:col-span-1">
-                    <p className="text-[11px] font-semibold uppercase text-slate-400">
+                    <p className="text-[11px] font-semibold uppercase text-foreground-lighter">
                       User agent
                     </p>
-                    <p className="line-clamp-2 text-[11px] text-slate-500">
+                    <p className="line-clamp-2 text-[11px] text-foreground-light">
                       {detail.userAgent || "—"}
                     </p>
                   </div>
                 </div>
 
                 <div>
-                  <h3 className="mb-2 text-sm font-semibold text-slate-800">
+                  <h3 className="mb-2 text-sm font-semibold text-foreground">
                     Fields changed
                   </h3>
                   {detail.changedFields.length === 0 ? (
-                    <p className="text-sm text-slate-400">No field-level diff recorded.</p>
+                    <p className="text-sm text-foreground-lighter">No field-level diff recorded.</p>
                   ) : (
-                    <div className="overflow-x-auto rounded-xl border border-slate-100">
+                    <div className="overflow-x-auto rounded-xl border border-border">
                       <table className="w-full text-left text-xs">
-                        <thead className="bg-slate-50 text-[10px] uppercase text-slate-400">
+                        <thead className="bg-surface-200 text-[10px] uppercase text-foreground-lighter">
                           <tr>
                             <th className="px-3 py-2 font-semibold">Field</th>
                             <th className="px-3 py-2 font-semibold">From</th>
@@ -490,9 +490,9 @@ export default function AuditLogsPage() {
                           {detail.changedFields.map((c) => (
                             <tr
                               key={c.field}
-                              className="border-t border-slate-50 align-top"
+                              className="border-t border-border align-top"
                             >
-                              <td className="px-3 py-2 font-medium text-slate-700">
+                              <td className="px-3 py-2 font-medium text-foreground">
                                 {c.field}
                               </td>
                               <td className="px-3 py-2 font-mono text-rose-600/90">
@@ -511,18 +511,18 @@ export default function AuditLogsPage() {
 
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                   <div>
-                    <h3 className="mb-2 text-sm font-semibold text-slate-800">
+                    <h3 className="mb-2 text-sm font-semibold text-foreground">
                       Old values
                     </h3>
-                    <pre className="max-h-64 overflow-auto rounded-xl bg-slate-50 p-3 text-[11px] leading-relaxed text-slate-600">
+                    <pre className="max-h-64 overflow-auto rounded-xl bg-surface-200 p-3 text-[11px] leading-relaxed text-foreground-light">
                       {prettyJson(detail.oldValues)}
                     </pre>
                   </div>
                   <div>
-                    <h3 className="mb-2 text-sm font-semibold text-slate-800">
+                    <h3 className="mb-2 text-sm font-semibold text-foreground">
                       New values
                     </h3>
-                    <pre className="max-h-64 overflow-auto rounded-xl bg-brand-50/50 p-3 text-[11px] leading-relaxed text-slate-600">
+                    <pre className="max-h-64 overflow-auto rounded-xl bg-brand-50/50 p-3 text-[11px] leading-relaxed text-foreground-light">
                       {prettyJson(detail.newValues)}
                     </pre>
                   </div>

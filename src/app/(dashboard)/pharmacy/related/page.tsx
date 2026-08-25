@@ -86,7 +86,7 @@ function RelatedPrescriptionsInner() {
 
   return (
     <RoleGuard modules={["consultations", "appointments", "pharmacy"]}>
-      <div className="mb-2 text-[11px] font-medium uppercase tracking-wide text-slate-400">
+      <div className="mb-2 text-[11px] font-medium uppercase tracking-wide text-foreground-lighter">
         Home / Pharmacy / Related prescriptions
       </div>
       <PageHeader
@@ -101,7 +101,7 @@ function RelatedPrescriptionsInner() {
         action={
           <Link
             href={backHref}
-            className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-brand-300"
+            className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-foreground hover:border-brand-300"
           >
             <ArrowLeft className="h-3.5 w-3.5" /> Back
           </Link>
@@ -117,16 +117,16 @@ function RelatedPrescriptionsInner() {
           headers={["Rx number", "Patient", "Prescribing doctor", "Medications", "Status"]}
         >
           {rows.map((r) => (
-            <tr key={r.id} className="hover:bg-slate-50/60">
-              <td className="px-5 py-3.5 font-medium text-slate-800">
+            <tr key={r.id} className="hover:bg-surface-200/60">
+              <td className="px-5 py-3.5 font-medium text-foreground">
                 {r.prescriptionNumber || r.id.slice(0, 8)}
               </td>
-              <td className="px-5 py-3.5 text-slate-500">
+              <td className="px-5 py-3.5 text-foreground-light">
                 {r.patientName}
-                <span className="block text-xs text-slate-400">MRN {r.mrn}</span>
+                <span className="block text-xs text-foreground-lighter">MRN {r.mrn}</span>
               </td>
-              <td className="px-5 py-3.5 text-slate-500">{r.prescribedBy}</td>
-              <td className="px-5 py-3.5 text-xs text-slate-500">
+              <td className="px-5 py-3.5 text-foreground-light">{r.prescribedBy}</td>
+              <td className="px-5 py-3.5 text-xs text-foreground-light">
                 {r.lines.map((l) => (
                   <div key={l.id}>
                     {l.medicationName}
@@ -143,7 +143,7 @@ function RelatedPrescriptionsInner() {
           ))}
         </Table>
         {!loading && rows.length === 0 && !error && (
-          <p className="px-5 py-10 text-center text-sm text-slate-400">
+          <p className="px-5 py-10 text-center text-sm text-foreground-lighter">
             No prescriptions are linked to this appointment yet.
           </p>
         )}
@@ -154,7 +154,7 @@ function RelatedPrescriptionsInner() {
 
 export default function RelatedPrescriptionsPage() {
   return (
-    <Suspense fallback={<p className="text-sm text-slate-400">Loading…</p>}>
+    <Suspense fallback={<p className="text-sm text-foreground-lighter">Loading…</p>}>
       <RelatedPrescriptionsInner />
     </Suspense>
   );

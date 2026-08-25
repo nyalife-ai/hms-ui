@@ -73,12 +73,12 @@ export function SearchablePicker({
     <div ref={rootRef} className="relative">
       <div
         className={`flex items-center gap-2 rounded-xl border bg-white px-3 py-2.5 ${
-          open ? "border-brand-400 ring-2 ring-brand-400/20" : "border-slate-200"
+          open ? "border-brand-400 ring-2 ring-brand-400/20" : "border-border"
         } ${disabled ? "opacity-50" : ""}`}
       >
-        <Search className="h-4 w-4 shrink-0 text-slate-400" />
+        <Search className="h-4 w-4 shrink-0 text-foreground-lighter" />
         <input
-          className="w-full bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none"
+          className="w-full bg-transparent text-sm text-foreground placeholder:text-foreground-lighter focus:outline-none"
           placeholder={placeholder}
           value={q}
           disabled={disabled}
@@ -91,25 +91,25 @@ export function SearchablePicker({
         {q ? (
           <button
             type="button"
-            className="text-slate-300 hover:text-slate-500"
+            className="text-foreground-muted hover:text-foreground-light"
             onClick={() => setQ("")}
             aria-label="Clear search"
           >
             <X className="h-3.5 w-3.5" />
           </button>
         ) : (
-          <ChevronDown className="h-4 w-4 shrink-0 text-slate-300" />
+          <ChevronDown className="h-4 w-4 shrink-0 text-foreground-muted" />
         )}
       </div>
 
       {open && !disabled && (
-        <div className="absolute z-30 mt-1 max-h-64 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white py-1 shadow-lg">
+        <div className="absolute z-30 mt-1 max-h-64 w-full overflow-y-auto rounded-xl border border-border bg-white py-1 shadow-lg">
           {filtered.length === 0 ? (
-            <p className="px-3 py-2.5 text-xs text-slate-400">{emptyMessage}</p>
+            <p className="px-3 py-2.5 text-xs text-foreground-lighter">{emptyMessage}</p>
           ) : (
             grouped.map(([group, items]) => (
               <div key={group}>
-                <p className="sticky top-0 bg-slate-50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-500">
+                <p className="sticky top-0 bg-surface-200 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-foreground-light">
                   {group}
                 </p>
                 {items.map((opt) => (
@@ -123,9 +123,9 @@ export function SearchablePicker({
                       setOpen(false);
                     }}
                   >
-                    <span className="font-medium text-slate-800">{opt.label}</span>
+                    <span className="font-medium text-foreground">{opt.label}</span>
                     {opt.sublabel && (
-                      <span className="text-xs text-slate-400">{opt.sublabel}</span>
+                      <span className="text-xs text-foreground-lighter">{opt.sublabel}</span>
                     )}
                   </button>
                 ))}

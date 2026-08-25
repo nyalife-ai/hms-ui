@@ -253,9 +253,9 @@ export function MessageComposer({
   const canSend = Boolean(text.trim() || file) && !busy && !disabled;
 
   return (
-    <div className="sticky bottom-0 shrink-0 border-t border-slate-100 bg-white px-3 py-3 sm:px-4">
+    <div className="sticky bottom-0 shrink-0 border-t border-border bg-white px-3 py-3 sm:px-4">
       {replyTo ? (
-        <div className="mb-2 flex items-start gap-2 rounded-xl bg-brand-50/70 px-3 py-2 text-xs text-slate-600">
+        <div className="mb-2 flex items-start gap-2 rounded-xl bg-brand-50/70 px-3 py-2 text-xs text-foreground-light">
           <div className="min-w-0 flex-1">
             <p className="font-semibold text-brand-700">Replying</p>
             <p className="truncate">{replyTo.preview}</p>
@@ -263,7 +263,7 @@ export function MessageComposer({
           <button
             type="button"
             onClick={onClearReply}
-            className="rounded-lg p-1 text-slate-400 hover:bg-white hover:text-slate-600"
+            className="rounded-lg p-1 text-foreground-lighter hover:bg-white hover:text-foreground-light"
             aria-label="Cancel reply"
             title="Cancel reply"
           >
@@ -281,7 +281,7 @@ export function MessageComposer({
       />
 
       {file ? (
-        <div className="mb-2 flex items-center gap-2 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+        <div className="mb-2 flex items-center gap-2 rounded-xl border border-border bg-surface-200 px-3 py-2 text-xs text-foreground-light">
           <Paperclip className="h-3.5 w-3.5 shrink-0" />
           <span className="min-w-0 flex-1 truncate">{file.name}</span>
           {filePreviewUrl ? (
@@ -293,7 +293,7 @@ export function MessageComposer({
               setAttachment(null);
               if (fileRef.current) fileRef.current.value = "";
             }}
-            className="rounded-lg p-1 text-slate-400 hover:bg-white"
+            className="rounded-lg p-1 text-foreground-lighter hover:bg-white"
             aria-label="Remove attachment"
             title="Remove attachment"
           >
@@ -311,7 +311,7 @@ export function MessageComposer({
       <div className="relative flex items-end gap-2">
         {mentionQuery != null && mentionCandidates.length ? (
           <ul
-            className="absolute bottom-full left-12 z-20 mb-1 max-h-48 w-64 overflow-auto rounded-xl border border-slate-200 bg-white py-1 shadow-lg"
+            className="absolute bottom-full left-12 z-20 mb-1 max-h-48 w-64 overflow-auto rounded-xl border border-border bg-white py-1 shadow-lg"
             role="listbox"
           >
             {mentionCandidates.map((p, i) => (
@@ -323,7 +323,7 @@ export function MessageComposer({
                   className={`flex w-full px-3 py-2 text-left text-sm ${
                     i === mentionIndex
                       ? "bg-brand-50 text-brand-800"
-                      : "text-slate-700 hover:bg-slate-50"
+                      : "text-foreground hover:bg-surface-200"
                   }`}
                   onMouseDown={(e) => {
                     e.preventDefault();
@@ -341,7 +341,7 @@ export function MessageComposer({
           <button
             type="button"
             onClick={() => setEmojiOpen((o) => !o)}
-            className="rounded-full border border-slate-200 p-2.5 text-slate-500 hover:border-brand-300 hover:text-brand-600"
+            className="rounded-full border border-border p-2.5 text-foreground-light hover:border-brand-300 hover:text-brand-600"
             aria-label="Insert emoji"
             title="Emoji"
             aria-expanded={emojiOpen}
@@ -368,7 +368,7 @@ export function MessageComposer({
         <button
           type="button"
           onClick={() => fileRef.current?.click()}
-          className="rounded-full border border-slate-200 p-2.5 text-slate-500 hover:border-brand-300 hover:text-brand-600"
+          className="rounded-full border border-border p-2.5 text-foreground-light hover:border-brand-300 hover:text-brand-600"
           aria-label="Attach file"
           title="Attach file"
           disabled={busy || disabled || voiceBusy}
@@ -398,7 +398,7 @@ export function MessageComposer({
             detectMention(value, e.target.selectionStart ?? value.length);
           }}
           onKeyDown={onKeyDown}
-          className="max-h-32 min-h-[42px] flex-1 resize-none rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20"
+          className="max-h-32 min-h-[42px] flex-1 resize-none rounded-2xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20"
         />
 
         <button

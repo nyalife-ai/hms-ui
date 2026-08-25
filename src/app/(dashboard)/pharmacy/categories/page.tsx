@@ -16,7 +16,7 @@ import {
 import { api } from "@/lib/api";
 
 const inputClass =
-  "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 type Category = {
   id: string;
@@ -125,9 +125,9 @@ export default function PharmacyCategoriesPage() {
         <CardHeader title="Formulary groups" subtitle="Used when adding medications" />
         <Table headers={["Name", "Description", "Status", ""]}>
           {rows.map((c) => (
-            <tr key={c.id} className="hover:bg-slate-50/60">
-              <td className="px-5 py-3.5 font-medium text-slate-800">{c.categoryName}</td>
-              <td className="px-5 py-3.5 text-slate-500">{c.description || "—"}</td>
+            <tr key={c.id} className="hover:bg-surface-200/60">
+              <td className="px-5 py-3.5 font-medium text-foreground">{c.categoryName}</td>
+              <td className="px-5 py-3.5 text-foreground-light">{c.description || "—"}</td>
               <td className="px-5 py-3.5">
                 <Badge tone={c.isActive ? "green" : "slate"}>
                   {c.isActive ? "Active" : "Inactive"}
@@ -140,19 +140,19 @@ export default function PharmacyCategoriesPage() {
           ))}
         </Table>
         {rows.length === 0 && !loading && (
-          <p className="px-5 pb-5 text-sm text-slate-400">No categories yet.</p>
+          <p className="px-5 pb-5 text-sm text-foreground-lighter">No categories yet.</p>
         )}
       </Card>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
           <div className="w-full max-w-md space-y-3 rounded-2xl bg-white p-5 shadow-xl">
             <div className="flex items-center justify-between">
-              <h2 className="font-semibold text-slate-900">
+              <h2 className="font-semibold text-foreground">
                 {editing ? "Edit category" : "Add category"}
               </h2>
               <button type="button" onClick={() => setOpen(false)}>
-                <X className="h-4 w-4 text-slate-400" />
+                <X className="h-4 w-4 text-foreground-lighter" />
               </button>
             </div>
             <div>
@@ -172,7 +172,7 @@ export default function PharmacyCategoriesPage() {
               />
             </div>
             {editing && (
-              <label className="flex items-center gap-2 text-sm text-slate-600">
+              <label className="flex items-center gap-2 text-sm text-foreground-light">
                 <input
                   type="checkbox"
                   checked={form.isActive}

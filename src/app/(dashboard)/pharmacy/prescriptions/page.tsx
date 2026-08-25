@@ -15,7 +15,7 @@ import { buildListQuery, toPageMeta, unwrapPage } from "@/lib/pagination";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 
 const inputClass =
-  "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 type Rx = {
   id: string;
@@ -292,16 +292,16 @@ export default function PharmacyPrescriptionsPage() {
           ]}
         >
           {rows.map((r) => (
-            <tr key={r.id} className="hover:bg-slate-50/60">
-              <td className="px-5 py-3.5 font-medium text-slate-800">
+            <tr key={r.id} className="hover:bg-surface-200/60">
+              <td className="px-5 py-3.5 font-medium text-foreground">
                 {r.prescriptionNumber || r.id.slice(0, 8)}
               </td>
-              <td className="px-5 py-3.5 text-slate-500">
+              <td className="px-5 py-3.5 text-foreground-light">
                 {r.patientName}
-                <span className="block text-xs text-slate-400">MRN {r.mrn}</span>
+                <span className="block text-xs text-foreground-lighter">MRN {r.mrn}</span>
               </td>
-              <td className="px-5 py-3.5 text-slate-500">{r.prescribedBy}</td>
-              <td className="px-5 py-3.5 text-xs text-slate-500">
+              <td className="px-5 py-3.5 text-foreground-light">{r.prescribedBy}</td>
+              <td className="px-5 py-3.5 text-xs text-foreground-light">
                 {r.lines.map((l) => (
                   <div key={l.id}>
                     {l.medicationName} — qty {l.quantity} ({l.status.toLowerCase()})
@@ -358,15 +358,15 @@ export default function PharmacyPrescriptionsPage() {
       </Card>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
           <div className="max-h-[90vh] w-full max-w-md space-y-3 overflow-y-auto rounded-2xl bg-white p-5 shadow-xl">
             <div className="flex justify-between">
-              <h2 className="font-semibold text-slate-900">New prescription</h2>
+              <h2 className="font-semibold text-foreground">New prescription</h2>
               <button type="button" onClick={() => setOpen(false)}>
-                <X className="h-4 w-4 text-slate-400" />
+                <X className="h-4 w-4 text-foreground-lighter" />
               </button>
             </div>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-foreground-light">
               Use this for walk-in or paper scripts. Doctor consultations also create prescriptions
               automatically when they complete with medications.
             </p>
@@ -381,7 +381,7 @@ export default function PharmacyPrescriptionsPage() {
             {draftLines.map((line, idx) => (
               <div key={idx} className="space-y-2 rounded-2xl bg-[#f3f7f7] p-3">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold uppercase text-slate-400">Line {idx + 1}</p>
+                  <p className="text-xs font-semibold uppercase text-foreground-lighter">Line {idx + 1}</p>
                   {draftLines.length > 1 && (
                     <button
                       type="button"
@@ -500,28 +500,28 @@ export default function PharmacyPrescriptionsPage() {
       )}
 
       {detail && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
           <div className="max-h-[90vh] w-full max-w-lg space-y-3 overflow-y-auto rounded-2xl bg-white p-5 shadow-xl">
             <div className="flex items-center justify-between">
-              <h2 className="font-semibold text-slate-900">
+              <h2 className="font-semibold text-foreground">
                 {detail.prescriptionNumber || detail.id.slice(0, 8)}
               </h2>
               <button type="button" onClick={() => setDetail(null)}>
-                <X className="h-4 w-4 text-slate-400" />
+                <X className="h-4 w-4 text-foreground-lighter" />
               </button>
             </div>
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-foreground-light">
               {detail.patientName} · MRN {detail.mrn} · {detail.prescribedBy}
             </p>
             {detail.consultationId && (
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-foreground-light">
                 Linked consult{" "}
                 <Link href="/consultations" className="font-medium text-brand-700 hover:underline">
                   {detail.consultationId.slice(0, 8)}…
                 </Link>
               </p>
             )}
-            {detail.notes && <p className="text-sm text-slate-500">{detail.notes}</p>}
+            {detail.notes && <p className="text-sm text-foreground-light">{detail.notes}</p>}
             {detail.isVoided && (
               <p className="text-sm text-rose-600">
                 Voided{detail.voidReason ? `: ${detail.voidReason}` : ""}
@@ -531,17 +531,17 @@ export default function PharmacyPrescriptionsPage() {
             <ul className="space-y-2">
               {detail.lines.map((l) => (
                 <li key={l.id} className="rounded-xl bg-[#f3f7f7] px-3 py-2 text-sm">
-                  <p className="font-medium text-slate-800">{l.medicationName}</p>
-                  <p className="text-xs text-slate-500">
+                  <p className="font-medium text-foreground">{l.medicationName}</p>
+                  <p className="text-xs text-foreground-light">
                     {l.dosage} · {l.frequency} · {l.duration} · qty {l.quantity} · {l.status}
                   </p>
                   {l.dispensedByName && (
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-foreground-lighter">
                       Dispensed by {l.dispensedByName}
                       {l.dispensedAt ? ` · ${new Date(l.dispensedAt).toLocaleString()}` : ""}
                     </p>
                   )}
-                  {l.instructions && <p className="text-xs text-slate-400">{l.instructions}</p>}
+                  {l.instructions && <p className="text-xs text-foreground-lighter">{l.instructions}</p>}
                 </li>
               ))}
             </ul>
@@ -554,9 +554,9 @@ export default function PharmacyPrescriptionsPage() {
       )}
 
       {cancelId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
           <div className="w-full max-w-md space-y-3 rounded-2xl bg-white p-5 shadow-xl">
-            <h2 className="font-semibold text-slate-900">Cancel prescription</h2>
+            <h2 className="font-semibold text-foreground">Cancel prescription</h2>
             <div>
               <FieldLabel optional>Reason</FieldLabel>
               <input className={inputClass} value={cancelReason} onChange={(e) => setCancelReason(e.target.value)} />
@@ -565,7 +565,7 @@ export default function PharmacyPrescriptionsPage() {
               <PrimaryButton disabled={busy} onClick={() => void cancelRx()}>
                 {busy ? "Cancelling…" : "Confirm cancel"}
               </PrimaryButton>
-              <button type="button" className="text-sm text-slate-500" onClick={() => setCancelId("")}>
+              <button type="button" className="text-sm text-foreground-light" onClick={() => setCancelId("")}>
                 Back
               </button>
             </div>
@@ -574,10 +574,10 @@ export default function PharmacyPrescriptionsPage() {
       )}
 
       {voidId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
           <div className="w-full max-w-md space-y-3 rounded-2xl bg-white p-5 shadow-xl">
-            <h2 className="font-semibold text-slate-900">Void prescription</h2>
-            <p className="text-xs text-slate-500">Use void after a clinical or legal correction. Reason is required.</p>
+            <h2 className="font-semibold text-foreground">Void prescription</h2>
+            <p className="text-xs text-foreground-light">Use void after a clinical or legal correction. Reason is required.</p>
             <div>
               <FieldLabel required>Void reason</FieldLabel>
               <input className={inputClass} value={voidReason} onChange={(e) => setVoidReason(e.target.value)} />
@@ -586,7 +586,7 @@ export default function PharmacyPrescriptionsPage() {
               <PrimaryButton disabled={busy} onClick={() => void voidRx()}>
                 {busy ? "Voiding…" : "Confirm void"}
               </PrimaryButton>
-              <button type="button" className="text-sm text-slate-500" onClick={() => setVoidId("")}>
+              <button type="button" className="text-sm text-foreground-light" onClick={() => setVoidId("")}>
                 Back
               </button>
             </div>

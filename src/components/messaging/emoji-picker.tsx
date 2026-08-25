@@ -334,22 +334,22 @@ export function EmojiPicker({
 
   return (
     <div
-      className="absolute bottom-full left-0 z-30 mb-2 w-72 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg"
+      className="absolute bottom-full left-0 z-30 mb-2 w-72 overflow-hidden rounded-2xl border border-border bg-white shadow-lg"
       role="dialog"
       aria-label="Emoji picker"
     >
-      <div className="border-b border-slate-100 p-2">
+      <div className="border-b border-border p-2">
         <input
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search emoji…"
-          className="w-full rounded-xl border border-slate-200 px-3 py-1.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20"
+          className="w-full rounded-xl border border-border px-3 py-1.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20"
           aria-label="Search emoji"
         />
       </div>
       {!query.trim() ? (
-        <div className="flex gap-0.5 overflow-x-auto border-b border-slate-100 px-1.5 py-1">
+        <div className="flex gap-0.5 overflow-x-auto border-b border-border px-1.5 py-1">
           {CATEGORIES.map((c) => (
             <button
               key={c.id}
@@ -358,7 +358,7 @@ export function EmojiPicker({
               className={`shrink-0 rounded-lg px-2 py-1 text-[11px] font-medium ${
                 categoryId === c.id
                   ? "bg-brand-50 text-brand-700"
-                  : "text-slate-500 hover:bg-slate-50"
+                  : "text-foreground-light hover:bg-surface-200"
               }`}
             >
               {c.label}
@@ -371,7 +371,7 @@ export function EmojiPicker({
           <button
             key={`${e.emoji}-${e.keywords[0]}`}
             type="button"
-            className="rounded-lg p-1 text-lg hover:bg-slate-50"
+            className="rounded-lg p-1 text-lg hover:bg-surface-200"
             aria-label={`Insert ${e.keywords[0] ?? e.emoji}`}
             onClick={() => {
               onSelect(e.emoji);
@@ -382,7 +382,7 @@ export function EmojiPicker({
           </button>
         ))}
         {!filtered.length ? (
-          <p className="col-span-8 py-6 text-center text-xs text-slate-400">
+          <p className="col-span-8 py-6 text-center text-xs text-foreground-lighter">
             No matches
           </p>
         ) : null}

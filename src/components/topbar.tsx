@@ -266,19 +266,19 @@ export function Topbar() {
   };
 
   return (
-    <header className="sticky top-0 z-20 flex h-16 items-center justify-between gap-3 bg-[#faf7f9]/90 px-4 backdrop-blur sm:gap-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-20 flex h-12 items-center justify-between gap-3 border-b border-border bg-background/95 px-4 backdrop-blur sm:gap-4 sm:px-6 lg:px-8">
       <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
         <button
           type="button"
           onClick={toggleMobileNav}
-          className="rounded-full bg-white p-2.5 text-brand-600 shadow-sm transition hover:bg-brand-50 lg:hidden"
+          className="rounded-md border border-border bg-surface p-2 text-foreground-light transition hover:bg-surface-200 lg:hidden"
           aria-label="Open menu"
         >
           <Menu className="h-5 w-5" />
         </button>
 
-        <div className="relative hidden w-full max-w-xs sm:block" ref={searchRef}>
-          <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+        <div className="relative hidden w-full max-w-sm sm:block" ref={searchRef}>
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground-lighter" />
           <input
             type="search"
             value={query}
@@ -291,16 +291,16 @@ export function Topbar() {
               if (e.key === "Enter" && results[0]) go(results[0].href);
             }}
             placeholder="Search modules…"
-            className="w-full rounded-full border border-slate-200 bg-white py-2.5 pl-11 pr-4 text-sm text-slate-700 placeholder:text-slate-400 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20"
+            className="h-9 w-full rounded-md border border-border bg-surface py-1.5 pl-9 pr-3 text-sm text-foreground placeholder:text-foreground-lighter focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20"
           />
           {searchOpen && results.length > 0 && (
-            <div className="absolute left-0 right-0 top-full z-30 mt-2 overflow-hidden rounded-2xl bg-white shadow-lg ring-1 ring-slate-100">
+            <div className="absolute left-0 right-0 top-full z-30 mt-1.5 overflow-hidden rounded-lg border border-border bg-surface shadow-lg">
               {results.map((r) => (
                 <button
                   key={r.href}
                   type="button"
                   onClick={() => go(r.href)}
-                  className="block w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-brand-50"
+                  className="block w-full px-3 py-2 text-left text-sm text-foreground hover:bg-surface-200"
                 >
                   {r.label}
                 </button>
@@ -310,44 +310,44 @@ export function Topbar() {
         </div>
       </div>
 
-      <div className="flex shrink-0 items-center gap-2 sm:gap-2.5">
+      <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
         <div className="relative" ref={menuRef}>
           <button
             type="button"
             onClick={() => setMenuOpen((open) => !open)}
             aria-expanded={menuOpen}
             aria-haspopup="menu"
-            className="flex items-center gap-2 rounded-full bg-white py-1.5 pl-1.5 pr-2.5 shadow-sm transition hover:bg-brand-50 sm:gap-2.5 sm:pr-3"
+            className="flex items-center gap-2 rounded-lg border border-border bg-surface py-1 pl-1 pr-2 transition hover:bg-surface-200 sm:gap-2.5 sm:pr-2.5"
           >
             <Avatar name={user.name} size="sm" />
             <span className="hidden text-left md:block">
-              <span className="block text-sm font-semibold leading-tight text-slate-800">
+              <span className="block text-sm font-semibold leading-tight text-foreground">
                 {user.name}
               </span>
-              <span className="block text-xs leading-tight text-slate-400">
+              <span className="block text-xs leading-tight text-foreground-light">
                 {roleLabel(user.role)}
               </span>
             </span>
             <ChevronDown
-              className={`h-4 w-4 text-slate-400 transition ${menuOpen ? "rotate-180" : ""}`}
+              className={`h-4 w-4 text-foreground-lighter transition ${menuOpen ? "rotate-180" : ""}`}
             />
           </button>
 
           {menuOpen && (
             <div
               role="menu"
-              className="absolute right-0 mt-2 w-56 rounded-2xl bg-white p-1.5 shadow-lg ring-1 ring-slate-100"
+              className="absolute right-0 mt-2 w-56 rounded-lg border border-border bg-surface p-1.5 shadow-lg"
             >
-              <div className="border-b border-slate-100 px-3 py-2">
-                <p className="truncate text-sm font-semibold text-slate-800">
+              <div className="border-b border-border px-3 py-2">
+                <p className="truncate text-sm font-semibold text-foreground">
                   {user.name}
                 </p>
-                <p className="truncate text-xs text-slate-400">{user.email}</p>
+                <p className="truncate text-xs text-foreground-light">{user.email}</p>
               </div>
 
               {demoAuthEnabled && (
                 <>
-                  <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                  <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-foreground-muted">
                     Preview another role (demo)
                   </p>
                   {ALL_ROLES.map((role: Role) => (
@@ -358,10 +358,10 @@ export function Topbar() {
                       onClick={() => {
                         void loginAsRole(role).then(() => setMenuOpen(false));
                       }}
-                      className={`block w-full rounded-xl px-3 py-2 text-left text-sm transition ${
+                      className={`block w-full rounded-md px-3 py-2 text-left text-sm transition ${
                         role === user.role
                           ? "bg-brand-50 font-semibold text-brand-700"
-                          : "text-slate-600 hover:bg-slate-50"
+                          : "text-foreground-light hover:bg-surface-200"
                       }`}
                     >
                       {ROLE_LABELS[role]}
@@ -374,7 +374,7 @@ export function Topbar() {
                 type="button"
                 role="menuitem"
                 onClick={() => void handleLogout()}
-                className="mt-1 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm text-rose-600 transition hover:bg-rose-50"
+                className="mt-1 flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-rose-600 transition hover:bg-rose-50"
               >
                 <LogOut className="h-4 w-4" />
                 Sign out
@@ -391,7 +391,7 @@ export function Topbar() {
               setBellOpen((v) => !v);
               if (!bellOpen) void syncFromApi();
             }}
-            className="relative rounded-full bg-white p-2.5 text-slate-500 shadow-sm transition hover:bg-brand-50"
+            className="relative rounded-lg border border-border bg-surface p-2 text-foreground-light transition hover:bg-surface-200"
             aria-label="Notifications"
           >
             <Bell className="h-4 w-4" />
@@ -402,9 +402,9 @@ export function Topbar() {
             )}
           </button>
           {bellOpen && (
-            <div className="absolute right-0 mt-2 max-h-96 w-80 overflow-y-auto rounded-2xl bg-white p-2 shadow-lg ring-1 ring-slate-100">
+            <div className="absolute right-0 mt-2 max-h-96 w-80 overflow-y-auto rounded-lg border border-border bg-surface p-2 shadow-lg">
               <div className="flex items-center justify-between gap-2 px-2 py-1.5">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-foreground-muted">
                   Notifications
                 </p>
                 {unread > 0 && (
@@ -427,7 +427,7 @@ export function Topbar() {
                 )}
               </div>
               {items.length === 0 ? (
-                <p className="px-3 py-4 text-sm text-slate-400">
+                <p className="px-3 py-4 text-sm text-foreground-light">
                   No notifications yet.
                 </p>
               ) : (
@@ -436,19 +436,19 @@ export function Topbar() {
                     key={n.id}
                     type="button"
                     onClick={() => void openNotification(n)}
-                    className={`block w-full rounded-xl px-3 py-2.5 text-left hover:bg-brand-50 ${
+                    className={`block w-full rounded-md px-3 py-2.5 text-left hover:bg-surface-200 ${
                       n.isRead ? "opacity-70" : ""
                     }`}
                   >
-                    <p className="text-xs font-semibold text-slate-800">
+                    <p className="text-xs font-semibold text-foreground">
                       {n.title}
                     </p>
                     {n.body && (
-                      <p className="mt-0.5 line-clamp-2 text-[11px] text-slate-500">
+                      <p className="mt-0.5 line-clamp-2 text-[11px] text-foreground-light">
                         {n.body}
                       </p>
                     )}
-                    <p className="mt-0.5 text-[11px] text-slate-400">
+                    <p className="mt-0.5 text-[11px] text-foreground-muted">
                       {n.notificationType} · {formatWhen(n.createdAt)}
                       {!n.isRead ? " · unread" : ""}
                     </p>
@@ -463,7 +463,7 @@ export function Topbar() {
           <button
             type="button"
             onClick={() => router.push("/settings")}
-            className="hidden rounded-full bg-white p-2.5 text-slate-500 shadow-sm transition hover:bg-brand-50 sm:inline-flex"
+            className="hidden rounded-lg border border-border bg-surface p-2 text-foreground-light transition hover:bg-surface-200 sm:inline-flex"
             aria-label="Settings"
           >
             <Settings className="h-4 w-4" />

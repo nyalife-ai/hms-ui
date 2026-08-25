@@ -8,7 +8,7 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
 const inputClass =
-  "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 export function RecordVitalsModal({
   patientId,
@@ -73,22 +73,22 @@ export function RecordVitalsModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
       <div className="max-h-[90vh] w-full max-w-lg space-y-3 overflow-y-auto rounded-2xl bg-white p-5 shadow-xl">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-base font-semibold text-slate-900">
+            <h2 className="text-base font-semibold text-foreground">
               Record clinical vitals
             </h2>
-            <p className="text-xs text-slate-400">{patientName}</p>
+            <p className="text-xs text-foreground-lighter">{patientName}</p>
           </div>
           <button type="button" onClick={onClose} aria-label="Close">
-            <X className="h-4 w-4 text-slate-400" />
+            <X className="h-4 w-4 text-foreground-lighter" />
           </button>
         </div>
 
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-foreground-lighter">
             Clinical measurements
           </p>
           <div className="mt-2 grid grid-cols-2 gap-3">
@@ -167,7 +167,7 @@ export function RecordVitalsModal({
         </div>
 
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-foreground-lighter">
             Triage &amp; observations
           </p>
           <div className="mt-2 space-y-3">
@@ -189,7 +189,7 @@ export function RecordVitalsModal({
                         ? opt.value === "EMERGENCY"
                           ? "border-rose-500 bg-rose-50 text-rose-700"
                           : "border-brand-500 bg-brand-50 text-brand-700"
-                        : "border-slate-200 text-slate-500 hover:border-slate-300"
+                        : "border-border text-foreground-light hover:border-border"
                     }`}
                   >
                     {opt.label}

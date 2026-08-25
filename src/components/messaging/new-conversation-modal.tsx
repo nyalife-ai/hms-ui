@@ -12,7 +12,7 @@ import {
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 
 const inputClass =
-  "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 export function NewConversationModal({
   open,
@@ -124,7 +124,7 @@ export function NewConversationModal({
             className={`rounded-full px-3.5 py-1.5 text-xs font-semibold ${
               mode === "DIRECT"
                 ? "bg-brand-500 text-white"
-                : "bg-slate-100 text-slate-600"
+                : "bg-surface-200 text-foreground-light"
             }`}
           >
             Direct
@@ -135,7 +135,7 @@ export function NewConversationModal({
             className={`inline-flex items-center gap-1 rounded-full px-3.5 py-1.5 text-xs font-semibold ${
               mode === "GROUP"
                 ? "bg-brand-500 text-white"
-                : "bg-slate-100 text-slate-600"
+                : "bg-surface-200 text-foreground-light"
             }`}
           >
             <Users className="h-3.5 w-3.5" /> Group
@@ -154,7 +154,7 @@ export function NewConversationModal({
         <div>
           <label
             htmlFor="staff-search"
-            className="mb-1.5 block text-xs font-medium text-slate-500"
+            className="mb-1.5 block text-xs font-medium text-foreground-light"
           >
             Find colleagues
           </label>
@@ -183,13 +183,13 @@ export function NewConversationModal({
           </div>
         ) : null}
 
-        <ul className="max-h-52 overflow-y-auto rounded-xl border border-slate-100">
+        <ul className="max-h-52 overflow-y-auto rounded-xl border border-border">
           {searching ? (
-            <li className="px-3 py-4 text-center text-xs text-slate-400">
+            <li className="px-3 py-4 text-center text-xs text-foreground-lighter">
               Searching…
             </li>
           ) : results.length === 0 ? (
-            <li className="px-3 py-4 text-center text-xs text-slate-400">
+            <li className="px-3 py-4 text-center text-xs text-foreground-lighter">
               {query.trim() ? "No matches" : "Type a name to search"}
             </li>
           ) : (
@@ -200,16 +200,16 @@ export function NewConversationModal({
                   <button
                     type="button"
                     onClick={() => toggle(u)}
-                    className={`flex w-full items-center gap-3 px-3 py-2.5 text-left hover:bg-slate-50 ${
+                    className={`flex w-full items-center gap-3 px-3 py-2.5 text-left hover:bg-surface-200 ${
                       isSelected ? "bg-brand-50/60" : ""
                     }`}
                   >
                     <Avatar name={u.displayName} size="sm" />
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-slate-800">
+                      <p className="truncate text-sm font-medium text-foreground">
                         {u.displayName}
                       </p>
-                      <p className="truncate text-xs text-slate-400">
+                      <p className="truncate text-xs text-foreground-lighter">
                         {u.role}
                         {u.department ? ` · ${u.department}` : ""}
                         {u.online ? " · Online" : ""}

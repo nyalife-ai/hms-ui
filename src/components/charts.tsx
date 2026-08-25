@@ -31,7 +31,7 @@ export function AgeStagesChart({
 }) {
   if (!data.length || data.every((d) => d.value === 0)) {
     return (
-      <p className="px-4 py-16 text-center text-sm text-slate-400">
+      <p className="px-4 py-16 text-center text-sm text-foreground-lighter">
         No patient age data yet.
       </p>
     );
@@ -57,7 +57,7 @@ export function DepartmentsDonut({
   const total = data.reduce((sum, d) => sum + d.value, 0);
   if (!data.length || total === 0) {
     return (
-      <p className="px-4 py-16 text-center text-sm text-slate-400">
+      <p className="px-4 py-16 text-center text-sm text-foreground-lighter">
         No department volume yet.
       </p>
     );
@@ -87,8 +87,8 @@ export function DepartmentsDonut({
         </PieChart>
       </ResponsiveContainer>
       <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-xs text-slate-400">Appointments</span>
-        <span className="text-xl font-bold text-slate-900">{total.toLocaleString()}</span>
+        <span className="text-xs text-foreground-lighter">Appointments</span>
+        <span className="text-xl font-bold text-foreground">{total.toLocaleString()}</span>
       </div>
     </div>
   );
@@ -101,7 +101,7 @@ export function RevenueLineChart({
 }) {
   if (!data.length) {
     return (
-      <p className="px-4 py-16 text-center text-sm text-slate-400">
+      <p className="px-4 py-16 text-center text-sm text-foreground-lighter">
         No invoice revenue recorded yet.
       </p>
     );
@@ -157,7 +157,7 @@ export function DeptStaffChart({
   }));
   if (!data.length) {
     return (
-      <p className="px-4 py-16 text-center text-sm text-slate-400">
+      <p className="px-4 py-16 text-center text-sm text-foreground-lighter">
         No department staffing data.
       </p>
     );
@@ -185,7 +185,7 @@ export function InventoryUsageChart({
 }) {
   if (!data.length) {
     return (
-      <p className="px-4 py-12 text-center text-sm text-slate-400">
+      <p className="px-4 py-12 text-center text-sm text-foreground-lighter">
         No dispense activity recorded yet.
       </p>
     );
@@ -235,7 +235,7 @@ export function AnalyticsLineChart({
   const hasData = data.some((d) => Number(d[valueKey] ?? 0) !== 0);
   if (!data.length || !hasData) {
     return (
-      <p className="px-4 py-16 text-center text-sm text-slate-400">{emptyLabel}</p>
+      <p className="px-4 py-16 text-center text-sm text-foreground-lighter">{emptyLabel}</p>
     );
   }
   return (
@@ -278,7 +278,7 @@ export function AnalyticsBarChart({
 }) {
   if (!data.length || data.every((d) => d.value === 0)) {
     return (
-      <p className="px-4 py-16 text-center text-sm text-slate-400">{emptyLabel}</p>
+      <p className="px-4 py-16 text-center text-sm text-foreground-lighter">{emptyLabel}</p>
     );
   }
   return (
@@ -304,7 +304,7 @@ export function AnalyticsDonutChart({
   const total = data.reduce((s, d) => s + d.value, 0);
   if (!data.length || total === 0) {
     return (
-      <p className="px-4 py-16 text-center text-sm text-slate-400">{emptyLabel}</p>
+      <p className="px-4 py-16 text-center text-sm text-foreground-lighter">{emptyLabel}</p>
     );
   }
   const slice = data.slice(0, 8).map((d, i) => ({
@@ -332,7 +332,7 @@ export function AnalyticsDonutChart({
           </Pie>
         </PieChart>
       </ResponsiveContainer>
-      <ul className="space-y-1.5 px-2 text-xs text-slate-600">
+      <ul className="space-y-1.5 px-2 text-xs text-foreground-light">
         {slice.map((d) => (
           <li key={d.name} className="flex items-center gap-2">
             <span

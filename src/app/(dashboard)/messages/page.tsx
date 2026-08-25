@@ -923,7 +923,7 @@ export default function MessagesPage() {
               />
             </>
           ) : (
-            <div className="flex flex-1 items-center justify-center px-5 py-16 text-sm text-slate-400">
+            <div className="flex flex-1 items-center justify-center px-5 py-16 text-sm text-foreground-lighter">
               Select a conversation or start a new one.
             </div>
           )}

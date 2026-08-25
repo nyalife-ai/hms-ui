@@ -6,7 +6,7 @@ import { BrandLogo } from "@/components/brand-logo";
 import { useAuth } from "@/lib/auth";
 
 const inputClass =
-  "mt-1.5 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20";
+  "mt-1.5 w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm text-foreground outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20";
 
 function LoginOtpForm() {
   const { user, loading, verifyLoginOtp } = useAuth();
@@ -58,11 +58,11 @@ function LoginOtpForm() {
           <h1 className="mt-8 text-2xl font-bold tracking-tight text-brand-600">
             Two-step verification
           </h1>
-          <p className="mt-3 max-w-sm text-sm text-slate-500">
+          <p className="mt-3 max-w-sm text-sm text-foreground-light">
             Enter the code we sent to your email to finish signing in.
           </p>
         </div>
-        <p className="absolute bottom-6 text-xs text-slate-400">
+        <p className="absolute bottom-6 text-xs text-foreground-lighter">
           © 2026 NyaLife Health
         </p>
       </div>
@@ -72,10 +72,10 @@ function LoginOtpForm() {
           <div className="mb-6 flex justify-center lg:hidden">
             <BrandLogo height={48} priority />
           </div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900">
+          <h2 className="text-2xl font-bold tracking-tight text-foreground">
             Enter verification code
           </h2>
-          <p className="mt-2 text-sm text-slate-500">
+          <p className="mt-2 text-sm text-foreground-light">
             Check your email for a 6-digit sign-in code.
           </p>
 
@@ -84,7 +84,7 @@ function LoginOtpForm() {
             className="mt-8 space-y-4 text-left"
           >
             <div>
-              <label className="text-sm font-medium text-slate-700" htmlFor="login-otp">
+              <label className="text-sm font-medium text-foreground" htmlFor="login-otp">
                 6-digit code
               </label>
               <input
@@ -112,7 +112,7 @@ function LoginOtpForm() {
             </button>
             <button
               type="button"
-              className="w-full text-xs font-semibold text-slate-500 hover:text-slate-700"
+              className="w-full text-xs font-semibold text-foreground-light hover:text-foreground"
               onClick={() => router.push("/login")}
             >
               Back to sign in
@@ -128,7 +128,7 @@ export default function LoginOtpPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center text-sm text-slate-500">
+        <div className="flex min-h-screen items-center justify-center text-sm text-foreground-light">
           Loading…
         </div>
       }

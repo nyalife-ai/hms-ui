@@ -62,7 +62,7 @@ export function PwaUpdateBanner() {
 
   return (
     <div
-      className="fixed bottom-4 left-1/2 z-[70] flex w-[min(92vw,28rem)] -translate-x-1/2 items-center gap-3 rounded-2xl border border-brand-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-lg"
+      className="fixed bottom-4 left-1/2 z-[70] flex w-[min(92vw,28rem)] -translate-x-1/2 items-center gap-3 rounded-2xl border border-brand-200 bg-white px-4 py-3 text-sm text-foreground shadow-lg"
       role="status"
     >
       <p className="min-w-0 flex-1">
@@ -78,7 +78,7 @@ export function PwaUpdateBanner() {
       <button
         type="button"
         onClick={() => setWaiting(null)}
-        className="shrink-0 rounded-full px-2 py-1 text-xs font-medium text-slate-400 hover:text-slate-600"
+        className="shrink-0 rounded-full px-2 py-1 text-xs font-medium text-foreground-lighter hover:text-foreground-light"
         aria-label="Dismiss update notice"
       >
         Later
