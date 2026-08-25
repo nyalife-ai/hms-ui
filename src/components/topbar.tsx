@@ -26,6 +26,7 @@ import {
   unlockNotificationAudio,
 } from "@/lib/notification-sound";
 import { connectRealtime } from "@/lib/realtime-client";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Avatar } from "./ui";
 
 const SEARCH_ROUTES: Array<{ label: string; href: string; keywords: string }> = [
@@ -459,11 +460,13 @@ export function Topbar() {
           )}
         </div>
 
+        <ThemeToggle />
+
         {canAccess(user.role, "settings", user.permissions) && (
           <button
             type="button"
             onClick={() => router.push("/settings")}
-            className="hidden rounded-lg border border-border bg-surface p-2 text-foreground-light transition hover:bg-surface-200 sm:inline-flex"
+            className="hidden rounded-md border border-border bg-surface p-2 text-foreground-light transition hover:bg-surface-200 sm:inline-flex"
             aria-label="Settings"
           >
             <Settings className="h-4 w-4" />

@@ -6,7 +6,7 @@ import { BrandLogo } from "@/components/brand-logo";
 import { useAuth } from "@/lib/auth";
 
 const inputClass =
-  "mt-1.5 w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm text-foreground outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20";
+  "mt-1.5 w-full rounded-lg border border-border bg-surface px-4 py-3 text-sm text-foreground outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20";
 
 function LoginOtpForm() {
   const { user, loading, verifyLoginOtp } = useAuth();
@@ -49,7 +49,7 @@ function LoginOtpForm() {
   };
 
   return (
-    <div className="flex min-h-screen bg-white">
+    <div className="flex min-h-screen bg-background">
       <div className="relative hidden w-1/2 flex-col items-center justify-center overflow-hidden bg-brand-50 p-12 lg:flex">
         <div className="pointer-events-none absolute -left-32 top-1/3 h-96 w-96 rounded-full bg-brand-100/50" />
         <div className="pointer-events-none absolute -bottom-24 right-0 h-80 w-80 rounded-full bg-brand-100/40" />
