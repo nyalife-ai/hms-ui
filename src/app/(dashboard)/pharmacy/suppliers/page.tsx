@@ -20,7 +20,7 @@ import { buildListQuery, toPageMeta, unwrapPage } from "@/lib/pagination";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 
 const inputClass =
-  "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 type Supplier = {
   id: string;
@@ -179,14 +179,14 @@ export default function PharmacySuppliersPage() {
         <CardHeader title="Vendor registry" subtitle="Used on purchase orders and inbound lots" />
         <Table headers={["Company", "Contact", "Phone", "Email", "Status", ""]}>
           {rows.map((s) => (
-            <tr key={s.id} className="hover:bg-slate-50/60">
+            <tr key={s.id} className="hover:bg-surface-200/60">
               <td className="px-5 py-3.5">
-                <p className="font-medium text-slate-800">{s.companyName}</p>
-                <p className="text-[11px] text-slate-400">{s.address || "—"}</p>
+                <p className="font-medium text-foreground">{s.companyName}</p>
+                <p className="text-[11px] text-foreground-lighter">{s.address || "—"}</p>
               </td>
-              <td className="px-5 py-3.5 text-slate-500">{s.contactPerson || "—"}</td>
-              <td className="px-5 py-3.5 text-slate-500">{s.phone || "—"}</td>
-              <td className="px-5 py-3.5 text-slate-500">{s.email || "—"}</td>
+              <td className="px-5 py-3.5 text-foreground-light">{s.contactPerson || "—"}</td>
+              <td className="px-5 py-3.5 text-foreground-light">{s.phone || "—"}</td>
+              <td className="px-5 py-3.5 text-foreground-light">{s.email || "—"}</td>
               <td className="px-5 py-3.5">
                 <Badge tone={s.isActive ? "green" : "slate"}>
                   {s.isActive ? "Active" : "Inactive"}
@@ -214,14 +214,14 @@ export default function PharmacySuppliersPage() {
       </Card>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
           <div className="w-full max-w-md space-y-3 rounded-2xl bg-white p-5 shadow-xl">
             <div className="flex items-center justify-between">
-              <h2 className="font-semibold text-slate-900">
+              <h2 className="font-semibold text-foreground">
                 {editing ? "Edit supplier" : "Add supplier"}
               </h2>
               <button type="button" onClick={() => setOpen(false)}>
-                <X className="h-4 w-4 text-slate-400" />
+                <X className="h-4 w-4 text-foreground-lighter" />
               </button>
             </div>
             <div>

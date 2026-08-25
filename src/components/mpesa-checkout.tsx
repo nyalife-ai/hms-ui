@@ -6,7 +6,7 @@ import { api } from "@/lib/api";
 import { ReceiptModal, type ReceiptData } from "@/components/receipt-modal";
 
 const inputClass =
-  "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 /** Poll cadence (ms) — backs off; stops on terminal status. */
 const POLL_DELAYS_MS = [0, 2000, 3000, 5000, 5000, 8000, 10000, 15000, 15000, 20000];
@@ -278,26 +278,26 @@ export function MpesaCheckoutModal({
     phase === "WAITING_CUSTOMER";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
       <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-base font-semibold text-slate-800">M-Pesa payment</h3>
+          <h3 className="text-base font-semibold text-foreground">M-Pesa payment</h3>
           <button
             onClick={() => {
               stopPolling();
               onClose();
             }}
-            className="text-slate-400 hover:text-slate-600"
+            className="text-foreground-lighter hover:text-foreground-light"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-foreground-light">
           {patientName} ·{" "}
-          <span className="font-semibold text-slate-900">KES {amount.toLocaleString()}</span>
+          <span className="font-semibold text-foreground">KES {amount.toLocaleString()}</span>
         </p>
-        <p className="mt-1 text-[11px] text-slate-400">
+        <p className="mt-1 text-[11px] text-foreground-lighter">
           {source === "PHARMACY" ? "Pharmacy dispense" : "Outpatient bill"}
         </p>
 
@@ -320,7 +320,7 @@ export function MpesaCheckoutModal({
               </div>
             )}
             <div>
-              <label className="text-xs font-semibold text-slate-600">M-Pesa phone</label>
+              <label className="text-xs font-semibold text-foreground-light">M-Pesa phone</label>
               <input
                 className={`mt-1.5 ${inputClass}`}
                 value={phone}
@@ -354,8 +354,8 @@ export function MpesaCheckoutModal({
             ) : (
               <XCircle className="h-8 w-8 text-rose-500" />
             )}
-            <p className="text-sm font-medium text-slate-800">{copy.title}</p>
-            <p className="text-[11px] text-slate-400">{hint || copy.hint}</p>
+            <p className="text-sm font-medium text-foreground">{copy.title}</p>
+            <p className="text-[11px] text-foreground-lighter">{hint || copy.hint}</p>
             {timeline && timeline.length > 0 && (
               <button
                 type="button"
@@ -366,24 +366,24 @@ export function MpesaCheckoutModal({
               </button>
             )}
             {showDetails && timeline && (
-              <ol className="mt-1 max-h-40 w-full overflow-y-auto rounded-xl bg-slate-50 px-3 py-2 text-left text-[11px] text-slate-600">
+              <ol className="mt-1 max-h-40 w-full overflow-y-auto rounded-xl bg-surface-200 px-3 py-2 text-left text-[11px] text-foreground-light">
                 {timeline.map((ev, idx) => (
-                  <li key={`${ev.at}-${idx}`} className="border-b border-slate-100 py-1.5 last:border-0">
-                    <span className="font-semibold text-slate-800">{timelineLabel(ev)}</span>
-                    <span className="text-slate-400">
+                  <li key={`${ev.at}-${idx}`} className="border-b border-border py-1.5 last:border-0">
+                    <span className="font-semibold text-foreground">{timelineLabel(ev)}</span>
+                    <span className="text-foreground-lighter">
                       {" "}
                       · {new Date(ev.at).toLocaleTimeString()}
                     </span>
                     {ev.message &&
                     !/job_|daraja|redis|worker|enqueue/i.test(ev.message) ? (
-                      <div className="text-slate-500">{ev.message}</div>
+                      <div className="text-foreground-light">{ev.message}</div>
                     ) : null}
                   </li>
                 ))}
               </ol>
             )}
             {checkoutId && showDetails ? (
-              <p className="text-[10px] text-slate-400">Ref {checkoutId.slice(0, 8)}…</p>
+              <p className="text-[10px] text-foreground-lighter">Ref {checkoutId.slice(0, 8)}…</p>
             ) : null}
           </div>
         )}

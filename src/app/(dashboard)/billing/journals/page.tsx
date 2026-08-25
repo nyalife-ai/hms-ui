@@ -20,7 +20,7 @@ import { buildListQuery, toPageMeta, unwrapPage } from "@/lib/pagination";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 
 const inputClass =
-  "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 type JournalRow = {
   id: string;
@@ -233,11 +233,11 @@ export default function BillingJournalsPage() {
         <CardHeader title="Journal entries" subtitle={`${total.toLocaleString()} records`} />
         <Table headers={["Entry", "Date", "Description", "Reference", "Status", ""]}>
           {rows.map((j) => (
-            <tr key={j.id} className="hover:bg-slate-50/60">
-              <td className="px-5 py-3.5 font-semibold text-slate-800">{j.entryNumber}</td>
-              <td className="px-5 py-3.5 text-slate-500">{formatDate(j.entryDate)}</td>
-              <td className="px-5 py-3.5 text-slate-600">{j.description || "—"}</td>
-              <td className="px-5 py-3.5 text-slate-500">
+            <tr key={j.id} className="hover:bg-surface-200/60">
+              <td className="px-5 py-3.5 font-semibold text-foreground">{j.entryNumber}</td>
+              <td className="px-5 py-3.5 text-foreground-light">{formatDate(j.entryDate)}</td>
+              <td className="px-5 py-3.5 text-foreground-light">{j.description || "—"}</td>
+              <td className="px-5 py-3.5 text-foreground-light">
                 {j.referenceType
                   ? `${j.referenceType}${j.referenceId ? ` · ${j.referenceId.slice(0, 8)}…` : ""}`
                   : "—"}
@@ -276,21 +276,21 @@ export default function BillingJournalsPage() {
           ))}
         </Table>
         {rows.length === 0 && !loading && (
-          <p className="px-5 pb-5 text-sm text-slate-400">No journal entries found.</p>
+          <p className="px-5 pb-5 text-sm text-foreground-lighter">No journal entries found.</p>
         )}
         <PaginationBar meta={meta} onPageChange={setPage} disabled={loading} />
       </Card>
 
       {(detail || detailLoading) && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
           <div className="max-h-[90vh] w-full max-w-2xl space-y-3 overflow-y-auto rounded-2xl bg-white p-5 shadow-xl">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="font-semibold text-slate-900">
+                <h2 className="font-semibold text-foreground">
                   {detail?.entryNumber ?? "Journal entry"}
                 </h2>
                 {detail && (
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-foreground-lighter">
                     {formatDate(detail.entryDate)}
                     {detail.postingPeriodName ? ` · ${detail.postingPeriodName}` : ""}
                     {detail.description ? ` · ${detail.description}` : ""}
@@ -299,24 +299,24 @@ export default function BillingJournalsPage() {
               </div>
               <button
                 type="button"
-                className="rounded-full border border-slate-200 px-3 py-1 text-xs text-slate-600"
+                className="rounded-full border border-border px-3 py-1 text-xs text-foreground-light"
                 onClick={() => setDetail(null)}
               >
                 Close
               </button>
             </div>
             {detailLoading && !detail ? (
-              <p className="text-sm text-slate-400">Loading lines…</p>
+              <p className="text-sm text-foreground-lighter">Loading lines…</p>
             ) : (
               <Table headers={["Account", "Direction", "Amount", "Note"]}>
                 {(detail?.lines ?? []).map((l) => (
                   <tr key={l.id}>
-                    <td className="px-5 py-3 text-sm text-slate-700">
+                    <td className="px-5 py-3 text-sm text-foreground">
                       {l.accountCode} · {l.accountName}
                     </td>
-                    <td className="px-5 py-3 text-sm text-slate-500">{l.direction}</td>
-                    <td className="px-5 py-3 text-sm text-slate-600">{formatKes(l.amount)}</td>
-                    <td className="px-5 py-3 text-sm text-slate-400">{l.description || "—"}</td>
+                    <td className="px-5 py-3 text-sm text-foreground-light">{l.direction}</td>
+                    <td className="px-5 py-3 text-sm text-foreground-light">{formatKes(l.amount)}</td>
+                    <td className="px-5 py-3 text-sm text-foreground-lighter">{l.description || "—"}</td>
                   </tr>
                 ))}
               </Table>

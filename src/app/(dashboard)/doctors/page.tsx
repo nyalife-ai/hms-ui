@@ -20,7 +20,7 @@ import { toPageMeta } from "@/lib/pagination";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 
 const inputClass =
-  "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 export default function DoctorsPage() {
   const router = useRouter();
@@ -117,7 +117,7 @@ export default function DoctorsPage() {
           <Card key={doc.id} className="flex flex-col p-5">
             <div className="flex items-start justify-between">
               <div>
-                <h3 className="text-sm font-bold text-slate-900">{doc.name}</h3>
+                <h3 className="text-sm font-bold text-foreground">{doc.name}</h3>
                 <div className="mt-1.5">
                   <Badge tone={doc.available ? "teal" : "red"}>
                     {doc.available ? "Available" : "Unavailable"}
@@ -128,7 +128,7 @@ export default function DoctorsPage() {
                 <button
                   type="button"
                   onClick={() => setMenuId(menuId === doc.id ? "" : doc.id)}
-                  className="rounded-lg px-2 py-1 text-xs font-medium text-slate-400 hover:bg-slate-50 hover:text-slate-600"
+                  className="rounded-lg px-2 py-1 text-xs font-medium text-foreground-lighter hover:bg-surface-200 hover:text-foreground-light"
                 >
                   Details
                 </button>
@@ -136,7 +136,7 @@ export default function DoctorsPage() {
                   <div className="absolute right-0 z-10 mt-1 w-44 rounded-xl bg-white p-1.5 shadow-lg ring-1 ring-slate-100">
                     <button
                       type="button"
-                      className="block w-full rounded-lg px-3 py-2 text-left text-xs text-slate-600 hover:bg-slate-50"
+                      className="block w-full rounded-lg px-3 py-2 text-left text-xs text-foreground-light hover:bg-surface-200"
                       onClick={() => {
                         setMenuId("");
                         router.push(`/appointments`);
@@ -146,7 +146,7 @@ export default function DoctorsPage() {
                     </button>
                     <a
                       href={`mailto:${doc.email}`}
-                      className="block w-full rounded-lg px-3 py-2 text-left text-xs text-slate-600 hover:bg-slate-50"
+                      className="block w-full rounded-lg px-3 py-2 text-left text-xs text-foreground-light hover:bg-surface-200"
                       onClick={() => setMenuId("")}
                     >
                       Email doctor
@@ -160,10 +160,10 @@ export default function DoctorsPage() {
               <Avatar name={doc.name} size="lg" />
             </div>
 
-            <div className="border-t border-slate-50 pt-3 text-center">
-              <p className="text-sm font-semibold text-slate-800">{doc.specialty}</p>
-              <p className="mt-0.5 text-xs text-slate-400">{doc.hours}</p>
-              <p className="mt-1 truncate text-[11px] text-slate-400">{doc.email}</p>
+            <div className="border-t border-border pt-3 text-center">
+              <p className="text-sm font-semibold text-foreground">{doc.specialty}</p>
+              <p className="mt-0.5 text-xs text-foreground-lighter">{doc.hours}</p>
+              <p className="mt-1 truncate text-[11px] text-foreground-lighter">{doc.email}</p>
             </div>
 
             <div className="mt-4 flex items-center gap-2">
@@ -176,16 +176,16 @@ export default function DoctorsPage() {
                     participantIds: [doc.userId],
                   }).then((conv) => router.push(`/messages?c=${conv.id}`));
                 }}
-                className="rounded-full border border-slate-200 p-2.5 text-slate-400 transition hover:border-brand-300 hover:text-brand-600"
+                className="rounded-full border border-border p-2.5 text-foreground-lighter transition hover:border-brand-300 hover:text-brand-600"
               >
                 <MessageCircle className="h-4 w-4" />
               </button>
               <a
                 title="Call"
                 href={doc.phone ? `tel:${doc.phone.replace(/\s+/g, "")}` : undefined}
-                className={`rounded-full border border-slate-200 p-2.5 transition ${
+                className={`rounded-full border border-border p-2.5 transition ${
                   doc.phone
-                    ? "text-slate-400 hover:border-brand-300 hover:text-brand-600"
+                    ? "text-foreground-lighter hover:border-brand-300 hover:text-brand-600"
                     : "pointer-events-none text-slate-200"
                 }`}
               >
@@ -209,25 +209,25 @@ export default function DoctorsPage() {
       {loading && (
         <div className="space-y-2 py-6">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-24 animate-pulse rounded-2xl bg-slate-100" />
+            <div key={i} className="h-24 animate-pulse rounded-2xl bg-surface-200" />
           ))}
         </div>
       )}
       {!loading && doctors.length === 0 && (
-        <p className="py-10 text-center text-sm text-slate-400">No doctors found.</p>
+        <p className="py-10 text-center text-sm text-foreground-lighter">No doctors found.</p>
       )}
-      <div className="mt-4 rounded-2xl border border-slate-100 bg-white">
+      <div className="mt-4 rounded-2xl border border-border bg-white">
         <PaginationBar meta={meta} onPageChange={setPage} disabled={loading} />
       </div>
 
       {assignDoctor && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
           <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-base font-semibold text-slate-900">
+              <h2 className="text-base font-semibold text-foreground">
                 Assign patient · {assignDoctor.name}
               </h2>
-              <button onClick={() => setAssignDoctor(null)} className="rounded-lg p-1 text-slate-400 hover:bg-slate-50">
+              <button onClick={() => setAssignDoctor(null)} className="rounded-lg p-1 text-foreground-lighter hover:bg-surface-200">
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -297,11 +297,11 @@ export default function DoctorsPage() {
       )}
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
           <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-base font-semibold text-slate-900">Add doctor</h2>
-              <button onClick={() => setOpen(false)} className="rounded-lg p-1 text-slate-400 hover:bg-slate-50">
+              <h2 className="text-base font-semibold text-foreground">Add doctor</h2>
+              <button onClick={() => setOpen(false)} className="rounded-lg p-1 text-foreground-lighter hover:bg-surface-200">
                 <X className="h-4 w-4" />
               </button>
             </div>

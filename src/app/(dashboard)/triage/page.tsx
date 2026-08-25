@@ -20,7 +20,7 @@ import {
 import { useVisits, type Visit, type Vitals } from "@/lib/visits";
 
 const inputClass =
-  "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground placeholder:text-foreground-lighter focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 const EMPTY_VITALS: Vitals = {
   temperature: "",
@@ -302,7 +302,7 @@ export default function TriagePage() {
               void refresh().finally(() => setRefreshBusy(false));
             }}
             disabled={refreshBusy || loading}
-            className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:border-brand-300 disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground-light hover:border-brand-300 disabled:opacity-50"
           >
             {refreshBusy || loading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -372,7 +372,7 @@ export default function TriagePage() {
           } md:block`}
         >
           {!selected ? (
-            <Card className="p-8 text-center text-sm text-slate-400">
+            <Card className="p-8 text-center text-sm text-foreground-lighter">
               Select a patient to begin clinical triage intake
             </Card>
           ) : (
@@ -381,14 +381,14 @@ export default function TriagePage() {
                 <div className="flex min-w-0 items-start gap-3">
                   <Avatar name={selected.patientName} />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-semibold text-slate-900">
+                    <p className="truncate font-semibold text-foreground">
                       {selected.patientName}
                     </p>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-foreground-light">
                       {selected.mrn} · {selected.age} yrs · {selected.gender}
                     </p>
                     {(selected.reasonForVisit || selected.additionalNotes) && (
-                      <div className="mt-2 rounded-xl bg-slate-50 px-3 py-2 text-xs text-slate-600">
+                      <div className="mt-2 rounded-xl bg-surface-200 px-3 py-2 text-xs text-foreground-light">
                         {selected.reasonForVisit && (
                           <p>
                             <span className="font-medium">Reception context: </span>
@@ -460,13 +460,13 @@ export default function TriagePage() {
                       </button>
                     </div>
                     {symptoms.length === 0 && (
-                      <p className="text-xs text-slate-400">No symptoms recorded yet</p>
+                      <p className="text-xs text-foreground-lighter">No symptoms recorded yet</p>
                     )}
                     <div className="space-y-3">
                       {symptoms.map((s, idx) => (
                         <div
                           key={idx}
-                          className="rounded-xl border border-slate-100 p-3 space-y-2"
+                          className="rounded-xl border border-border p-3 space-y-2"
                         >
                           <div className="flex min-w-0 flex-wrap gap-2">
                             <select
@@ -499,7 +499,7 @@ export default function TriagePage() {
                             </select>
                             <button
                               type="button"
-                              className="rounded-lg p-2 text-slate-400 hover:bg-slate-50"
+                              className="rounded-lg p-2 text-foreground-lighter hover:bg-surface-200"
                               onClick={() =>
                                 setSymptoms((rows) => rows.filter((_, i) => i !== idx))
                               }
@@ -786,7 +786,7 @@ export default function TriagePage() {
               {section(
                 "3. Relevant history",
                 <>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-foreground-lighter">
                     Triage-level known history only — full medical history remains on the doctor form.
                   </p>
                   <div className="flex flex-wrap gap-2">
@@ -798,7 +798,7 @@ export default function TriagePage() {
                         className={`rounded-full border px-3 py-1 text-xs ${
                           conditions.includes(c)
                             ? "border-brand-300 bg-brand-50 text-brand-800"
-                            : "border-slate-200 text-slate-600"
+                            : "border-border text-foreground-light"
                         }`}
                       >
                         {c}
@@ -830,7 +830,7 @@ export default function TriagePage() {
                         className={`rounded-full border px-3 py-1 text-xs ${
                           allergiesKnown === false
                             ? "border-brand-300 bg-brand-50"
-                            : "border-slate-200"
+                            : "border-border"
                         }`}
                         onClick={() => setAllergiesKnown(false)}
                       >
@@ -841,7 +841,7 @@ export default function TriagePage() {
                         className={`rounded-full border px-3 py-1 text-xs ${
                           allergiesKnown === true
                             ? "border-brand-300 bg-brand-50"
-                            : "border-slate-200"
+                            : "border-border"
                         }`}
                         onClick={() => setAllergiesKnown(true)}
                       >
@@ -879,7 +879,7 @@ export default function TriagePage() {
               {section(
                 "4. Context-specific screening",
                 <>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-foreground-lighter">
                     Enable only when clinically relevant — do not open every section by default.
                   </p>
                   <div className="flex flex-wrap gap-2">
@@ -898,7 +898,7 @@ export default function TriagePage() {
                         className={`rounded-full border px-3 py-1 text-xs ${
                           contexts.includes(id)
                             ? "border-brand-300 bg-brand-50 text-brand-800"
-                            : "border-slate-200 text-slate-600"
+                            : "border-border text-foreground-light"
                         }`}
                       >
                         {label}
@@ -906,7 +906,7 @@ export default function TriagePage() {
                     ))}
                   </div>
                   {contexts.includes("ANTENATAL") && (
-                    <div className="grid gap-2 rounded-xl border border-slate-100 p-3 sm:grid-cols-2">
+                    <div className="grid gap-2 rounded-xl border border-border p-3 sm:grid-cols-2">
                       {(
                         [
                           ["pregnancyStatus", "Pregnancy status"],
@@ -934,7 +934,7 @@ export default function TriagePage() {
                     </div>
                   )}
                   {contexts.includes("GYNAECOLOGICAL") && (
-                    <div className="grid gap-2 rounded-xl border border-slate-100 p-3 sm:grid-cols-2">
+                    <div className="grid gap-2 rounded-xl border border-border p-3 sm:grid-cols-2">
                       {(
                         [
                           ["pregnancyStatus", "Pregnancy status"],
@@ -957,7 +957,7 @@ export default function TriagePage() {
                     </div>
                   )}
                   {contexts.includes("PAEDIATRIC") && (
-                    <div className="grid gap-2 rounded-xl border border-slate-100 p-3 sm:grid-cols-2">
+                    <div className="grid gap-2 rounded-xl border border-border p-3 sm:grid-cols-2">
                       {(
                         [
                           ["feedingConcerns", "Feeding concerns"],
@@ -980,7 +980,7 @@ export default function TriagePage() {
                     </div>
                   )}
                   {contexts.includes("CHRONIC") && (
-                    <div className="grid gap-2 rounded-xl border border-slate-100 p-3">
+                    <div className="grid gap-2 rounded-xl border border-border p-3">
                       <div>
                         <FieldLabel>Relevant chronic symptoms</FieldLabel>
                         <input
@@ -1072,7 +1072,7 @@ export default function TriagePage() {
                           className={`rounded-full border px-3 py-1 text-xs ${
                             redFlags.includes(f)
                               ? "border-rose-300 bg-rose-50 text-rose-800"
-                              : "border-slate-200 text-slate-600"
+                              : "border-border text-foreground-light"
                           }`}
                         >
                           {f}
@@ -1107,7 +1107,7 @@ export default function TriagePage() {
                           className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${
                             priority === p
                               ? "border-brand-400 bg-brand-50 text-brand-800"
-                              : "border-slate-200 text-slate-600"
+                              : "border-border text-foreground-light"
                           }`}
                         >
                           <Badge tone={priorityTone(p)}>{p}</Badge>

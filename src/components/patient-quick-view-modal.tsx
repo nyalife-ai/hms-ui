@@ -115,16 +115,16 @@ export function PatientQuickViewModal({
   return (
     <Modal open onClose={onClose} size="xl" hideHeader>
       <div className="flex max-h-[80vh] overflow-hidden">
-        <aside className="flex w-[200px] shrink-0 flex-col border-r border-slate-100 bg-[#faf7f9] sm:w-[220px]">
+        <aside className="flex w-[200px] shrink-0 flex-col border-r border-border bg-[#faf7f9] sm:w-[220px]">
           <div className="px-4 pb-3 pt-5">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-brand-600">
               Diagnostic overview
             </p>
-            <h2 className="mt-1 text-base font-bold leading-snug text-slate-900">
+            <h2 className="mt-1 text-base font-bold leading-snug text-foreground">
               {detail?.name ?? (loading ? "Loading…" : "Patient")}
             </h2>
             {detail?.mrn ? (
-              <p className="mt-0.5 text-xs text-slate-400">
+              <p className="mt-0.5 text-xs text-foreground-lighter">
                 {detail.mrn}
                 {detail.referenceCode ? ` · ${detail.referenceCode}` : ""}
               </p>
@@ -147,11 +147,11 @@ export function PatientQuickViewModal({
                   className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm transition ${
                     active
                       ? "bg-white font-semibold text-brand-700 shadow-sm ring-1 ring-brand-100"
-                      : "font-medium text-slate-600 hover:bg-white/70"
+                      : "font-medium text-foreground-light hover:bg-white/70"
                   }`}
                 >
                   <Icon
-                    className={`h-4 w-4 ${active ? "text-brand-600" : "text-slate-400"}`}
+                    className={`h-4 w-4 ${active ? "text-brand-600" : "text-foreground-lighter"}`}
                   />
                   {item.label}
                 </button>
@@ -161,7 +161,7 @@ export function PatientQuickViewModal({
           <button
             type="button"
             onClick={onClose}
-            className="m-3 inline-flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-800"
+            className="m-3 inline-flex items-center gap-1 text-xs font-medium text-foreground-light hover:text-foreground"
           >
             <ChevronLeft className="h-3.5 w-3.5" /> Back to List
           </button>
@@ -173,7 +173,7 @@ export function PatientQuickViewModal({
               {[1, 2, 3].map((i) => (
                 <div
                   key={i}
-                  className="h-16 animate-pulse rounded-xl bg-slate-100"
+                  className="h-16 animate-pulse rounded-xl bg-surface-200"
                 />
               ))}
             </div>
@@ -195,37 +195,37 @@ export function PatientQuickViewModal({
                   </p>
                   <dl className="mt-3 space-y-3 text-sm">
                     <div>
-                      <dt className="text-[10px] uppercase tracking-wide text-slate-400">
+                      <dt className="text-[10px] uppercase tracking-wide text-foreground-lighter">
                         Full identity
                       </dt>
-                      <dd className="font-semibold text-slate-900">{detail.name}</dd>
+                      <dd className="font-semibold text-foreground">{detail.name}</dd>
                     </div>
                     <div>
-                      <dt className="text-[10px] uppercase tracking-wide text-slate-400">
+                      <dt className="text-[10px] uppercase tracking-wide text-foreground-lighter">
                         Gender
                       </dt>
-                      <dd className="font-semibold text-slate-900">
+                      <dd className="font-semibold text-foreground">
                         {detail.gender || "—"}
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-[10px] uppercase tracking-wide text-slate-400">
+                      <dt className="text-[10px] uppercase tracking-wide text-foreground-lighter">
                         Date of birth
                       </dt>
-                      <dd className="font-semibold text-slate-900">
+                      <dd className="font-semibold text-foreground">
                         {detail.dateOfBirth || "—"}
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-[10px] uppercase tracking-wide text-slate-400">
+                      <dt className="text-[10px] uppercase tracking-wide text-foreground-lighter">
                         Age
                       </dt>
-                      <dd className="font-semibold text-slate-900">
+                      <dd className="font-semibold text-foreground">
                         {detail.age > 0 ? `${detail.age} years` : "—"}
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-[10px] uppercase tracking-wide text-slate-400">
+                      <dt className="text-[10px] uppercase tracking-wide text-foreground-lighter">
                         Blood group
                       </dt>
                       <dd className="mt-1">
@@ -235,10 +235,10 @@ export function PatientQuickViewModal({
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-[10px] uppercase tracking-wide text-slate-400">
+                      <dt className="text-[10px] uppercase tracking-wide text-foreground-lighter">
                         Registered
                       </dt>
-                      <dd className="font-semibold text-slate-900">
+                      <dd className="font-semibold text-foreground">
                         {formatDate(detail.registeredAt)}
                       </dd>
                     </div>
@@ -250,44 +250,44 @@ export function PatientQuickViewModal({
                   </p>
                   <dl className="mt-3 space-y-3 text-sm">
                     <div>
-                      <dt className="text-[10px] uppercase tracking-wide text-slate-400">
+                      <dt className="text-[10px] uppercase tracking-wide text-foreground-lighter">
                         Phone
                       </dt>
-                      <dd className="font-semibold text-slate-900">
+                      <dd className="font-semibold text-foreground">
                         {detail.phone || "—"}
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-[10px] uppercase tracking-wide text-slate-400">
+                      <dt className="text-[10px] uppercase tracking-wide text-foreground-lighter">
                         Email
                       </dt>
-                      <dd className="truncate font-semibold text-slate-900">
+                      <dd className="truncate font-semibold text-foreground">
                         {detail.email || "—"}
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-[10px] uppercase tracking-wide text-slate-400">
+                      <dt className="text-[10px] uppercase tracking-wide text-foreground-lighter">
                         Address
                       </dt>
-                      <dd className="font-medium text-slate-700">
+                      <dd className="font-medium text-foreground">
                         {[detail.address, detail.city, detail.country]
                           .filter(Boolean)
                           .join(", ") || "—"}
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-[10px] uppercase tracking-wide text-slate-400">
+                      <dt className="text-[10px] uppercase tracking-wide text-foreground-lighter">
                         Occupation
                       </dt>
-                      <dd className="font-semibold text-slate-900">
+                      <dd className="font-semibold text-foreground">
                         {detail.occupation || "—"}
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-[10px] uppercase tracking-wide text-slate-400">
+                      <dt className="text-[10px] uppercase tracking-wide text-foreground-lighter">
                         Height / weight
                       </dt>
-                      <dd className="font-semibold text-slate-900">
+                      <dd className="font-semibold text-foreground">
                         {detail.physical.height != null
                           ? `${detail.physical.height} cm`
                           : "—"}
@@ -298,10 +298,10 @@ export function PatientQuickViewModal({
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-[10px] uppercase tracking-wide text-slate-400">
+                      <dt className="text-[10px] uppercase tracking-wide text-foreground-lighter">
                         Vitals on file
                       </dt>
-                      <dd className="font-semibold text-slate-900">
+                      <dd className="font-semibold text-foreground">
                         {detail.counts.vitals}
                       </dd>
                     </div>
@@ -310,19 +310,19 @@ export function PatientQuickViewModal({
               </div>
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
+                <div className="rounded-xl border border-border bg-surface-200 px-4 py-3">
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-brand-600">
                     Allergies
                   </p>
-                  <p className="mt-1 text-sm font-medium text-slate-800">
+                  <p className="mt-1 text-sm font-medium text-foreground">
                     {detail.allergies || "None recorded"}
                   </p>
                 </div>
-                <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
+                <div className="rounded-xl border border-border bg-surface-200 px-4 py-3">
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-brand-600">
                     Chronic conditions
                   </p>
-                  <p className="mt-1 text-sm font-medium text-slate-800">
+                  <p className="mt-1 text-sm font-medium text-foreground">
                     {detail.chronicDiseases || "None recorded"}
                   </p>
                 </div>
@@ -332,12 +332,12 @@ export function PatientQuickViewModal({
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-brand-600">
                   Emergency (NOK)
                 </p>
-                <div className="mt-2 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-slate-900">
+                <div className="mt-2 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-foreground">
                   <Users className="h-4 w-4 text-brand-600" />
                   {detail.emergencyContact?.name || "Not registered"}
                 </div>
                 {detail.emergencyContact?.phone && (
-                  <p className="mt-1 text-xs text-slate-600">
+                  <p className="mt-1 text-xs text-foreground-light">
                     {detail.emergencyContact.relationship} ·{" "}
                     {detail.emergencyContact.phone}
                   </p>
@@ -349,7 +349,7 @@ export function PatientQuickViewModal({
                   Insurance
                 </p>
                 {(detail.insurance?.length ?? 0) === 0 ? (
-                  <p className="mt-2 text-sm text-slate-500">No active policy on file</p>
+                  <p className="mt-2 text-sm text-foreground-light">No active policy on file</p>
                 ) : (
                   <ul className="mt-2 space-y-1 text-sm">
                     {detail.insurance!.map((pol) => (
@@ -364,7 +364,7 @@ export function PatientQuickViewModal({
 
               <Link
                 href={`/patients/${detail.id}`}
-                className="inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-800 hover:border-brand-300 hover:text-brand-700"
+                className="inline-flex items-center justify-center rounded-xl border border-border px-4 py-2 text-sm font-semibold text-foreground hover:border-brand-300 hover:text-brand-700"
               >
                 Open full profile
               </Link>
@@ -381,7 +381,7 @@ export function PatientQuickViewModal({
                   icon={FolderOpen}
                   title="No historical encounters"
                   description="No appointments, visits, or consultations are on file for this patient yet."
-                  className="mt-2 rounded-xl border border-slate-200 bg-slate-50"
+                  className="mt-2 rounded-xl border border-border bg-surface-200"
                 />
               ) : (
                 <ul className="mt-4 space-y-2">
@@ -390,10 +390,10 @@ export function PatientQuickViewModal({
                       <Link
                         href={item.href}
                         onClick={onClose}
-                        className="block rounded-xl border border-slate-100 bg-slate-50 px-3.5 py-2.5 text-sm transition hover:border-brand-200 hover:bg-brand-50/40"
+                        className="block rounded-xl border border-border bg-surface-200 px-3.5 py-2.5 text-sm transition hover:border-brand-200 hover:bg-brand-50/40"
                       >
                         <div className="flex items-start justify-between gap-2">
-                          <p className="font-semibold text-slate-800">
+                          <p className="font-semibold text-foreground">
                             {item.label}
                             {item.date ? ` · ${item.date}` : ""}
                             {item.time ? ` ${item.time}` : ""}
@@ -402,7 +402,7 @@ export function PatientQuickViewModal({
                             {item.status.replace(/_/g, " ")}
                           </Badge>
                         </div>
-                        <p className="text-xs text-slate-500">
+                        <p className="text-xs text-foreground-light">
                           {item.provider}
                           {item.summary ? ` · ${item.summary}` : ""}
                         </p>

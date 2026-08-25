@@ -22,7 +22,7 @@ import { buildListQuery, toPageMeta, unwrapPage } from "@/lib/pagination";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 
 const inputClass =
-  "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 type ClaimRow = {
   id: string;
@@ -242,20 +242,20 @@ export default function BillingClaimsPage() {
           ]}
         >
           {rows.map((c) => (
-            <tr key={c.id} className="hover:bg-slate-50/60">
-              <td className="px-5 py-3.5 font-semibold text-slate-800">{c.claimNumber}</td>
+            <tr key={c.id} className="hover:bg-surface-200/60">
+              <td className="px-5 py-3.5 font-semibold text-foreground">{c.claimNumber}</td>
               <td className="px-5 py-3.5">
                 <div className="flex items-center gap-3">
                   <Avatar name={c.patientName} size="sm" />
                   <div>
-                    <p className="text-sm text-slate-700">{c.patientName}</p>
-                    <p className="text-[11px] text-slate-400">{c.patientMrn}</p>
+                    <p className="text-sm text-foreground">{c.patientName}</p>
+                    <p className="text-[11px] text-foreground-lighter">{c.patientMrn}</p>
                   </div>
                 </div>
               </td>
-              <td className="px-5 py-3.5 text-slate-500">{c.invoiceNumber}</td>
-              <td className="px-5 py-3.5 text-slate-600">{formatKes(c.amountClaimed)}</td>
-              <td className="px-5 py-3.5 text-slate-600">{formatKes(c.amountApproved)}</td>
+              <td className="px-5 py-3.5 text-foreground-light">{c.invoiceNumber}</td>
+              <td className="px-5 py-3.5 text-foreground-light">{formatKes(c.amountClaimed)}</td>
+              <td className="px-5 py-3.5 text-foreground-light">{formatKes(c.amountApproved)}</td>
               <td className="px-5 py-3.5">
                 <Badge tone={STATUS_TONES[c.status] ?? "slate"}>
                   {c.status.replaceAll("_", " ")}
@@ -268,7 +268,7 @@ export default function BillingClaimsPage() {
                       type="button"
                       disabled={busyId === c.id}
                       onClick={() => openAction(c)}
-                      className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-700 hover:border-brand-300 disabled:opacity-50"
+                      className="rounded-full border border-border px-3 py-1 text-xs font-semibold text-foreground hover:border-brand-300 disabled:opacity-50"
                     >
                       Update status
                     </button>
@@ -279,15 +279,15 @@ export default function BillingClaimsPage() {
           ))}
         </Table>
         {rows.length === 0 && !loading && (
-          <p className="px-5 pb-5 text-sm text-slate-400">No claims found.</p>
+          <p className="px-5 pb-5 text-sm text-foreground-lighter">No claims found.</p>
         )}
         <PaginationBar meta={meta} onPageChange={setPage} disabled={loading} />
       </Card>
 
       {actionClaim && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
           <div className="w-full max-w-md space-y-3 rounded-2xl bg-white p-5 shadow-xl">
-            <h2 className="font-semibold text-slate-900">
+            <h2 className="font-semibold text-foreground">
               Update {actionClaim.claimNumber}
             </h2>
             <div>
@@ -336,7 +336,7 @@ export default function BillingClaimsPage() {
               </PrimaryButton>
               <button
                 type="button"
-                className="rounded-full border border-slate-200 px-4 py-2 text-sm text-slate-600"
+                className="rounded-full border border-border px-4 py-2 text-sm text-foreground-light"
                 onClick={() => setActionClaim(null)}
               >
                 Cancel

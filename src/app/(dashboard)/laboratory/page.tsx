@@ -114,7 +114,7 @@ export default function LaboratoryOverviewPage() {
             <Link href="/laboratory/results">
               <button
                 type="button"
-                className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:border-brand-300 hover:text-brand-700"
+                className="rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground-light hover:border-brand-300 hover:text-brand-700"
               >
                 Results
               </button>
@@ -122,7 +122,7 @@ export default function LaboratoryOverviewPage() {
             <button
               type="button"
               onClick={() => void load()}
-              className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:border-brand-300 hover:text-brand-700"
+              className="rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground-light hover:border-brand-300 hover:text-brand-700"
             >
               Refresh
             </button>
@@ -175,8 +175,8 @@ export default function LaboratoryOverviewPage() {
               >
                 <Avatar name={v.patientName} />
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-slate-800">{v.patientName}</p>
-                  <p className="text-[11px] text-slate-400">
+                  <p className="text-sm font-semibold text-foreground">{v.patientName}</p>
+                  <p className="text-[11px] text-foreground-lighter">
                     {v.mrn} · {v.testCount} test(s)
                     {v.requestNumber ? ` · ${v.requestNumber}` : ""}
                   </p>
@@ -213,10 +213,10 @@ export default function LaboratoryOverviewPage() {
           <Link
             key={l.href}
             href={l.href}
-            className="rounded-2xl border border-slate-100 bg-white p-4 shadow-[0_1px_3px_rgba(23,40,46,0.05)] hover:border-brand-200"
+            className="rounded-2xl border border-border bg-white p-4 shadow-[0_1px_3px_rgba(23,40,46,0.05)] hover:border-brand-200"
           >
-            <p className="font-semibold text-slate-800">{l.label}</p>
-            <p className="mt-1 text-xs text-slate-400">{l.hint}</p>
+            <p className="font-semibold text-foreground">{l.label}</p>
+            <p className="mt-1 text-xs text-foreground-lighter">{l.hint}</p>
           </Link>
         ))}
       </div>

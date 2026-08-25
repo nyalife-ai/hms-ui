@@ -12,7 +12,8 @@ import {
 } from "@/components/patient-form";
 import { PatientSearchSelect } from "@/components/patient-search-select";
 import { RoleGuard } from "@/components/role-guard";
-import { Avatar, Badge, Card, CardHeader, PageHeader } from "@/components/ui";
+import { Avatar, Badge, Card, CardHeader } from "@/components/ui";
+import { PageLayout, ScaffoldContainer } from "@/components/studio";
 import { VisitQueueList } from "@/components/visit-flow";
 import { api } from "@/lib/api";
 import {
@@ -31,7 +32,7 @@ import type {
 } from "@/lib/insurance";
 
 const inputClass =
-  "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground placeholder:text-foreground-lighter focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 type VerifyState =
   | "IDLE"
@@ -379,14 +380,17 @@ export default function FrontDeskPage() {
 
   return (
     <RoleGuard module="front-desk">
-      <PageHeader title="Front Desk" subtitle="Check patients in and send them to triage" />
-
+      <PageLayout
+        title="Front Desk"
+        subtitle="Check patients in and send them to triage"
+      >
+        <ScaffoldContainer className="pt-6">
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.3fr_1fr]">
         <Card>
           <CardHeader title="Patient Check-In" subtitle="Step 1 of the visit — reception" />
           <div className="space-y-5 px-5 pb-5">
             <div>
-              <label className="text-xs font-semibold text-slate-600">
+              <label className="text-xs font-semibold text-foreground-light">
                 Is this the patient&apos;s first visit?
               </label>
               <div className="mt-2 grid grid-cols-2 gap-2">
@@ -400,7 +404,7 @@ export default function FrontDeskPage() {
                     className={`rounded-full border px-3 py-2.5 text-sm font-medium transition ${
                       firstVisit === opt.value
                         ? "border-brand-500 bg-brand-50 text-brand-700"
-                        : "border-slate-200 text-slate-500 hover:border-slate-300"
+                        : "border-border text-foreground-light hover:border-border"
                     }`}
                   >
                     {opt.label}
@@ -444,14 +448,14 @@ export default function FrontDeskPage() {
                     className={`rounded-full border px-3 py-2.5 text-sm font-medium transition ${
                       method === m
                         ? "border-brand-500 bg-brand-50 text-brand-700"
-                        : "border-slate-200 text-slate-500 hover:border-slate-300"
+                        : "border-border text-foreground-light hover:border-border"
                     }`}
                   >
                     {m === "CASH" ? "Cash / M-Pesa" : "Insurance"}
                   </button>
                 ))}
               </div>
-              <p className="mt-2 text-[11px] leading-relaxed text-slate-400">
+              <p className="mt-2 text-[11px] leading-relaxed text-foreground-lighter">
                 {method === "CASH"
                   ? "Patient pays at billing (cash or M-Pesa) after clinical care."
                   : "Visit is billed to the insurer. Confirm eligibility below before sending to triage."}
@@ -462,7 +466,7 @@ export default function FrontDeskPage() {
               <div className="space-y-4 rounded-2xl bg-[#f3f7f7] p-4">
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
-                    <label className="text-xs font-semibold text-slate-600">
+                    <label className="text-xs font-semibold text-foreground-light">
                       Insurance provider
                     </label>
                     <select
@@ -482,11 +486,11 @@ export default function FrontDeskPage() {
                       ))}
                     </select>
                     {provider?.channel && (
-                      <p className="mt-1 text-[10px] text-slate-400">{provider.channel}</p>
+                      <p className="mt-1 text-[10px] text-foreground-lighter">{provider.channel}</p>
                     )}
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-slate-600">
+                    <label className="text-xs font-semibold text-foreground-light">
                       Member / policy number
                     </label>
                     <input
@@ -533,22 +537,22 @@ export default function FrontDeskPage() {
                         <UserCheck className="h-4 w-4" />
                       </span>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold text-slate-800">
+                        <p className="truncate text-sm font-semibold text-foreground">
                           {eligibility.member.name}
                         </p>
-                        <p className="text-[11px] text-slate-400">
+                        <p className="text-[11px] text-foreground-lighter">
                           {eligibility.member.phoneMasked} · {eligibility.coverage?.scheme}
                           {eligibility.mode ? ` · ${eligibility.mode}` : ""}
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-bold text-slate-900">
+                        <p className="text-sm font-bold text-foreground">
                           KES{" "}
                           {(
                             selectedBenefit?.balance ?? eligibility.coverage?.balance
                           )?.toLocaleString() ?? "—"}
                         </p>
-                        <p className="text-[10px] text-slate-400">benefit balance</p>
+                        <p className="text-[10px] text-foreground-lighter">benefit balance</p>
                       </div>
                     </div>
                   )}
@@ -560,7 +564,7 @@ export default function FrontDeskPage() {
                     verifyState === "OTP_SENT" ||
                     verifyState === "VERIFYING_OTP") && (
                     <div>
-                      <label className="text-xs font-semibold text-slate-600">
+                      <label className="text-xs font-semibold text-foreground-light">
                         Benefit to bill
                       </label>
                       <select
@@ -604,7 +608,7 @@ export default function FrontDeskPage() {
 
                 {(verifyState === "OTP_SENT" || verifyState === "VERIFYING_OTP") && (
                   <div className="space-y-2">
-                    <label className="text-xs font-semibold text-slate-600">
+                    <label className="text-xs font-semibold text-foreground-light">
                       Enter the OTP the patient received
                     </label>
                     {sandboxOtpHint && (
@@ -643,7 +647,7 @@ export default function FrontDeskPage() {
                 {verifyState === "VERIFIED" && (
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge tone="teal">Member verified — visit authorized</Badge>
-                    <span className="text-[10px] text-slate-400">
+                    <span className="text-[10px] text-foreground-lighter">
                       {ediAuthGuid
                         ? `GUID ${ediAuthGuid.slice(0, 18)}${ediAuthGuid.length > 18 ? "…" : ""}`
                         : `Auth ${authCode.slice(0, 18)}${authCode.length > 18 ? "…" : ""}`}
@@ -652,7 +656,7 @@ export default function FrontDeskPage() {
                 )}
 
                 {verifyState === "MANUAL" && (
-                  <p className="text-[11px] text-slate-400">
+                  <p className="text-[11px] text-foreground-lighter">
                     {provider?.name} has no portal integration — cover will be confirmed manually
                     by billing and the visit proceeds as pending.
                   </p>
@@ -717,12 +721,12 @@ export default function FrontDeskPage() {
               }
             />
             {!consultFeeEnabled ? (
-              <p className="px-5 pb-5 text-sm text-slate-400">
+              <p className="px-5 pb-5 text-sm text-foreground-lighter">
                 Patients go straight to triage after check-in. An admin can re-enable
                 fees under Settings → General.
               </p>
             ) : atFinance.length === 0 ? (
-              <p className="px-5 pb-5 text-sm text-slate-400">
+              <p className="px-5 pb-5 text-sm text-foreground-lighter">
                 No patients waiting for consultation-fee payment.
               </p>
             ) : (
@@ -735,10 +739,10 @@ export default function FrontDeskPage() {
                     <div className="flex min-w-0 items-center gap-3">
                       <Avatar name={v.patientName} size="sm" />
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-slate-800">
+                        <p className="truncate text-sm font-semibold text-foreground">
                           {v.patientName}
                         </p>
-                        <p className="text-[11px] text-slate-500">
+                        <p className="text-[11px] text-foreground-light">
                           {v.billing?.invoiceNumber ?? "Draft invoice"}
                           {v.billing?.consultFeeAmount != null
                             ? ` · KES ${Number(v.billing.consultFeeAmount).toLocaleString()}`
@@ -761,7 +765,7 @@ export default function FrontDeskPage() {
             />
             <div className="space-y-2 px-5 pb-5">
               {todaysAppointments.length === 0 ? (
-                <p className="text-sm text-slate-400">
+                <p className="text-sm text-foreground-lighter">
                   No scheduled appointments left for today.
                 </p>
               ) : (
@@ -771,10 +775,10 @@ export default function FrontDeskPage() {
                     className="flex items-center justify-between gap-3 rounded-xl bg-[#f3f7f7] px-3.5 py-3"
                   >
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-slate-800">
+                      <p className="truncate text-sm font-semibold text-foreground">
                         {a.patient}
                       </p>
-                      <p className="mt-0.5 flex items-center gap-1.5 text-xs text-slate-500">
+                      <p className="mt-0.5 flex items-center gap-1.5 text-xs text-foreground-light">
                         <CalendarDays className="h-3.5 w-3.5 shrink-0" />
                         {a.time} · {a.doctor} · {a.type}
                       </p>
@@ -810,6 +814,8 @@ export default function FrontDeskPage() {
           </Card>
         </div>
       </div>
+        </ScaffoldContainer>
+      </PageLayout>
     </RoleGuard>
   );
 }

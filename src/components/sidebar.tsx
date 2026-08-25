@@ -55,14 +55,14 @@ function NavLinkItem({
           href={item.href}
           prefetch
           onClick={onNavigate}
-          className={`flex items-center gap-3 rounded-full px-4 py-2.5 text-sm font-medium transition ${
+          className={`flex items-center gap-2.5 rounded-md border-l-2 px-2.5 py-1.5 text-[13px] font-medium transition ${
             active
-              ? "bg-brand-500 text-white shadow-sm"
-              : "text-slate-500 hover:bg-brand-50 hover:text-brand-800"
+              ? "border-brand-500 bg-brand-50 text-brand-700"
+              : "border-transparent text-foreground-light hover:bg-surface-200 hover:text-foreground"
           }`}
         >
           <item.icon
-            className={`h-[18px] w-[18px] ${active ? "text-white" : "text-brand-500"}`}
+            className={`h-4 w-4 ${active ? "text-brand-600" : "text-foreground-lighter"}`}
           />
           {item.label}
         </Link>
@@ -75,21 +75,19 @@ function NavLinkItem({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className={`flex w-full items-center gap-3 rounded-full px-4 py-2.5 text-sm font-medium transition ${
+        className={`flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] font-medium transition ${
           selfActive
-            ? "bg-brand-50 text-brand-800"
-            : "text-slate-500 hover:bg-brand-50 hover:text-brand-800"
+            ? "bg-brand-50 text-brand-700"
+            : "text-foreground-light hover:bg-surface-200 hover:text-foreground"
         }`}
         aria-expanded={open}
       >
-        <item.icon className="h-[18px] w-[18px] text-brand-500" />
+        <item.icon className="h-4 w-4 text-foreground-lighter" />
         <span className="flex-1 text-left">{item.label}</span>
-        <ChevronDown
-          className={`h-4 w-4 transition ${open ? "rotate-180" : ""}`}
-        />
+        <ChevronDown className={`h-3.5 w-3.5 transition ${open ? "rotate-180" : ""}`} />
       </button>
       {open && (
-        <ul className="mt-1 space-y-0.5 border-l border-slate-100 ml-6 pl-2">
+        <ul className="mt-0.5 ml-3 space-y-0.5 border-l border-border pl-2">
           {item.children!.map((child) => {
             const active = isAccordionChildActive(
               pathname,
@@ -102,10 +100,10 @@ function NavLinkItem({
                   href={child.href}
                   prefetch
                   onClick={onNavigate}
-                  className={`block rounded-full px-3 py-2 text-sm transition ${
+                  className={`block rounded-md px-2.5 py-1 text-[13px] transition ${
                     active
-                      ? "bg-brand-500 font-medium text-white shadow-sm"
-                      : "text-slate-500 hover:bg-brand-50 hover:text-brand-800"
+                      ? "bg-brand-50 font-medium text-brand-700"
+                      : "text-foreground-light hover:bg-surface-200 hover:text-foreground"
                   }`}
                 >
                   {child.label}
@@ -157,13 +155,13 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <>
-      <div className="flex h-16 items-center justify-between px-4">
-        <BrandLogo height={36} priority />
+      <div className="flex h-14 items-center justify-between border-b border-border px-4">
+        <BrandLogo height={32} priority />
         {onNavigate && (
           <button
             type="button"
             onClick={onNavigate}
-            className="rounded-full p-2 text-slate-400 transition hover:bg-brand-50 hover:text-brand-600 lg:hidden"
+            className="rounded-md p-2 text-foreground-lighter transition hover:bg-surface-200 hover:text-foreground lg:hidden"
             aria-label="Close menu"
           >
             <X className="h-5 w-5" />
@@ -171,32 +169,28 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
         )}
       </div>
 
-      <nav className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
+      <nav className="flex-1 space-y-4 overflow-y-auto px-2.5 py-3">
         {sections.map((section) => (
           <div key={section.title}>
-            <p className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-300">
+            <p className="px-2.5 pb-1 font-mono text-[10px] font-medium uppercase tracking-wider text-foreground-muted">
               {section.title}
             </p>
-            <ul className="space-y-1">
+            <ul className="space-y-0.5">
               {section.items.map((item) => (
-                <NavLinkItem
-                  key={item.href}
-                  item={item}
-                  onNavigate={onNavigate}
-                />
+                <NavLinkItem key={item.href} item={item} onNavigate={onNavigate} />
               ))}
             </ul>
           </div>
         ))}
       </nav>
 
-      <div className="p-4">
+      <div className="border-t border-border p-2.5">
         <button
           type="button"
           onClick={() => void handleLogout()}
-          className="flex w-full items-center gap-3 rounded-full px-4 py-2.5 text-sm font-medium text-slate-500 transition hover:bg-rose-50 hover:text-rose-600"
+          className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] font-medium text-foreground-light transition hover:bg-rose-50 hover:text-rose-600"
         >
-          <LogOut className="h-[18px] w-[18px]" />
+          <LogOut className="h-4 w-4" />
           Sign Out
         </button>
       </div>
@@ -209,7 +203,7 @@ export function Sidebar() {
 
   return (
     <>
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col bg-white lg:flex">
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r border-border bg-sidebar lg:flex">
         <SidebarNav />
       </aside>
 
@@ -219,14 +213,14 @@ export function Sidebar() {
       >
         <button
           type="button"
-          className={`absolute inset-0 bg-slate-900/40 transition-opacity ${
+          className={`absolute inset-0 bg-foreground/40 transition-opacity ${
             mobileNavOpen ? "opacity-100" : "opacity-0"
           }`}
           aria-label="Close menu overlay"
           onClick={closeMobileNav}
         />
         <aside
-          className={`absolute inset-y-0 left-0 flex w-[min(100%,16rem)] flex-col bg-white shadow-xl transition-transform duration-200 ease-out ${
+          className={`absolute inset-y-0 left-0 flex w-[min(100%,16rem)] flex-col border-r border-border bg-sidebar shadow-xl transition-transform duration-200 ease-out ${
             mobileNavOpen ? "translate-x-0" : "-translate-x-full"
           }`}
         >

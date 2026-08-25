@@ -170,31 +170,31 @@ export function InvoicePrintModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
       <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-5 shadow-xl">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-base font-semibold text-slate-800">Invoice</h3>
+          <h3 className="text-base font-semibold text-foreground">Invoice</h3>
           <div className="flex gap-2">
             <button
               type="button"
               disabled={!invoice}
               onClick={handlePrint}
-              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-brand-300 disabled:opacity-40"
+              className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-foreground hover:border-brand-300 disabled:opacity-40"
             >
               <Printer className="h-3.5 w-3.5" /> Print
             </button>
             <button type="button" onClick={onClose} aria-label="Close">
-              <X className="h-4 w-4 text-slate-400" />
+              <X className="h-4 w-4 text-foreground-lighter" />
             </button>
           </div>
         </div>
 
-        {loading && <p className="text-sm text-slate-400">Loading invoice…</p>}
+        {loading && <p className="text-sm text-foreground-lighter">Loading invoice…</p>}
         {error && <p className="text-sm text-rose-500">{error}</p>}
 
         {invoice && (
-          <div className="space-y-4 text-sm text-slate-700">
-            <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
+          <div className="space-y-4 text-sm text-foreground">
+            <div className="flex items-center gap-3 border-b border-border pb-4">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/logo-transparent.png"
@@ -202,34 +202,34 @@ export function InvoicePrintModal({
                 className="h-14 w-14 object-contain"
               />
               <div>
-                <p className="text-lg font-bold text-slate-900">{hospital.name}</p>
-                <p className="text-xs text-slate-400">Outpatient invoice</p>
+                <p className="text-lg font-bold text-foreground">{hospital.name}</p>
+                <p className="text-xs text-foreground-lighter">Outpatient invoice</p>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <p className="text-[11px] text-slate-400">Invoice</p>
+                <p className="text-[11px] text-foreground-lighter">Invoice</p>
                 <p className="font-semibold">{invoice.invoiceNumber}</p>
               </div>
               <div>
-                <p className="text-[11px] text-slate-400">Status</p>
+                <p className="text-[11px] text-foreground-lighter">Status</p>
                 <p className="font-semibold">{invoice.status.replaceAll("_", " ")}</p>
               </div>
               <div>
-                <p className="text-[11px] text-slate-400">Patient</p>
+                <p className="text-[11px] text-foreground-lighter">Patient</p>
                 <p className="font-semibold">{invoice.patientName}</p>
-                <p className="text-xs text-slate-400">{invoice.patientMrn}</p>
+                <p className="text-xs text-foreground-lighter">{invoice.patientMrn}</p>
               </div>
               <div>
-                <p className="text-[11px] text-slate-400">Date</p>
+                <p className="text-[11px] text-foreground-lighter">Date</p>
                 <p className="font-semibold">{formatDate(invoice.invoiceDate)}</p>
-                <p className="text-xs text-slate-400">Due {formatDate(invoice.dueDate)}</p>
+                <p className="text-xs text-foreground-lighter">Due {formatDate(invoice.dueDate)}</p>
               </div>
             </div>
 
             <table className="w-full text-left">
               <thead>
-                <tr className="border-b border-slate-100 text-[11px] text-slate-400">
+                <tr className="border-b border-border text-[11px] text-foreground-lighter">
                   <th className="pb-2 font-medium">Description</th>
                   <th className="pb-2 font-medium">Qty</th>
                   <th className="pb-2 font-medium">Unit</th>
@@ -238,7 +238,7 @@ export function InvoicePrintModal({
               </thead>
               <tbody>
                 {invoice.items.map((line) => (
-                  <tr key={line.id} className="border-b border-slate-50">
+                  <tr key={line.id} className="border-b border-border">
                     <td className="py-2">{line.description}</td>
                     <td className="py-2">{formatKes(line.quantity)}</td>
                     <td className="py-2">{formatKes(line.unitPrice)}</td>
@@ -250,7 +250,7 @@ export function InvoicePrintModal({
               </tbody>
             </table>
 
-            <div className="space-y-1 border-t border-slate-100 pt-3 text-right">
+            <div className="space-y-1 border-t border-border pt-3 text-right">
               <p>
                 Subtotal: <span className="font-medium">{formatKes(invoice.subtotal)}</span>
               </p>
@@ -265,7 +265,7 @@ export function InvoicePrintModal({
                   Tax: <span className="font-medium">{formatKes(invoice.tax)}</span>
                 </p>
               )}
-              <p className="text-base font-bold text-slate-900">
+              <p className="text-base font-bold text-foreground">
                 Total: KES {formatKes(invoice.totalAmount)}
               </p>
               {invoice.status !== "DRAFT" && Number(invoice.outstanding) > 0 && (

@@ -8,7 +8,7 @@ import {
 } from "@/lib/clinical-record";
 
 const inputClass =
-  "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground placeholder:text-foreground-lighter focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 function Section({
   title,
@@ -20,10 +20,10 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="space-y-3 rounded-2xl border border-slate-100 bg-white p-4 sm:p-5">
+    <section className="space-y-3 rounded-2xl border border-border bg-white p-4 sm:p-5">
       <div>
-        <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
-        {subtitle && <p className="mt-0.5 text-xs text-slate-400">{subtitle}</p>}
+        <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+        {subtitle && <p className="mt-0.5 text-xs text-foreground-lighter">{subtitle}</p>}
       </div>
       {children}
     </section>
@@ -39,7 +39,7 @@ function Field({
 }) {
   return (
     <div>
-      <label className="text-xs font-semibold text-slate-600">{label}</label>
+      <label className="text-xs font-semibold text-foreground-light">{label}</label>
       <div className="mt-1.5">{children}</div>
     </div>
   );
@@ -118,8 +118,8 @@ export function ConsultationClinicalForm({
               <option value="EMERGENCY">Emergency</option>
             </select>
           </Field>
-          <div className="rounded-xl bg-slate-50 px-3.5 py-2.5 text-xs text-slate-600 sm:col-span-1">
-            <p className="font-semibold text-slate-500">Vital signs</p>
+          <div className="rounded-xl bg-surface-200 px-3.5 py-2.5 text-xs text-foreground-light sm:col-span-1">
+            <p className="font-semibold text-foreground-light">Vital signs</p>
             <p className="mt-1 leading-relaxed">
               {vitalsSummary || "No vitals recorded at triage."}
             </p>
@@ -192,7 +192,7 @@ export function ConsultationClinicalForm({
         }
       >
         {!female && (
-          <label className="flex cursor-pointer items-center gap-2.5 rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm text-slate-700">
+          <label className="flex cursor-pointer items-center gap-2.5 rounded-xl border border-border px-3.5 py-2.5 text-sm text-foreground">
             <input
               type="checkbox"
               className="accent-[#4a929b]"
@@ -206,7 +206,7 @@ export function ConsultationClinicalForm({
         )}
 
         {!showReproductive ? (
-          <p className="rounded-xl bg-slate-50 px-3.5 py-3 text-xs text-slate-500">
+          <p className="rounded-xl bg-surface-200 px-3.5 py-3 text-xs text-foreground-light">
             Reproductive &amp; obstetric sections are hidden for this patient.
             Check the box above if partner or reproductive context applies.
           </p>
@@ -302,8 +302,8 @@ export function ConsultationClinicalForm({
               </Field>
             </div>
 
-            <div className="border-t border-slate-100 pt-4">
-              <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
+            <div className="border-t border-border pt-4">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-foreground-lighter">
                 Obstetric history
               </p>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -339,7 +339,7 @@ export function ConsultationClinicalForm({
 
               <div className="mt-3">
                 <div className="mb-2 flex items-center justify-between">
-                  <p className="text-xs font-semibold text-slate-600">
+                  <p className="text-xs font-semibold text-foreground-light">
                     Past pregnancies
                   </p>
                   <button
@@ -351,7 +351,7 @@ export function ConsultationClinicalForm({
                   </button>
                 </div>
                 {value.obstetric.pastPregnancies.length === 0 ? (
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-foreground-lighter">
                     No past pregnancy records added.
                   </p>
                 ) : (
@@ -359,7 +359,7 @@ export function ConsultationClinicalForm({
                     {value.obstetric.pastPregnancies.map((p, i) => (
                       <div
                         key={i}
-                        className="grid grid-cols-1 gap-2 rounded-xl bg-slate-50 p-3 sm:grid-cols-[1fr_1fr_1.5fr_auto]"
+                        className="grid grid-cols-1 gap-2 rounded-xl bg-surface-200 p-3 sm:grid-cols-[1fr_1fr_1.5fr_auto]"
                       >
                         <input
                           className={inputClass}
@@ -395,7 +395,7 @@ export function ConsultationClinicalForm({
                                 ),
                             })
                           }
-                          className="self-center rounded-lg p-2 text-slate-300 hover:bg-white hover:text-rose-500"
+                          className="self-center rounded-lg p-2 text-foreground-muted hover:bg-white hover:text-rose-500"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>

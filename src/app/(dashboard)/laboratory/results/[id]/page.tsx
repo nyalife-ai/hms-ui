@@ -140,7 +140,7 @@ export default function LabResultDetailPage() {
 
   return (
     <RoleGuard module="laboratory">
-      <div className="mb-2 text-[11px] font-medium uppercase tracking-wide text-slate-400">
+      <div className="mb-2 text-[11px] font-medium uppercase tracking-wide text-foreground-lighter">
         Home / Dashboard / Lab Results / {detail?.requestNumber ?? "…"}
       </div>
       <PageHeader
@@ -158,7 +158,7 @@ export default function LabResultDetailPage() {
               type="button"
               disabled={busy || !detail?.results.length}
               onClick={() => void runPdf("open")}
-              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-brand-300 disabled:opacity-40"
+              className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-foreground hover:border-brand-300 disabled:opacity-40"
             >
               <Printer className="h-3.5 w-3.5" /> Open PDF
             </button>
@@ -170,7 +170,7 @@ export default function LabResultDetailPage() {
             </PrimaryButton>
             <Link
               href="/laboratory/results"
-              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-brand-300"
+              className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-foreground hover:border-brand-300"
             >
               <ArrowLeft className="h-3.5 w-3.5" /> Back
             </Link>
@@ -182,7 +182,7 @@ export default function LabResultDetailPage() {
       {loading && (
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-28 animate-pulse rounded-2xl bg-slate-100" />
+            <div key={i} className="h-28 animate-pulse rounded-2xl bg-surface-200" />
           ))}
         </div>
       )}
@@ -197,11 +197,11 @@ export default function LabResultDetailPage() {
               { label: "Reported", value: formatWhen(detail.updatedAt) },
             ].map((s) => (
               <Card key={s.label} className="p-4">
-                <p className="text-xs text-slate-400">{s.label}</p>
+                <p className="text-xs text-foreground-lighter">{s.label}</p>
                 <div className="mt-1">
                   {"node" in s && s.node
                     ? s.node
-                    : <p className="text-lg font-bold text-slate-900">{"value" in s ? s.value : ""}</p>}
+                    : <p className="text-lg font-bold text-foreground">{"value" in s ? s.value : ""}</p>}
                 </div>
               </Card>
             ))}
@@ -210,18 +210,18 @@ export default function LabResultDetailPage() {
           <Card className="p-5">
             <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-3">
               <div>
-                <p className="text-xs text-slate-400">Patient</p>
-                <p className="font-semibold text-slate-900">{detail.patientName}</p>
-                <p className="text-xs text-slate-400">{detail.mrn}</p>
+                <p className="text-xs text-foreground-lighter">Patient</p>
+                <p className="font-semibold text-foreground">{detail.patientName}</p>
+                <p className="text-xs text-foreground-lighter">{detail.mrn}</p>
               </div>
               <div>
-                <p className="text-xs text-slate-400">Physician</p>
-                <p className="font-medium text-slate-800">
+                <p className="text-xs text-foreground-lighter">Physician</p>
+                <p className="font-medium text-foreground">
                   {detail.requestingDoctor || "—"}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-slate-400">Request</p>
+                <p className="text-xs text-foreground-lighter">Request</p>
                 <Link
                   href={`/laboratory/requests/${detail.id}`}
                   className="font-medium text-brand-700 hover:underline"
@@ -239,28 +239,28 @@ export default function LabResultDetailPage() {
                 {panel.lines.map((r) => (
                   <div
                     key={r.id}
-                    className={`rounded-2xl border px-4 py-3 ${r.isCritical ? "border-rose-200 bg-rose-50/40" : "border-slate-100 bg-white"}`}
+                    className={`rounded-2xl border px-4 py-3 ${r.isCritical ? "border-rose-200 bg-rose-50/40" : "border-border bg-white"}`}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <p className="text-sm font-semibold text-slate-900">
+                        <p className="text-sm font-semibold text-foreground">
                           {r.parameterName}
                         </p>
-                        <p className="text-[11px] text-slate-400">
+                        <p className="text-[11px] text-foreground-lighter">
                           Ref {r.normalReferenceRange || "—"} · {r.unitOfMeasurement || "—"}
                         </p>
                       </div>
                       <Badge tone={tone(r.interpretation)}>{r.interpretation}</Badge>
                     </div>
-                    <p className="mt-3 text-2xl font-bold tracking-tight text-slate-900">
+                    <p className="mt-3 text-2xl font-bold tracking-tight text-foreground">
                       {r.resultValue ?? "—"}
                       {r.unitOfMeasurement ? (
-                        <span className="ml-1 text-sm font-medium text-slate-400">
+                        <span className="ml-1 text-sm font-medium text-foreground-lighter">
                           {r.unitOfMeasurement}
                         </span>
                       ) : null}
                     </p>
-                    <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
+                    <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-foreground-lighter">
                       {r.isVerified ? (
                         <span className="inline-flex items-center gap-1 text-emerald-600">
                           <CheckCircle2 className="h-3.5 w-3.5" /> Verified {formatWhen(r.verifiedAt)}
@@ -279,7 +279,7 @@ export default function LabResultDetailPage() {
                         correctingId === r.id ? (
                           <span className="inline-flex items-center gap-1">
                             <input
-                              className="w-20 rounded-lg border border-slate-200 px-2 py-1 text-xs"
+                              className="w-20 rounded-lg border border-border px-2 py-1 text-xs"
                               value={correctValue}
                               onChange={(e) => setCorrectValue(e.target.value)}
                               placeholder="New value"
@@ -297,7 +297,7 @@ export default function LabResultDetailPage() {
                           <button
                             type="button"
                             disabled={busy}
-                            className="rounded-full border border-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-600"
+                            className="rounded-full border border-border px-2.5 py-1 text-xs font-semibold text-foreground-light"
                             onClick={() => {
                               setCorrectingId(r.id);
                               setCorrectValue(r.resultValue || "");
@@ -317,22 +317,22 @@ export default function LabResultDetailPage() {
 
           {(detail.observations || detail.conclusion || detail.notes) && (
             <Card className="p-5 space-y-3">
-              <h3 className="text-sm font-semibold text-slate-900">Notes & conclusion</h3>
+              <h3 className="text-sm font-semibold text-foreground">Notes & conclusion</h3>
               {detail.notes && (
-                <p className="text-sm text-slate-600">
-                  <span className="font-medium text-slate-800">Clinical: </span>
+                <p className="text-sm text-foreground-light">
+                  <span className="font-medium text-foreground">Clinical: </span>
                   {detail.notes}
                 </p>
               )}
               {detail.observations && (
-                <p className="text-sm text-slate-600">
-                  <span className="font-medium text-slate-800">Observations: </span>
+                <p className="text-sm text-foreground-light">
+                  <span className="font-medium text-foreground">Observations: </span>
                   {detail.observations}
                 </p>
               )}
               {detail.conclusion && (
-                <p className="text-sm text-slate-600">
-                  <span className="font-medium text-slate-800">Conclusion: </span>
+                <p className="text-sm text-foreground-light">
+                  <span className="font-medium text-foreground">Conclusion: </span>
                   {detail.conclusion}
                 </p>
               )}

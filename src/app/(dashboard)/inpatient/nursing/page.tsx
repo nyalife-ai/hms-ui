@@ -20,7 +20,7 @@ import { unwrapPage } from "@/lib/pagination";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 
 const inputClass =
-  "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 type NursingNote = {
   id: string;
@@ -297,7 +297,7 @@ export default function IpdNursingPage() {
             </select>
           </div>
         </div>
-        <label className="mt-3 flex items-center gap-2 text-sm text-slate-600">
+        <label className="mt-3 flex items-center gap-2 text-sm text-foreground-light">
           <input
             type="checkbox"
             checked={includeHistory}
@@ -338,18 +338,18 @@ export default function IpdNursingPage() {
         />
         <Table headers={["When", "Type", "Author", "Notes", "Vitals"]}>
           {notes.map((n) => (
-            <tr key={n.id} className="transition hover:bg-slate-50/60">
-              <td className="px-5 py-3.5 text-slate-500 text-xs">
+            <tr key={n.id} className="transition hover:bg-surface-200/60">
+              <td className="px-5 py-3.5 text-foreground-light text-xs">
                 {new Date(n.createdAt).toLocaleString()}
               </td>
               <td className="px-5 py-3.5">
                 <Badge tone="blue">{n.noteType || "NURSING"}</Badge>
               </td>
-              <td className="px-5 py-3.5 text-slate-700">{n.nurseName}</td>
-              <td className="px-5 py-3.5 text-slate-700 whitespace-pre-wrap">
+              <td className="px-5 py-3.5 text-foreground">{n.nurseName}</td>
+              <td className="px-5 py-3.5 text-foreground whitespace-pre-wrap">
                 {n.notesText}
               </td>
-              <td className="px-5 py-3.5 text-xs text-slate-500">
+              <td className="px-5 py-3.5 text-xs text-foreground-light">
                 {n.vitalSignsSnapshot
                   ? ["pulse", "hr", "bp", "temperature", "temp", "spo2"]
                       .filter((k) => n.vitalSignsSnapshot?.[k] != null && k !== "noteType")
@@ -361,7 +361,7 @@ export default function IpdNursingPage() {
           ))}
         </Table>
         {!notes.length && (
-          <p className="px-5 py-8 text-center text-sm text-slate-400">
+          <p className="px-5 py-8 text-center text-sm text-foreground-lighter">
             No notes for this admission yet
           </p>
         )}
@@ -374,20 +374,20 @@ export default function IpdNursingPage() {
         />
         <Table headers={["When", "Recorded by", "Pulse", "BP", "Temp", "SpO₂"]}>
           {vitals.map((v) => (
-            <tr key={v.id} className="transition hover:bg-slate-50/60">
-              <td className="px-5 py-3.5 text-xs text-slate-500">
+            <tr key={v.id} className="transition hover:bg-surface-200/60">
+              <td className="px-5 py-3.5 text-xs text-foreground-light">
                 {new Date(v.recordedAt).toLocaleString()}
               </td>
-              <td className="px-5 py-3.5 text-slate-700">{v.recordedBy}</td>
-              <td className="px-5 py-3.5 text-slate-600">{String(v.pulse ?? "—")}</td>
-              <td className="px-5 py-3.5 text-slate-600">{String(v.bp ?? "—")}</td>
-              <td className="px-5 py-3.5 text-slate-600">{String(v.temperature ?? "—")}</td>
-              <td className="px-5 py-3.5 text-slate-600">{String(v.spo2 ?? "—")}</td>
+              <td className="px-5 py-3.5 text-foreground">{v.recordedBy}</td>
+              <td className="px-5 py-3.5 text-foreground-light">{String(v.pulse ?? "—")}</td>
+              <td className="px-5 py-3.5 text-foreground-light">{String(v.bp ?? "—")}</td>
+              <td className="px-5 py-3.5 text-foreground-light">{String(v.temperature ?? "—")}</td>
+              <td className="px-5 py-3.5 text-foreground-light">{String(v.spo2 ?? "—")}</td>
             </tr>
           ))}
         </Table>
         {!vitals.length && (
-          <p className="px-5 py-8 text-center text-sm text-slate-400">
+          <p className="px-5 py-8 text-center text-sm text-foreground-lighter">
             No vitals recorded for this admission yet
           </p>
         )}
@@ -411,11 +411,11 @@ export default function IpdNursingPage() {
         </div>
         <Table headers={["Rx", "Medications", "Status"]}>
           {meds.map((rx) => (
-            <tr key={rx.id} className="transition hover:bg-slate-50/60">
-              <td className="px-5 py-3.5 font-medium text-slate-800">
+            <tr key={rx.id} className="transition hover:bg-surface-200/60">
+              <td className="px-5 py-3.5 font-medium text-foreground">
                 {rx.prescriptionNumber || rx.id.slice(0, 8)}
               </td>
-              <td className="px-5 py-3.5 text-xs text-slate-600">
+              <td className="px-5 py-3.5 text-xs text-foreground-light">
                 {rx.lines.map((l) => (
                   <div key={l.medicationName}>
                     {l.medicationName}
@@ -431,21 +431,21 @@ export default function IpdNursingPage() {
           ))}
         </Table>
         {!meds.length && (
-          <p className="px-5 py-8 text-center text-sm text-slate-400">
+          <p className="px-5 py-8 text-center text-sm text-foreground-lighter">
             No ward or discharge prescriptions linked to this admission yet
           </p>
         )}
       </Card>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
           <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-base font-semibold text-slate-900">Add nursing note</h2>
+              <h2 className="text-base font-semibold text-foreground">Add nursing note</h2>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="rounded-lg p-1 text-slate-400 hover:bg-slate-50"
+                className="rounded-lg p-1 text-foreground-lighter hover:bg-surface-200"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -482,7 +482,7 @@ export default function IpdNursingPage() {
                   </select>
                 </div>
               ) : (
-                <p className="rounded-xl bg-slate-50 px-3.5 py-2.5 text-sm text-slate-700">
+                <p className="rounded-xl bg-surface-200 px-3.5 py-2.5 text-sm text-foreground">
                   Recording as {user?.name || "you"}
                 </p>
               )}
@@ -522,14 +522,14 @@ export default function IpdNursingPage() {
       )}
 
       {medOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
           <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-base font-semibold text-slate-900">Ward medication order</h2>
+              <h2 className="text-base font-semibold text-foreground">Ward medication order</h2>
               <button
                 type="button"
                 onClick={() => setMedOpen(false)}
-                className="rounded-lg p-1 text-slate-400 hover:bg-slate-50"
+                className="rounded-lg p-1 text-foreground-lighter hover:bg-surface-200"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -541,7 +541,7 @@ export default function IpdNursingPage() {
                   <DoctorSearchSelect value={prescriberId} onChange={(id) => setPrescriberId(id)} />
                 </div>
               ) : (
-                <p className="rounded-xl bg-slate-50 px-3.5 py-2.5 text-sm text-slate-700">
+                <p className="rounded-xl bg-surface-200 px-3.5 py-2.5 text-sm text-foreground">
                   Prescribed as {user?.name || "you"}
                 </p>
               )}

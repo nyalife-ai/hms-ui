@@ -62,7 +62,7 @@ export function Modal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4 backdrop-blur-[1px]"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4 backdrop-blur-[1px]"
       role="presentation"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
@@ -73,13 +73,13 @@ export function Modal({
         role="dialog"
         aria-modal="true"
         aria-labelledby={!hideHeader && title != null ? titleId : undefined}
-        className={`flex max-h-[85vh] w-[min(100%,85vw)] flex-col overflow-hidden rounded-2xl bg-white shadow-xl ${SIZE_CLASS[size]} ${className}`}
+        className={`flex max-h-[85vh] w-[min(100%,85vw)] flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-xl ${SIZE_CLASS[size]} ${className}`}
       >
         {!hideHeader && (
-          <div className="sticky top-0 z-10 flex shrink-0 items-center justify-between gap-3 border-b border-slate-100 bg-white px-5 py-4">
+          <div className="sticky top-0 z-10 flex shrink-0 items-center justify-between gap-3 border-b border-border bg-surface px-4 py-3.5">
             <h2
               id={titleId}
-              className="text-base font-semibold text-slate-900"
+              className="font-heading text-base font-semibold tracking-tight text-foreground"
             >
               {title}
             </h2>
@@ -87,19 +87,19 @@ export function Modal({
               type="button"
               onClick={onClose}
               aria-label="Close"
-              className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-50 hover:text-slate-700"
+              className="rounded-md p-1.5 text-foreground-lighter transition hover:bg-surface-200 hover:text-foreground"
             >
               <X className="h-4 w-4" />
             </button>
           </div>
         )}
         <div
-          className={`min-h-0 flex-1 overflow-y-auto ${hideHeader ? "" : "px-5 py-4"}`}
+          className={`min-h-0 flex-1 overflow-y-auto ${hideHeader ? "" : "px-4 py-4"}`}
         >
           {children}
         </div>
         {footer != null && (
-          <div className="sticky bottom-0 shrink-0 border-t border-slate-100 bg-white px-5 py-3">
+          <div className="sticky bottom-0 shrink-0 border-t border-border bg-surface px-4 py-3">
             {footer}
           </div>
         )}

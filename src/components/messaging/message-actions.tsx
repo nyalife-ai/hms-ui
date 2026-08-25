@@ -183,7 +183,7 @@ export function MessageActions({
   };
 
   const itemClass =
-    "flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-slate-700 hover:bg-slate-50 active:bg-slate-100";
+    "flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-foreground hover:bg-surface-200";
 
   const reactionPicker = (
     <div
@@ -196,7 +196,7 @@ export function MessageActions({
           key={emoji}
           type="button"
           role="menuitem"
-          className="rounded-lg px-2 py-1 text-lg hover:bg-slate-50"
+          className="rounded-lg px-2 py-1 text-lg hover:bg-surface-200"
           aria-label={`React with ${emoji}`}
           onClick={() => {
             handlers.onReact(emoji);
@@ -235,7 +235,7 @@ export function MessageActions({
 
   return (
     <div ref={rootRef}>
-      <div className="pointer-events-none absolute -top-1 right-1 z-10 hidden gap-0.5 rounded-full border border-slate-200 bg-white p-0.5 shadow-sm opacity-0 transition group-hover:pointer-events-auto group-hover:opacity-100 sm:flex">
+      <div className="pointer-events-none absolute -top-1 right-1 z-10 hidden gap-0.5 rounded-full border border-border bg-white p-0.5 shadow-sm opacity-0 transition group-hover:pointer-events-auto group-hover:opacity-100 sm:flex">
         {actions.map((a) => (
           <IconBtn
             key={a.id}
@@ -258,7 +258,7 @@ export function MessageActions({
       {hoverReact && reactOpen ? (
         <div
           role="menu"
-          className="absolute -top-12 right-0 z-[60] hidden rounded-xl border border-slate-200 bg-white shadow-lg sm:block"
+          className="absolute -top-12 right-0 z-[60] hidden rounded-xl border border-border bg-white shadow-lg sm:block"
         >
           {reactionPicker}
         </div>
@@ -268,7 +268,7 @@ export function MessageActions({
         <div className="fixed inset-0 z-[60] sm:hidden" role="presentation">
           <button
             type="button"
-            className="absolute inset-0 bg-slate-900/40"
+            className="absolute inset-0 bg-foreground/40"
             aria-label="Close menu"
             onPointerUp={(e) => {
               if (Date.now() < ignoreCloseUntilRef.current) {
@@ -291,7 +291,7 @@ export function MessageActions({
             className="absolute inset-x-0 bottom-0 max-h-[70vh] overflow-y-auto rounded-t-2xl bg-white pb-[max(1rem,env(safe-area-inset-bottom))] pt-2 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="mx-auto mb-2 h-1 w-10 rounded-full bg-slate-200" />
+            <div className="mx-auto mb-2 h-1 w-10 rounded-full bg-surface-200" />
             {reactOpen ? reactionPicker : menuItems}
           </div>
         </div>
@@ -300,7 +300,7 @@ export function MessageActions({
       {open && pos ? (
         <div
           role="menu"
-          className={`fixed z-[60] min-w-[168px] overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg ${
+          className={`fixed z-[60] min-w-[168px] overflow-hidden rounded-xl border border-border bg-white py-1 shadow-lg ${
             useBottomSheet ? "hidden sm:block" : ""
           }`}
           style={popoverStyle}
@@ -330,8 +330,8 @@ function IconBtn({
       aria-label={label}
       className={`rounded-full p-1.5 ${
         danger
-          ? "text-slate-500 hover:bg-rose-50 hover:text-rose-600"
-          : "text-slate-500 hover:bg-slate-50 hover:text-brand-600"
+          ? "text-foreground-light hover:bg-rose-50 hover:text-rose-600"
+          : "text-foreground-light hover:bg-surface-200 hover:text-brand-600"
       }`}
       onClick={(e) => {
         e.stopPropagation();
@@ -350,7 +350,7 @@ export function DeliveryTicks({
   status: string | null | undefined;
   light?: boolean;
 }) {
-  const muted = light ? "text-white/70" : "text-slate-400";
+  const muted = light ? "text-white/70" : "text-foreground-lighter";
   if (status === "READ") {
     return (
       <span title="Read" aria-label="Read" className="inline-flex">

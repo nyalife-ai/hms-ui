@@ -1,0 +1,40 @@
+/**
+ * Copied / adapted from supabase/packages/config/typography.css
+ * Copyright (c) Supabase contributors — Apache-2.0.
+ * Studio heading + text utilities for HMS pages.
+ */
+@utility heading-title {
+  @apply scroll-m-20 text-2xl tracking-tight;
+}
+
+@utility heading-section {
+  @apply scroll-m-20 text-xl;
+}
+
+@utility heading-subSection {
+  @apply scroll-m-20 text-base;
+}
+
+@utility heading-default {
+  @apply scroll-m-20 text-sm font-medium;
+}
+
+@utility heading-compact {
+  @apply scroll-m-20 text-xs font-medium;
+}
+
+@utility heading-meta {
+  @apply text-xs font-mono font-medium uppercase tracking-wider;
+}
+
+@utility text-default {
+  @apply text-base;
+}
+
+@utility text-subTitle {
+  @apply text-lg;
+}
+
+@utility text-compact {
+  @apply text-xs;
+}

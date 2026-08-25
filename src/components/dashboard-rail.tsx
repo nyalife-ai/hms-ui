@@ -168,10 +168,10 @@ export function MiniCalendar() {
   return (
     <Card className="p-5">
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
+        <h3 className="text-sm font-semibold text-foreground">{title}</h3>
         <div className="flex gap-1">
           <button
-            className="rounded-lg p-1 text-slate-400 hover:bg-slate-50"
+            className="rounded-lg p-1 text-foreground-lighter hover:bg-surface-200"
             type="button"
             aria-label="Previous month"
             onClick={() => setCursor(new Date(year, monthIndex - 1, 1))}
@@ -179,7 +179,7 @@ export function MiniCalendar() {
             <ChevronLeft className="h-4 w-4" />
           </button>
           <button
-            className="rounded-lg p-1 text-slate-400 hover:bg-slate-50"
+            className="rounded-lg p-1 text-foreground-lighter hover:bg-surface-200"
             type="button"
             aria-label="Next month"
             onClick={() => setCursor(new Date(year, monthIndex + 1, 1))}
@@ -190,7 +190,7 @@ export function MiniCalendar() {
       </div>
       <div className="grid grid-cols-7 gap-y-1.5 text-center text-xs">
         {WEEKDAYS.map((d) => (
-          <span key={d} className="pb-1 font-medium text-slate-300">
+          <span key={d} className="pb-1 font-medium text-foreground-muted">
             {d}
           </span>
         ))}
@@ -218,8 +218,8 @@ export function MiniCalendar() {
                     : isToday
                       ? "ring-1 ring-brand-400 font-semibold text-brand-700"
                       : hasEvent
-                        ? "bg-brand-50 font-medium text-brand-800 hover:bg-brand-100"
-                        : "text-slate-600 hover:bg-slate-50"
+                        ? "bg-brand-100 font-medium text-brand-700 hover:bg-brand-50"
+                        : "text-foreground-light hover:bg-surface-200"
                 }`}
                 aria-label={`${title} ${day}${hasEvent ? ", has scheduled activity" : ""}`}
                 aria-pressed={isSelected}
@@ -241,7 +241,7 @@ export function MiniCalendar() {
         })}
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-3 text-[10px] text-slate-400">
+      <div className="mt-3 flex flex-wrap gap-3 text-[10px] text-foreground-muted">
         <span className="inline-flex items-center gap-1">
           <span className="h-1.5 w-1.5 rounded-full bg-brand-500" /> Appointment
         </span>
@@ -250,12 +250,12 @@ export function MiniCalendar() {
         </span>
       </div>
 
-      <div className="mt-4 border-t border-slate-100 pt-4">
-        <p className="text-xs font-semibold text-slate-800">{selectedLabel}</p>
+      <div className="mt-4 border-t border-border pt-4">
+        <p className="text-xs font-semibold text-foreground">{selectedLabel}</p>
         {loading ? (
-          <p className="mt-2 text-[11px] text-slate-400">Loading schedule…</p>
+          <p className="mt-2 text-[11px] text-foreground-lighter">Loading schedule…</p>
         ) : dayAppointments.length === 0 && dayFollowUps.length === 0 ? (
-          <p className="mt-2 text-[11px] text-slate-400">
+          <p className="mt-2 text-[11px] text-foreground-lighter">
             No appointments or follow-ups on this day.
           </p>
         ) : (
@@ -264,12 +264,12 @@ export function MiniCalendar() {
               <Link
                 key={item.id}
                 href="/appointments"
-                className="block rounded-xl bg-brand-50/80 px-3 py-2 transition hover:bg-brand-50"
+                className="block rounded-lg bg-brand-50/80 px-3 py-2 transition hover:bg-brand-50"
               >
-                <p className="text-[11px] font-semibold text-slate-800">
+                <p className="text-[11px] font-semibold text-foreground">
                   {item.time} — {item.patient}
                 </p>
-                <p className="truncate text-[10px] text-slate-500">
+                <p className="truncate text-[10px] text-foreground-lighter">
                   {item.type} · {item.doctor}
                 </p>
               </Link>
@@ -278,12 +278,12 @@ export function MiniCalendar() {
               <Link
                 key={item.id}
                 href="/follow-ups"
-                className="block rounded-xl bg-amber-50/80 px-3 py-2 transition hover:bg-amber-50"
+                className="block rounded-lg bg-amber-50/80 px-3 py-2 transition hover:bg-amber-50"
               >
-                <p className="text-[11px] font-semibold text-slate-800">
+                <p className="text-[11px] font-semibold text-foreground">
                   Follow-up — {item.patientName}
                 </p>
-                <p className="truncate text-[10px] text-slate-500">
+                <p className="truncate text-[10px] text-foreground-lighter">
                   {item.followUpType || "Review"}
                   {item.doctorName ? ` · ${item.doctorName}` : ""}
                 </p>
@@ -323,7 +323,7 @@ export function AgendaCard() {
       <CardHeader title="Agenda" subtitle="Upcoming clinical schedule" />
       <div className="space-y-3 px-5 pb-5">
         {items.length === 0 ? (
-          <p className="text-sm text-slate-400">No upcoming appointments.</p>
+          <p className="text-sm text-foreground-lighter">No upcoming appointments.</p>
         ) : (
           items.map((item) => {
             const day = Number(item.date.slice(8, 10));
@@ -335,20 +335,20 @@ export function AgendaCard() {
               <Link
                 key={item.id}
                 href="/appointments"
-                className="flex gap-3 rounded-2xl bg-brand-50 p-3.5 transition hover:bg-brand-100/80"
+                className="flex gap-3 rounded-lg bg-brand-50 p-3 transition hover:bg-brand-100/80"
               >
-                <div className="flex w-10 shrink-0 flex-col items-center justify-center rounded-xl bg-white py-1.5">
+                <div className="flex w-10 shrink-0 flex-col items-center justify-center rounded-md bg-surface py-1.5">
                   <span className="text-base font-bold leading-tight text-brand-700">
                     {day}
                   </span>
-                  <span className="text-[10px] text-slate-400">{weekday}</span>
+                  <span className="text-[10px] text-foreground-lighter">{weekday}</span>
                 </div>
                 <div className="min-w-0">
                   <Badge tone="teal">{item.type}</Badge>
-                  <p className="mt-1 truncate text-xs font-semibold text-slate-800">
+                  <p className="mt-1 truncate text-xs font-semibold text-foreground">
                     {item.patient} · {item.doctor}
                   </p>
-                  <p className="mt-0.5 text-[11px] text-slate-400">
+                  <p className="mt-0.5 text-[11px] text-foreground-lighter">
                     {item.time} · {item.department}
                   </p>
                 </div>
@@ -368,34 +368,30 @@ export function DoctorsScheduleCard() {
   return (
     <Card>
       <CardHeader title="Doctors' Schedule" />
-      <div className="mx-5 mb-4 grid grid-cols-3 divide-x divide-brand-100 rounded-2xl bg-brand-50 py-3 text-center">
+      <div className="mx-4 mb-4 grid grid-cols-3 divide-x divide-brand-100 rounded-lg bg-brand-50 py-3 text-center">
         <div>
           <p className="text-lg font-bold text-brand-700">{doctors.length}</p>
-          <p className="text-[11px] text-slate-400">All Doctors</p>
+          <p className="text-[11px] text-foreground-lighter">All Doctors</p>
         </div>
         <div>
           <p className="text-lg font-bold text-brand-700">{available.length}</p>
-          <p className="text-[11px] text-slate-400">Available</p>
+          <p className="text-[11px] text-foreground-lighter">Available</p>
         </div>
         <div>
-          <p className="text-lg font-bold text-slate-900">{unavailable.length}</p>
-          <p className="text-[11px] text-slate-400">Unavailable</p>
+          <p className="text-lg font-bold text-foreground">{unavailable.length}</p>
+          <p className="text-[11px] text-foreground-lighter">Unavailable</p>
         </div>
       </div>
       <ul className="space-y-1 px-3 pb-4">
         {doctors.slice(0, 6).map((doc) => (
           <li
             key={doc.id}
-            className="flex items-center gap-3 rounded-xl px-2 py-2 transition hover:bg-slate-50"
+            className="flex items-center gap-3 rounded-xl px-2 py-2 transition hover:bg-surface-200"
           >
             <Avatar name={doc.name} size="sm" />
             <div className="min-w-0 flex-1">
-              <p className="truncate text-xs font-semibold text-slate-800">
-                {doc.name}
-              </p>
-              <p className="truncate text-[11px] text-slate-400">
-                {doc.specialty}
-              </p>
+              <p className="truncate text-xs font-semibold text-foreground">{doc.name}</p>
+              <p className="truncate text-[11px] text-foreground-lighter">{doc.specialty}</p>
             </div>
             <Badge tone={doc.available ? "teal" : "red"}>
               {doc.available ? "Available" : "Unavailable"}
@@ -447,10 +443,10 @@ export function RecentActivityCard() {
               <FileText className="h-3.5 w-3.5" />
             </span>
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-semibold text-slate-800">{item.title}</p>
-              <p className="truncate text-[11px] text-slate-400">{item.meta}</p>
+              <p className="text-xs font-semibold text-foreground">{item.title}</p>
+              <p className="truncate text-[11px] text-foreground-lighter">{item.meta}</p>
             </div>
-            <span className="shrink-0 text-[10px] text-slate-300">{item.time}</span>
+            <span className="shrink-0 text-[10px] text-foreground-muted">{item.time}</span>
           </li>
         ))}
       </ul>

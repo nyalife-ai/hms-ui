@@ -19,7 +19,7 @@ import { useAuth } from "@/lib/auth";
 import { buildListQuery, toPageMeta, unwrapPage } from "@/lib/pagination";
 
 const inputClass =
-  "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 /** Backend may return camelCase or raw prisma snake_case for periods. */
 type PeriodRow = {
@@ -213,11 +213,11 @@ export default function BillingPeriodsPage() {
           ]}
         >
           {rows.map((p) => (
-            <tr key={p.id} className="hover:bg-slate-50/60">
-              <td className="px-5 py-3.5 font-semibold text-slate-800">{periodName(p)}</td>
-              <td className="px-5 py-3.5 text-slate-500">{fiscalYear(p)}</td>
-              <td className="px-5 py-3.5 text-slate-500">{startDate(p)}</td>
-              <td className="px-5 py-3.5 text-slate-500">{endDate(p)}</td>
+            <tr key={p.id} className="hover:bg-surface-200/60">
+              <td className="px-5 py-3.5 font-semibold text-foreground">{periodName(p)}</td>
+              <td className="px-5 py-3.5 text-foreground-light">{fiscalYear(p)}</td>
+              <td className="px-5 py-3.5 text-foreground-light">{startDate(p)}</td>
+              <td className="px-5 py-3.5 text-foreground-light">{endDate(p)}</td>
               <td className="px-5 py-3.5">
                 <Badge tone={STATUS_TONES[p.status] ?? "slate"}>{p.status}</Badge>
               </td>
@@ -229,7 +229,7 @@ export default function BillingPeriodsPage() {
                         type="button"
                         disabled={actionBusy === p.id}
                         onClick={() => void setStatus(p.id, "OPEN")}
-                        className="rounded-full border border-slate-200 px-2.5 py-1 text-[11px] font-semibold text-slate-600 hover:border-brand-300 disabled:opacity-50"
+                        className="rounded-full border border-border px-2.5 py-1 text-[11px] font-semibold text-foreground-light hover:border-brand-300 disabled:opacity-50"
                       >
                         Open
                       </button>
@@ -239,7 +239,7 @@ export default function BillingPeriodsPage() {
                         type="button"
                         disabled={actionBusy === p.id}
                         onClick={() => void setStatus(p.id, "CLOSED")}
-                        className="rounded-full border border-slate-200 px-2.5 py-1 text-[11px] font-semibold text-slate-600 hover:border-brand-300 disabled:opacity-50"
+                        className="rounded-full border border-border px-2.5 py-1 text-[11px] font-semibold text-foreground-light hover:border-brand-300 disabled:opacity-50"
                       >
                         Close
                       </button>
@@ -249,7 +249,7 @@ export default function BillingPeriodsPage() {
                         type="button"
                         disabled={actionBusy === p.id}
                         onClick={() => void setStatus(p.id, "LOCKED")}
-                        className="rounded-full border border-slate-200 px-2.5 py-1 text-[11px] font-semibold text-slate-600 hover:border-brand-300 disabled:opacity-50"
+                        className="rounded-full border border-border px-2.5 py-1 text-[11px] font-semibold text-foreground-light hover:border-brand-300 disabled:opacity-50"
                       >
                         Lock
                       </button>
@@ -261,18 +261,18 @@ export default function BillingPeriodsPage() {
           ))}
         </Table>
         {rows.length === 0 && !loading && (
-          <p className="px-5 pb-5 text-sm text-slate-400">No posting periods found.</p>
+          <p className="px-5 pb-5 text-sm text-foreground-lighter">No posting periods found.</p>
         )}
         <PaginationBar meta={meta} onPageChange={setPage} disabled={loading} />
       </Card>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
           <div className="w-full max-w-md space-y-3 rounded-2xl bg-white p-5 shadow-xl">
             <div className="flex items-center justify-between">
-              <h2 className="font-semibold text-slate-900">Add posting period</h2>
+              <h2 className="font-semibold text-foreground">Add posting period</h2>
               <button type="button" onClick={() => setOpen(false)}>
-                <X className="h-4 w-4 text-slate-400" />
+                <X className="h-4 w-4 text-foreground-lighter" />
               </button>
             </div>
             <div>

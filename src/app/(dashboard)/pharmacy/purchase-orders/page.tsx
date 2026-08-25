@@ -12,7 +12,7 @@ import { buildListQuery, toPageMeta, unwrapPage } from "@/lib/pagination";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 
 const inputClass =
-  "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 type PO = {
   id: string;
@@ -227,14 +227,14 @@ export default function PharmacyPurchaseOrdersPage() {
         <CardHeader title="Orders" subtitle={`${total.toLocaleString()} POs`} />
         <Table headers={["Order", "Supplier", "Date", "Status", "Lines", "Actions"]}>
           {rows.map((p) => (
-            <tr key={p.id} className="hover:bg-slate-50/60">
-              <td className="px-5 py-3.5 font-medium text-slate-800">{p.orderNumber}</td>
-              <td className="px-5 py-3.5 text-slate-500">{p.supplierName}</td>
-              <td className="px-5 py-3.5 text-slate-500">{p.orderDate}</td>
+            <tr key={p.id} className="hover:bg-surface-200/60">
+              <td className="px-5 py-3.5 font-medium text-foreground">{p.orderNumber}</td>
+              <td className="px-5 py-3.5 text-foreground-light">{p.supplierName}</td>
+              <td className="px-5 py-3.5 text-foreground-light">{p.orderDate}</td>
               <td className="px-5 py-3.5">
                 <Badge>{p.status}</Badge>
               </td>
-              <td className="px-5 py-3.5 text-slate-500 text-xs">
+              <td className="px-5 py-3.5 text-foreground-light text-xs">
                 {p.lines.map((l) => (
                   <div key={l.id}>
                     {l.medicationName}: {l.receivedQuantity}/{l.quantityOrdered}
@@ -295,7 +295,7 @@ export default function PharmacyPurchaseOrdersPage() {
       </Card>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
           <div className="w-full max-w-md space-y-3 rounded-2xl bg-white p-5 shadow-xl">
             <div className="flex justify-between">
               <h2 className="font-semibold">Create purchase order</h2>
@@ -315,7 +315,7 @@ export default function PharmacyPurchaseOrdersPage() {
             {poLines.map((line, idx) => (
               <div key={idx} className="space-y-2 rounded-2xl bg-[#f3f7f7] p-3">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold uppercase text-slate-400">Line {idx + 1}</p>
+                  <p className="text-xs font-semibold uppercase text-foreground-lighter">Line {idx + 1}</p>
                   {poLines.length > 1 && (
                     <button
                       type="button"
@@ -405,15 +405,15 @@ export default function PharmacyPurchaseOrdersPage() {
       )}
 
       {receiveId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
           <div className="w-full max-w-md space-y-3 rounded-2xl bg-white p-5 shadow-xl">
             <h2 className="font-semibold">Receive stock</h2>
             {receiveDrafts.length === 0 ? (
-              <p className="text-sm text-slate-400">Nothing remaining on this order.</p>
+              <p className="text-sm text-foreground-lighter">Nothing remaining on this order.</p>
             ) : (
               receiveDrafts.map((d) => (
                 <div key={d.lineId} className="space-y-2 rounded-2xl bg-[#f3f7f7] p-3">
-                  <p className="text-sm font-medium text-slate-800">
+                  <p className="text-sm font-medium text-foreground">
                     {d.medicationName} · remaining {d.remaining}
                   </p>
                   <div>
@@ -476,7 +476,7 @@ export default function PharmacyPurchaseOrdersPage() {
             <PrimaryButton disabled={busy} onClick={receive}>
               {busy ? "Receiving…" : "Confirm receive"}
             </PrimaryButton>
-            <button type="button" className="text-sm text-slate-500" onClick={() => setReceiveId("")}>
+            <button type="button" className="text-sm text-foreground-light" onClick={() => setReceiveId("")}>
               Cancel
             </button>
           </div>
@@ -484,24 +484,24 @@ export default function PharmacyPurchaseOrdersPage() {
       )}
 
       {detail && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
           <div className="max-h-[90vh] w-full max-w-lg space-y-3 overflow-y-auto rounded-2xl bg-white p-5 shadow-xl">
             <div className="flex items-center justify-between">
-              <h2 className="font-semibold text-slate-900">{detail.orderNumber}</h2>
+              <h2 className="font-semibold text-foreground">{detail.orderNumber}</h2>
               <button type="button" onClick={() => setDetail(null)}>
-                <X className="h-4 w-4 text-slate-400" />
+                <X className="h-4 w-4 text-foreground-lighter" />
               </button>
             </div>
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-foreground-light">
               {detail.supplierName} · {detail.orderDate} · {detail.status}
             </p>
             {detail.expectedDeliveryDate && (
-              <p className="text-xs text-slate-500">Expected {detail.expectedDeliveryDate}</p>
+              <p className="text-xs text-foreground-light">Expected {detail.expectedDeliveryDate}</p>
             )}
             {detail.createdByName && (
-              <p className="text-xs text-slate-500">Created by {detail.createdByName}</p>
+              <p className="text-xs text-foreground-light">Created by {detail.createdByName}</p>
             )}
-            {detail.notes && <p className="text-sm text-slate-500">{detail.notes}</p>}
+            {detail.notes && <p className="text-sm text-foreground-light">{detail.notes}</p>}
             <ul className="space-y-2">
               {detail.lines.map((l) => (
                 <li key={l.id} className="rounded-xl bg-[#f3f7f7] px-3 py-2 text-sm">

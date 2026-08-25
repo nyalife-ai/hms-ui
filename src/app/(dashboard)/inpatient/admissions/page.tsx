@@ -21,7 +21,7 @@ import { useWards, type ActiveAdmission, type IpdBed } from "@/lib/catalog";
 import { unwrapPage } from "@/lib/pagination";
 
 const inputClass =
-  "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 export default function IpdAdmissionsPage() {
   const { user } = useAuth();
@@ -281,21 +281,21 @@ export default function IpdAdmissionsPage() {
         <CardHeader title="Active admissions" subtitle="Discharge or transfer beds" />
         <Table headers={["Patient", "Ward / Bed", "Doctor", "Diagnosis", "Status", "Actions"]}>
           {admissions.map((a) => (
-            <tr key={a.id} className="transition hover:bg-slate-50/60">
+            <tr key={a.id} className="transition hover:bg-surface-200/60">
               <td className="px-5 py-3.5">
                 <div className="flex items-center gap-3">
                   <Avatar name={a.patientName} size="sm" />
                   <div>
-                    <p className="font-medium text-slate-800">{a.patientName}</p>
-                    <p className="text-xs text-slate-400">{a.mrn}</p>
+                    <p className="font-medium text-foreground">{a.patientName}</p>
+                    <p className="text-xs text-foreground-lighter">{a.mrn}</p>
                   </div>
                 </div>
               </td>
-              <td className="px-5 py-3.5 text-slate-500">
+              <td className="px-5 py-3.5 text-foreground-light">
                 {a.wardName} · Bed {a.bedNumber}
               </td>
-              <td className="px-5 py-3.5 text-slate-500">{a.admittingDoctor}</td>
-              <td className="px-5 py-3.5 text-slate-500">{a.diagnosis || "—"}</td>
+              <td className="px-5 py-3.5 text-foreground-light">{a.admittingDoctor}</td>
+              <td className="px-5 py-3.5 text-foreground-light">{a.diagnosis || "—"}</td>
               <td className="px-5 py-3.5">
                 <Badge tone="amber">{a.status}</Badge>
               </td>
@@ -308,7 +308,7 @@ export default function IpdAdmissionsPage() {
                       setTransferBedId("");
                       setTransferReason("");
                     }}
-                    className="rounded-full border border-slate-200 px-3 py-1 text-xs font-medium text-slate-600 hover:border-brand-300 hover:text-brand-700"
+                    className="rounded-full border border-border px-3 py-1 text-xs font-medium text-foreground-light hover:border-brand-300 hover:text-brand-700"
                   >
                     Transfer bed
                   </button>
@@ -319,7 +319,7 @@ export default function IpdAdmissionsPage() {
                       setTransferOutReason("");
                       setTransferOutDest("");
                     }}
-                    className="rounded-full border border-slate-200 px-3 py-1 text-xs font-medium text-slate-600 hover:border-amber-300 hover:text-amber-700"
+                    className="rounded-full border border-border px-3 py-1 text-xs font-medium text-foreground-light hover:border-amber-300 hover:text-amber-700"
                   >
                     Transfer out
                   </button>
@@ -343,7 +343,7 @@ export default function IpdAdmissionsPage() {
           ))}
         </Table>
         {admissions.length === 0 && (
-          <p className="px-5 py-8 text-center text-sm text-slate-400">
+          <p className="px-5 py-8 text-center text-sm text-foreground-lighter">
             No active admissions — admit a patient to occupy a bed.
           </p>
         )}
@@ -356,23 +356,23 @@ export default function IpdAdmissionsPage() {
         />
         <Table headers={["Patient", "Status", "Diagnosis", "Actions"]}>
           {history.map((h) => (
-            <tr key={h.id} className="hover:bg-slate-50/60">
+            <tr key={h.id} className="hover:bg-surface-200/60">
               <td className="px-5 py-3.5">
-                <p className="font-medium text-slate-800">{h.patientName}</p>
-                <p className="text-xs text-slate-400">{h.mrn}</p>
+                <p className="font-medium text-foreground">{h.patientName}</p>
+                <p className="text-xs text-foreground-lighter">{h.mrn}</p>
               </td>
               <td className="px-5 py-3.5">
                 <Badge tone={h.status === "DISCHARGED" ? "green" : "blue"}>
                   {h.status}
                 </Badge>
               </td>
-              <td className="px-5 py-3.5 text-slate-500">{h.diagnosis || "—"}</td>
+              <td className="px-5 py-3.5 text-foreground-light">{h.diagnosis || "—"}</td>
               <td className="px-5 py-3.5">
                 {h.status === "DISCHARGED" && (
                   <button
                     type="button"
                     onClick={() => void viewSummary(h)}
-                    className="rounded-full border border-slate-200 px-3 py-1 text-xs font-medium text-slate-600 hover:border-brand-300 hover:text-brand-700"
+                    className="rounded-full border border-border px-3 py-1 text-xs font-medium text-foreground-light hover:border-brand-300 hover:text-brand-700"
                   >
                     View summary
                   </button>
@@ -382,18 +382,18 @@ export default function IpdAdmissionsPage() {
           ))}
         </Table>
         {history.length === 0 && (
-          <p className="px-5 py-8 text-center text-sm text-slate-400">
+          <p className="px-5 py-8 text-center text-sm text-foreground-lighter">
             No closed admissions yet
           </p>
         )}
       </Card>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
           <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-base font-semibold text-slate-900">Admit patient</h2>
-              <button onClick={() => setOpen(false)} className="rounded-lg p-1 text-slate-400 hover:bg-slate-50">
+              <h2 className="text-base font-semibold text-foreground">Admit patient</h2>
+              <button onClick={() => setOpen(false)} className="rounded-lg p-1 text-foreground-lighter hover:bg-surface-200">
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -436,7 +436,7 @@ export default function IpdAdmissionsPage() {
                 {pickDoctor ? (
                   <DoctorSearchSelect value={doctorId} onChange={(id) => setDoctorId(id)} />
                 ) : (
-                  <p className="rounded-xl bg-slate-50 px-3.5 py-2.5 text-sm text-slate-700">
+                  <p className="rounded-xl bg-surface-200 px-3.5 py-2.5 text-sm text-foreground">
                     {user?.name || "You"} — assigned as admitting doctor
                   </p>
                 )}
@@ -460,11 +460,11 @@ export default function IpdAdmissionsPage() {
       )}
 
       {dischargeId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
           <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-5 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-base font-semibold text-slate-900">Discharge patient</h2>
-              <button onClick={() => setDischargeId("")} className="rounded-lg p-1 text-slate-400 hover:bg-slate-50">
+              <h2 className="text-base font-semibold text-foreground">Discharge patient</h2>
+              <button onClick={() => setDischargeId("")} className="rounded-lg p-1 text-foreground-lighter hover:bg-surface-200">
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -477,7 +477,7 @@ export default function IpdAdmissionsPage() {
                     onChange={(id) => setDischargeDoctorId(id)}
                   />
                 ) : (
-                  <p className="rounded-xl bg-slate-50 px-3.5 py-2.5 text-sm text-slate-700">
+                  <p className="rounded-xl bg-surface-200 px-3.5 py-2.5 text-sm text-foreground">
                     {user?.name || "You"} — assigned as discharging doctor
                   </p>
                 )}
@@ -603,11 +603,11 @@ export default function IpdAdmissionsPage() {
       )}
 
       {transferId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
           <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-base font-semibold text-slate-900">Transfer bed</h2>
-              <button onClick={() => setTransferId("")} className="rounded-lg p-1 text-slate-400 hover:bg-slate-50">
+              <h2 className="text-base font-semibold text-foreground">Transfer bed</h2>
+              <button onClick={() => setTransferId("")} className="rounded-lg p-1 text-foreground-lighter hover:bg-surface-200">
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -644,16 +644,16 @@ export default function IpdAdmissionsPage() {
       )}
 
       {transferOutId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
           <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-base font-semibold text-slate-900">Transfer out of facility</h2>
-              <button onClick={() => setTransferOutId("")} className="rounded-lg p-1 text-slate-400 hover:bg-slate-50">
+              <h2 className="text-base font-semibold text-foreground">Transfer out of facility</h2>
+              <button onClick={() => setTransferOutId("")} className="rounded-lg p-1 text-foreground-lighter hover:bg-surface-200">
                 <X className="h-4 w-4" />
               </button>
             </div>
             <div className="space-y-3">
-              <p className="text-sm text-slate-500">
+              <p className="text-sm text-foreground-light">
                 Sets admission status to TRANSFERRED, frees the bed, and removes the patient from the active board.
               </p>
               <div>
@@ -684,37 +684,37 @@ export default function IpdAdmissionsPage() {
       )}
 
       {summaryView && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
           <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-5 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-base font-semibold text-slate-900">
+              <h2 className="text-base font-semibold text-foreground">
                 Discharge summary · {summaryView.patientName}
               </h2>
-              <button onClick={() => setSummaryView(null)} className="rounded-lg p-1 text-slate-400 hover:bg-slate-50">
+              <button onClick={() => setSummaryView(null)} className="rounded-lg p-1 text-foreground-lighter hover:bg-surface-200">
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <div className="space-y-3 text-sm text-slate-700">
-              <p className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500">
+            <div className="space-y-3 text-sm text-foreground">
+              <p className="rounded-lg bg-surface-200 px-3 py-2 text-xs text-foreground-light">
                 Finalized records are locked and cannot be edited.
                 {summaryView.finalizedAt
                   ? ` Finalized ${new Date(summaryView.finalizedAt).toLocaleString()}.`
                   : ""}
               </p>
               <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Diagnosis</p>
+                <p className="text-xs font-medium uppercase tracking-wide text-foreground-lighter">Diagnosis</p>
                 <p className="mt-1">{summaryView.dischargeDiagnosis || "—"}</p>
               </div>
               <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Treatment summary</p>
+                <p className="text-xs font-medium uppercase tracking-wide text-foreground-lighter">Treatment summary</p>
                 <p className="mt-1 whitespace-pre-wrap">{summaryView.summaryOfTreatment || "—"}</p>
               </div>
               <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Medications</p>
+                <p className="text-xs font-medium uppercase tracking-wide text-foreground-lighter">Medications</p>
                 <p className="mt-1 whitespace-pre-wrap">{summaryView.dischargeMedications || "—"}</p>
               </div>
               <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Follow-up</p>
+                <p className="text-xs font-medium uppercase tracking-wide text-foreground-lighter">Follow-up</p>
                 <p className="mt-1 whitespace-pre-wrap">{summaryView.followUpInstructions || "—"}</p>
               </div>
             </div>

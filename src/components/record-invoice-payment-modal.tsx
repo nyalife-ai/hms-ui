@@ -11,7 +11,7 @@ import { PrimaryButton } from "@/components/ui";
 import { api } from "@/lib/api";
 
 const inputClass =
-  "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 type PaymentMethod = {
   id: string;
@@ -134,15 +134,15 @@ export function RecordInvoicePaymentModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
       <div className="max-h-[90vh] w-full max-w-md space-y-3 overflow-y-auto rounded-2xl bg-white p-5 shadow-xl">
         <div className="flex items-center justify-between">
-          <h2 className="font-semibold text-slate-900">Record payment</h2>
+          <h2 className="font-semibold text-foreground">Record payment</h2>
           <button type="button" onClick={onClose} aria-label="Close">
-            <X className="h-4 w-4 text-slate-400" />
+            <X className="h-4 w-4 text-foreground-lighter" />
           </button>
         </div>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-foreground-light">
           Payment is allocated to the selected invoice. Drafts are issued first; journals and
           ledger accounts update automatically.
         </p>
@@ -156,11 +156,11 @@ export function RecordInvoicePaymentModal({
 
         {invoice && (
           <div className="rounded-xl bg-[#f3f7f7] px-3.5 py-3 text-sm">
-            <p className="font-semibold text-slate-800">{invoice.invoiceNumber}</p>
-            <p className="text-[11px] text-slate-500">
+            <p className="font-semibold text-foreground">{invoice.invoiceNumber}</p>
+            <p className="text-[11px] text-foreground-light">
               {invoice.patientName} · {invoice.patientMrn} · {invoice.status.replaceAll("_", " ")}
             </p>
-            <p className="mt-1 text-slate-700">
+            <p className="mt-1 text-foreground">
               {invoice.status === "DRAFT" ? "Draft total" : "Outstanding"}:{" "}
               <span className="font-semibold">
                 KES {amountDue(invoice).toLocaleString()}
@@ -187,7 +187,7 @@ export function RecordInvoicePaymentModal({
               }}
               placeholder="0"
             />
-            <p className="mt-1 text-[11px] text-slate-400">
+            <p className="mt-1 text-[11px] text-foreground-lighter">
               Applied before issue. Pay amount preview ≈ KES{" "}
               {Number.isFinite(previewTotal) ? previewTotal.toLocaleString() : "—"}
             </p>

@@ -20,7 +20,7 @@ import { buildListQuery, toPageMeta, unwrapPage } from "@/lib/pagination";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 
 const inputClass =
-  "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 const FORMS = ["TABLET", "CAPSULE", "SYRUP", "INJECTION", "CREAM", "OTHER"] as const;
 
@@ -272,20 +272,20 @@ export default function PharmacyMedicationsPage() {
         <CardHeader title="Formulary" subtitle="Price, stock roll-up, clinical notes" />
         <Table headers={["Name", "Generic", "Form", "Price", "On hand", "Status", ""]}>
           {rows.map((m) => (
-            <tr key={m.id} className="hover:bg-slate-50/60">
+            <tr key={m.id} className="hover:bg-surface-200/60">
               <td className="px-5 py-3.5">
-                <p className="font-medium text-slate-800">{m.medicationName}</p>
-                <p className="text-[11px] text-slate-400">
+                <p className="font-medium text-foreground">{m.medicationName}</p>
+                <p className="text-[11px] text-foreground-lighter">
                   {m.categoryName || "Uncategorised"}
                   {m.strength ? ` · ${m.strength}` : ""}
                 </p>
               </td>
-              <td className="px-5 py-3.5 text-slate-500">{m.genericName || "—"}</td>
-              <td className="px-5 py-3.5 text-slate-500">{m.form || "—"}</td>
-              <td className="px-5 py-3.5 text-slate-600">
+              <td className="px-5 py-3.5 text-foreground-light">{m.genericName || "—"}</td>
+              <td className="px-5 py-3.5 text-foreground-light">{m.form || "—"}</td>
+              <td className="px-5 py-3.5 text-foreground-light">
                 KES {Number(m.standardSellingPrice || 0).toLocaleString()}
               </td>
-              <td className="px-5 py-3.5 text-slate-600">{m.quantityOnHand ?? 0}</td>
+              <td className="px-5 py-3.5 text-foreground-light">{m.quantityOnHand ?? 0}</td>
               <td className="px-5 py-3.5">
                 <Badge tone={m.isActive ? "green" : "slate"}>
                   {m.isActive ? "Active" : "Inactive"}
@@ -314,14 +314,14 @@ export default function PharmacyMedicationsPage() {
       </Card>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
           <div className="max-h-[90vh] w-full max-w-lg space-y-3 overflow-y-auto rounded-2xl bg-white p-5 shadow-xl">
             <div className="flex items-center justify-between">
-              <h2 className="font-semibold text-slate-900">
+              <h2 className="font-semibold text-foreground">
                 {editing ? "Edit medication" : "Add medication"}
               </h2>
               <button type="button" onClick={() => setOpen(false)}>
-                <X className="h-4 w-4 text-slate-400" />
+                <X className="h-4 w-4 text-foreground-lighter" />
               </button>
             </div>
             <div>
@@ -429,7 +429,7 @@ export default function PharmacyMedicationsPage() {
               />
             </div>
             {editing && (
-              <label className="flex items-center gap-2 text-sm text-slate-600">
+              <label className="flex items-center gap-2 text-sm text-foreground-light">
                 <input
                   type="checkbox"
                   checked={form.isActive}
@@ -446,48 +446,48 @@ export default function PharmacyMedicationsPage() {
       )}
 
       {detail && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
           <div className="max-h-[90vh] w-full max-w-lg space-y-3 overflow-y-auto rounded-2xl bg-white p-5 shadow-xl">
             <div className="flex items-center justify-between">
-              <h2 className="font-semibold text-slate-900">{detail.medicationName}</h2>
+              <h2 className="font-semibold text-foreground">{detail.medicationName}</h2>
               <button type="button" onClick={() => setDetail(null)}>
-                <X className="h-4 w-4 text-slate-400" />
+                <X className="h-4 w-4 text-foreground-lighter" />
               </button>
             </div>
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-foreground-light">
               {detail.genericName || "No generic"} · {detail.form || "—"} ·{" "}
               {detail.strength || "no strength"} · {detail.categoryName || "Uncategorised"}
             </p>
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-foreground-light">
               Sell price KES {Number(detail.standardSellingPrice || 0).toLocaleString()}
             </p>
             {detail.description && (
-              <p className="text-sm text-slate-600">{detail.description}</p>
+              <p className="text-sm text-foreground-light">{detail.description}</p>
             )}
             {detail.sideEffects && (
               <div>
-                <p className="text-[11px] font-semibold uppercase text-slate-400">Side effects</p>
-                <p className="text-sm text-slate-600">{detail.sideEffects}</p>
+                <p className="text-[11px] font-semibold uppercase text-foreground-lighter">Side effects</p>
+                <p className="text-sm text-foreground-light">{detail.sideEffects}</p>
               </div>
             )}
             {detail.contraindications && (
               <div>
-                <p className="text-[11px] font-semibold uppercase text-slate-400">
+                <p className="text-[11px] font-semibold uppercase text-foreground-lighter">
                   Contraindications
                 </p>
-                <p className="text-sm text-slate-600">{detail.contraindications}</p>
+                <p className="text-sm text-foreground-light">{detail.contraindications}</p>
               </div>
             )}
             <div>
-              <p className="mb-2 text-[11px] font-semibold uppercase text-slate-400">Batches</p>
+              <p className="mb-2 text-[11px] font-semibold uppercase text-foreground-lighter">Batches</p>
               {(detail.batches ?? []).length === 0 ? (
-                <p className="text-sm text-slate-400">No lots on this medication.</p>
+                <p className="text-sm text-foreground-lighter">No lots on this medication.</p>
               ) : (
                 <ul className="space-y-2">
                   {detail.batches!.map((b) => (
                     <li key={b.id} className="rounded-xl bg-[#f3f7f7] px-3 py-2 text-sm">
-                      <span className="font-medium text-slate-800">{b.batchNumber}</span>
-                      <span className="text-slate-500">
+                      <span className="font-medium text-foreground">{b.batchNumber}</span>
+                      <span className="text-foreground-light">
                         {" "}
                         · {b.quantityOnHand} on hand · exp {b.expiryDate}
                         {b.expired ? " · expired" : ""}

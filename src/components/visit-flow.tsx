@@ -36,14 +36,14 @@ export function PipelineStepper({
                     ? "bg-brand-500 text-white"
                     : active
                       ? "bg-brand-100 text-brand-700 ring-2 ring-brand-400"
-                      : "bg-slate-100 text-slate-400"
+                      : "bg-surface-200 text-foreground-lighter"
                 } ${clickable ? "cursor-pointer hover:ring-2 hover:ring-brand-300" : ""}`}
               >
                 {done && idx !== highlighted ? <Check className="h-3 w-3" /> : idx}
               </button>
               <span
                 className={`max-w-[3.25rem] truncate text-center text-[9px] sm:max-w-none sm:whitespace-nowrap ${
-                  active ? "font-semibold text-brand-700" : "text-slate-400"
+                  active ? "font-semibold text-brand-700" : "text-foreground-lighter"
                 }`}
                 title={step}
               >
@@ -51,7 +51,7 @@ export function PipelineStepper({
               </span>
             </div>
             {i < PIPELINE_STEPS.length - 1 && (
-              <span className={`mb-4 h-0.5 w-3 shrink-0 rounded-full sm:w-5 ${done ? "bg-brand-400" : "bg-slate-100"}`} />
+              <span className={`mb-4 h-0.5 w-3 shrink-0 rounded-full sm:w-5 ${done ? "bg-brand-400" : "bg-surface-200"}`} />
             )}
           </div>
         );
@@ -74,7 +74,7 @@ export function VisitQueueList({
   trailing?: (visit: Visit) => ReactNode;
 }) {
   if (visits.length === 0) {
-    return <p className="px-5 pb-5 text-sm text-slate-400">{emptyMessage}</p>;
+    return <p className="px-5 pb-5 text-sm text-foreground-lighter">{emptyMessage}</p>;
   }
   return (
     <ul className="space-y-1 px-3 pb-4">
@@ -83,13 +83,13 @@ export function VisitQueueList({
           <button
             onClick={() => onSelect(v.id)}
             className={`flex min-w-0 flex-1 items-center gap-3 rounded-xl px-2.5 py-2.5 text-left transition ${
-              selectedId === v.id ? "bg-brand-50 ring-1 ring-brand-200" : "hover:bg-slate-50"
+              selectedId === v.id ? "bg-brand-50 ring-1 ring-brand-200" : "hover:bg-surface-200"
             }`}
           >
             <Avatar name={v.patientName} size="sm" />
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-1.5">
-                <p className="truncate text-sm font-semibold text-slate-800">
+                <p className="truncate text-sm font-semibold text-foreground">
                   {v.patientName}
                 </p>
                 {(v.triagePriority || v.triage?.priority) &&
@@ -99,15 +99,15 @@ export function VisitQueueList({
                     </Badge>
                   )}
               </div>
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[11px] text-foreground-lighter">
                 {v.mrn} · {v.age} yrs · {v.gender}
               </p>
               {(v.triage?.chiefComplaint || v.reasonForVisit) && (
-                <p className="mt-0.5 truncate text-[11px] text-slate-500">
+                <p className="mt-0.5 truncate text-[11px] text-foreground-light">
                   {v.triage?.chiefComplaint || v.reasonForVisit}
                 </p>
               )}
-              <p className="text-[10px] text-slate-400">
+              <p className="text-[10px] text-foreground-lighter">
                 {v.triageCompletedAt || v.triage?.completedAt
                   ? `Triaged ${formatTime(v.triageCompletedAt || v.triage!.completedAt)}`
                   : `In at ${formatTime(v.checkedInAt)}`}
@@ -159,8 +159,8 @@ export function VitalsGrid({ visit }: { visit: Visit }) {
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
       {entries.map((e) => (
         <div key={e.label} className="rounded-xl bg-[#f3f7f7] px-3 py-2.5">
-          <p className="text-[10px] text-slate-400">{e.label}</p>
-          <p className="text-sm font-semibold text-slate-800">{e.value}</p>
+          <p className="text-[10px] text-foreground-lighter">{e.label}</p>
+          <p className="text-sm font-semibold text-foreground">{e.value}</p>
         </div>
       ))}
     </div>
@@ -206,8 +206,8 @@ export function PaymentInfo({ visit }: { visit: Visit }) {
       </div>
     ) : fee === "WAIVED" ? (
       <div className="flex min-w-0 flex-wrap items-center gap-2.5 rounded-xl bg-[#f3f7f7] px-3.5 py-3">
-        <Banknote className="h-4 w-4 shrink-0 text-slate-400" />
-        <p className="min-w-0 truncate text-sm font-medium text-slate-700">
+        <Banknote className="h-4 w-4 shrink-0 text-foreground-lighter" />
+        <p className="min-w-0 truncate text-sm font-medium text-foreground">
           Consultation fee waived
         </p>
       </div>
@@ -216,8 +216,8 @@ export function PaymentInfo({ visit }: { visit: Visit }) {
   const payMethod =
     visit.payment.method === "CASH" ? (
       <div className="flex items-center gap-2.5 rounded-xl bg-[#f3f7f7] px-3.5 py-3">
-        <Banknote className="h-4 w-4 shrink-0 text-slate-400" />
-        <p className="text-sm font-medium text-slate-700">Paying cash / M-Pesa</p>
+        <Banknote className="h-4 w-4 shrink-0 text-foreground-lighter" />
+        <p className="text-sm font-medium text-foreground">Paying cash / M-Pesa</p>
       </div>
     ) : (
       (() => {
@@ -231,10 +231,10 @@ export function PaymentInfo({ visit }: { visit: Visit }) {
           <div className="flex min-w-0 flex-wrap items-center gap-2.5 rounded-xl bg-[#f3f7f7] px-3.5 py-3">
             <ShieldCheck className="h-4 w-4 shrink-0 text-brand-500" />
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-slate-700">
+              <p className="truncate text-sm font-medium text-foreground">
                 {visit.payment.provider}
               </p>
-              <p className="truncate text-[11px] text-slate-400">
+              <p className="truncate text-[11px] text-foreground-lighter">
                 Policy {visit.payment.policyNumber}
                 {visit.payment.benefitBalance
                   ? ` · Balance KES ${visit.payment.benefitBalance.toLocaleString()}`

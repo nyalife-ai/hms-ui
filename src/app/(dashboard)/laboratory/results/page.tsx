@@ -24,7 +24,7 @@ import { buildListQuery, toPageMeta, unwrapPage } from "@/lib/pagination";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 
 const inputClass =
-  "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 const STATUS_TONE: Record<string, BadgeTone> = {
   PENDING: "amber",
@@ -126,7 +126,7 @@ export default function LabResultsPage() {
 
   return (
     <RoleGuard module="laboratory">
-      <div className="mb-2 text-[11px] font-medium uppercase tracking-wide text-slate-400">
+      <div className="mb-2 text-[11px] font-medium uppercase tracking-wide text-foreground-lighter">
         Home / Dashboard / Lab Results
       </div>
       <PageHeader
@@ -185,7 +185,7 @@ export default function LabResultsPage() {
             </option>
           ))}
         </select>
-        <label className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-600">
+        <label className="flex items-center gap-2 rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground-light">
           <input
             type="checkbox"
             checked={criticalOnly}
@@ -196,7 +196,7 @@ export default function LabResultsPage() {
           />
           Critical only
         </label>
-        <label className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-600">
+        <label className="flex items-center gap-2 rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground-light">
           <input
             type="checkbox"
             checked={unverifiedOnly}
@@ -229,19 +229,19 @@ export default function LabResultsPage() {
           {rows.map((r) => (
             <tr
               key={r.id}
-              className={`hover:bg-slate-50/60 ${r.criticalCount > 0 ? "bg-rose-50/30" : ""}`}
+              className={`hover:bg-surface-200/60 ${r.criticalCount > 0 ? "bg-rose-50/30" : ""}`}
             >
-              <td className="px-5 py-3.5 font-medium text-slate-800">
+              <td className="px-5 py-3.5 font-medium text-foreground">
                 {r.requestNumber}
               </td>
-              <td className="px-5 py-3.5 text-slate-500">
+              <td className="px-5 py-3.5 text-foreground-light">
                 {r.patientName}
-                <span className="block text-xs text-slate-400">{r.mrn}</span>
+                <span className="block text-xs text-foreground-lighter">{r.mrn}</span>
               </td>
-              <td className="px-5 py-3.5 text-slate-500 text-xs">
+              <td className="px-5 py-3.5 text-foreground-light text-xs">
                 {r.panels.length ? r.panels.join(", ") : "—"}
               </td>
-              <td className="px-5 py-3.5 text-slate-700">
+              <td className="px-5 py-3.5 text-foreground">
                 {r.resultCount}
                 {r.criticalCount > 0 && (
                   <span className="ml-1 text-xs text-rose-500">
@@ -260,7 +260,7 @@ export default function LabResultsPage() {
                   {statusLabel(r.status)}
                 </Badge>
               </td>
-              <td className="px-5 py-3.5 text-xs text-slate-500">
+              <td className="px-5 py-3.5 text-xs text-foreground-light">
                 {r.updatedAt.slice(0, 10)}
               </td>
               <td className="px-5 py-3.5">
@@ -274,7 +274,7 @@ export default function LabResultsPage() {
           ))}
         </Table>
         {rows.length === 0 && !loading && (
-          <p className="px-5 pb-5 text-sm text-slate-400">
+          <p className="px-5 pb-5 text-sm text-foreground-lighter">
             No result reports match filters.
           </p>
         )}

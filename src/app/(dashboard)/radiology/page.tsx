@@ -26,7 +26,7 @@ const STATUS_TONES: Record<string, BadgeTone> = {
 };
 
 const inputClass =
-  "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 export default function RadiologyPage() {
   const [page, setPage] = useState(1);
@@ -244,7 +244,7 @@ export default function RadiologyPage() {
       className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold ${
         section === id
           ? "bg-brand-50 text-brand-800"
-          : "border border-slate-200 text-slate-600 hover:border-brand-300"
+          : "border border-border text-foreground-light hover:border-brand-300"
       }`}
     >
       {label}
@@ -293,16 +293,16 @@ export default function RadiologyPage() {
             const raw = r.rawStatus || "";
             const openScan = ["PENDING", "SCHEDULED", "IN_PROGRESS"].includes(raw);
             return (
-              <tr key={r.id} className="transition hover:bg-slate-50/60">
+              <tr key={r.id} className="transition hover:bg-surface-200/60">
                 <td className="px-5 py-3.5">
                   <div className="flex items-center gap-3">
                     <Avatar name={r.patient} size="sm" />
-                    <span className="font-medium text-slate-800">{r.patient}</span>
+                    <span className="font-medium text-foreground">{r.patient}</span>
                   </div>
                 </td>
-                <td className="px-5 py-3.5 text-slate-500">{r.scan}</td>
-                <td className="px-5 py-3.5 text-slate-500">{r.requestedBy}</td>
-                <td className="px-5 py-3.5 text-slate-500">{r.scheduled}</td>
+                <td className="px-5 py-3.5 text-foreground-light">{r.scan}</td>
+                <td className="px-5 py-3.5 text-foreground-light">{r.requestedBy}</td>
+                <td className="px-5 py-3.5 text-foreground-light">{r.scheduled}</td>
                 <td className="px-5 py-3.5">
                   <Badge tone={STATUS_TONES[r.status]}>{r.status}</Badge>
                 </td>
@@ -314,7 +314,7 @@ export default function RadiologyPage() {
                           type="button"
                           disabled={actionId === r.id}
                           onClick={() => void setStatus(r.id, "IN_PROGRESS")}
-                          className="rounded-full border border-slate-200 px-2.5 py-1 text-[11px] font-medium text-slate-600 hover:border-amber-300"
+                          className="rounded-full border border-border px-2.5 py-1 text-[11px] font-medium text-foreground-light hover:border-amber-300"
                         >
                           Start
                         </button>
@@ -338,7 +338,7 @@ export default function RadiologyPage() {
                       <button
                         type="button"
                         onClick={() => openReport(r.id)}
-                        className="rounded-full border border-slate-200 px-2.5 py-1 text-[11px] font-medium text-slate-600 hover:border-brand-300"
+                        className="rounded-full border border-border px-2.5 py-1 text-[11px] font-medium text-foreground-light hover:border-brand-300"
                       >
                         Report
                       </button>
@@ -347,7 +347,7 @@ export default function RadiologyPage() {
                     <button
                       type="button"
                       onClick={() => openReport(r.id)}
-                      className="rounded-full border border-slate-200 px-2.5 py-1 text-[11px] font-medium text-slate-600 hover:border-brand-300"
+                      className="rounded-full border border-border px-2.5 py-1 text-[11px] font-medium text-foreground-light hover:border-brand-300"
                     >
                       Report
                     </button>
@@ -399,11 +399,11 @@ export default function RadiologyPage() {
           </div>
           <Table headers={["Scan", "Category", "Price", "Contrast", "Status"]}>
             {scanTypeRows.map((s) => (
-              <tr key={s.id} className="hover:bg-slate-50/60">
-                <td className="px-5 py-3.5 font-medium text-slate-800">{s.scanType}</td>
-                <td className="px-5 py-3.5 text-slate-500">{s.category || "—"}</td>
-                <td className="px-5 py-3.5 text-slate-500">{s.standardPrice}</td>
-                <td className="px-5 py-3.5 text-slate-500">{s.contrastRequired ? "Yes" : "No"}</td>
+              <tr key={s.id} className="hover:bg-surface-200/60">
+                <td className="px-5 py-3.5 font-medium text-foreground">{s.scanType}</td>
+                <td className="px-5 py-3.5 text-foreground-light">{s.category || "—"}</td>
+                <td className="px-5 py-3.5 text-foreground-light">{s.standardPrice}</td>
+                <td className="px-5 py-3.5 text-foreground-light">{s.contrastRequired ? "Yes" : "No"}</td>
                 <td className="px-5 py-3.5">
                   <Badge tone={s.isActive ? "green" : "slate"}>
                     {s.isActive ? "Active" : "Inactive"}
@@ -473,7 +473,7 @@ export default function RadiologyPage() {
                     Attach
                   </PrimaryButton>
                 </div>
-                <ul className="mt-3 space-y-1 text-sm text-slate-600">
+                <ul className="mt-3 space-y-1 text-sm text-foreground-light">
                   {detail.images.map((img) => (
                     <li key={img.id}>
                       {img.modality || "IMG"} · {img.filePath}
@@ -487,11 +487,11 @@ export default function RadiologyPage() {
       )}
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
           <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-base font-semibold text-slate-900">New scan request</h2>
-              <button onClick={() => setOpen(false)} className="rounded-lg p-1 text-slate-400 hover:bg-slate-50">
+              <h2 className="text-base font-semibold text-foreground">New scan request</h2>
+              <button onClick={() => setOpen(false)} className="rounded-lg p-1 text-foreground-lighter hover:bg-surface-200">
                 <X className="h-4 w-4" />
               </button>
             </div>

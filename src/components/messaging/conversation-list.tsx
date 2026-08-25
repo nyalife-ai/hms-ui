@@ -10,17 +10,17 @@ import {
 } from "@/lib/messaging";
 
 const inputClass =
-  "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground placeholder:text-foreground-lighter focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 function Skeleton() {
   return (
     <ul className="divide-y divide-slate-50" aria-hidden>
       {Array.from({ length: 7 }).map((_, i) => (
         <li key={i} className="flex items-center gap-3 px-4 py-3.5">
-          <div className="h-10 w-10 animate-pulse rounded-full bg-slate-100" />
+          <div className="h-10 w-10 animate-pulse rounded-full bg-surface-200" />
           <div className="min-w-0 flex-1 space-y-2">
-            <div className="h-3.5 w-1/2 animate-pulse rounded bg-slate-100" />
-            <div className="h-3 w-4/5 animate-pulse rounded bg-slate-50" />
+            <div className="h-3.5 w-1/2 animate-pulse rounded bg-surface-200" />
+            <div className="h-3 w-4/5 animate-pulse rounded bg-surface-200" />
           </div>
         </li>
       ))}
@@ -51,7 +51,7 @@ export function ConversationList({
 }) {
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="shrink-0 border-b border-slate-100 p-3">
+      <div className="shrink-0 border-b border-border p-3">
         <label htmlFor="msg-conv-search" className="sr-only">
           Search conversations
         </label>
@@ -97,7 +97,7 @@ export function ConversationList({
                     type="button"
                     onClick={() => onSelect(c)}
                     aria-current={selected ? "true" : undefined}
-                    className={`flex w-full items-center gap-3 px-4 py-3.5 text-left transition hover:bg-slate-50/80 ${
+                    className={`flex w-full items-center gap-3 px-4 py-3.5 text-left transition hover:bg-surface-200/80 ${
                       selected ? "bg-brand-50/80" : ""
                     }`}
                   >
@@ -113,21 +113,21 @@ export function ConversationList({
                     </span>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2">
-                        <p className="truncate text-sm font-medium text-slate-800">
+                        <p className="truncate text-sm font-medium text-foreground">
                           {title}
                         </p>
-                        <span className="shrink-0 text-[11px] text-slate-400">
+                        <span className="shrink-0 text-[11px] text-foreground-lighter">
                           {formatConversationTime(c.updatedAt)}
                         </span>
                       </div>
                       <div className="mt-0.5 flex items-center gap-1.5">
                         {c.muted ? (
                           <BellOff
-                            className="h-3 w-3 shrink-0 text-slate-400"
+                            className="h-3 w-3 shrink-0 text-foreground-lighter"
                             aria-label="Muted"
                           />
                         ) : null}
-                        <p className="truncate text-sm text-slate-500">
+                        <p className="truncate text-sm text-foreground-light">
                           {c.preview || "No messages yet"}
                         </p>
                       </div>

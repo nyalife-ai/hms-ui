@@ -111,21 +111,30 @@ export function PwaUpdateBanner() {
 
   return (
     <div
-      className="fixed inset-x-0 top-0 z-[100] flex justify-center px-3 pt-[max(0.75rem,env(safe-area-inset-top))]"
+      className="fixed bottom-4 left-1/2 z-[100] flex w-[min(92vw,28rem)] -translate-x-1/2 items-center gap-3 rounded-2xl border border-brand-200 bg-surface px-4 py-3 text-sm text-foreground shadow-lg"
       role="status"
     >
-      <div className="flex w-full max-w-lg items-center gap-3 rounded-2xl border border-brand-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-lg">
-        <p className="min-w-0 flex-1">
-          A new version of NyaLife is ready. Save your work, then update.
-        </p>
-        <button
-          type="button"
-          onClick={applyUpdate}
-          className="shrink-0 rounded-full bg-brand-500 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-brand-600"
-        >
-          Update now
-        </button>
-      </div>
+      <p className="min-w-0 flex-1">
+        A new version of NyaLife is ready. Save your work, then update.
+      </p>
+      <button
+        type="button"
+        onClick={applyUpdate}
+        className="shrink-0 rounded-full bg-brand-500 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-brand-600"
+      >
+        Update now
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          setNeedsConfirm(false);
+          setWaiting(null);
+        }}
+        className="shrink-0 rounded-full px-2 py-1 text-xs font-medium text-foreground-lighter hover:text-foreground-light"
+        aria-label="Dismiss update notice"
+      >
+        Later
+      </button>
     </div>
   );
 }

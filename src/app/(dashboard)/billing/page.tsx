@@ -38,7 +38,7 @@ import { buildListQuery } from "@/lib/pagination";
 import { useVisits, type Visit } from "@/lib/visits";
 
 const inputClass =
-  "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 type BillingOverview = {
   todayIssuedInvoicesTotal: string;
@@ -390,7 +390,7 @@ export default function BillingPage() {
             <Link href="/billing/invoices">
               <button
                 type="button"
-                className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:border-brand-300 hover:text-brand-700"
+                className="rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground-light hover:border-brand-300 hover:text-brand-700"
               >
                 Invoices
               </button>
@@ -401,7 +401,7 @@ export default function BillingPage() {
             <button
               type="button"
               onClick={() => void loadOverview()}
-              className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:border-brand-300 hover:text-brand-700"
+              className="rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground-light hover:border-brand-300 hover:text-brand-700"
             >
               Refresh
             </button>
@@ -433,8 +433,8 @@ export default function BillingPage() {
         <CardHeader title="Consultation fee" />
         {awaitingConsultFee.length === 0 ? (
           <div className="flex flex-col items-center justify-center px-5 pb-8 pt-2 text-center">
-            <Wallet className="mb-3 h-10 w-10 text-slate-300" />
-            <p className="text-sm font-semibold text-slate-700">No pending payments</p>
+            <Wallet className="mb-3 h-10 w-10 text-foreground-muted" />
+            <p className="text-sm font-semibold text-foreground">No pending payments</p>
           </div>
         ) : (
           <ul className="space-y-3 px-5 pb-5">
@@ -446,14 +446,14 @@ export default function BillingPage() {
                     <div className="flex items-center gap-3">
                       <Avatar name={v.patientName} />
                       <div>
-                        <p className="text-sm font-semibold text-slate-800">{v.patientName}</p>
-                        <p className="text-[11px] text-slate-400">
+                        <p className="text-sm font-semibold text-foreground">{v.patientName}</p>
+                        <p className="text-[11px] text-foreground-lighter">
                           {v.billing?.invoiceNumber ?? "Draft"} · KES{" "}
                           {Number(amount).toLocaleString()} · Awaiting payment
                         </p>
                       </div>
                     </div>
-                    <p className="text-lg font-bold text-slate-900">
+                    <p className="text-lg font-bold text-foreground">
                       KES {Number(amount).toLocaleString()}
                     </p>
                   </div>
@@ -483,7 +483,7 @@ export default function BillingPage() {
                     <button
                       type="button"
                       onClick={() => setMpesaVisit(v)}
-                      className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
+                      className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-4 py-2 text-sm font-semibold text-foreground"
                     >
                       <Smartphone className="h-4 w-4" />
                       Pay via M-Pesa
@@ -503,8 +503,8 @@ export default function BillingPage() {
         />
         {billable.length === 0 ? (
           <div className="flex flex-col items-center justify-center px-5 pb-8 pt-2 text-center">
-            <Wallet className="mb-3 h-10 w-10 text-slate-300" />
-            <p className="text-sm font-semibold text-slate-700">No patients awaiting payment</p>
+            <Wallet className="mb-3 h-10 w-10 text-foreground-muted" />
+            <p className="text-sm font-semibold text-foreground">No patients awaiting payment</p>
           </div>
         ) : (
           <ul className="space-y-3 px-5 pb-5">
@@ -527,17 +527,17 @@ export default function BillingPage() {
                     <div className="flex items-center gap-3">
                       <Avatar name={v.patientName} />
                       <div>
-                        <p className="text-sm font-semibold text-slate-800">{v.patientName}</p>
-                        <p className="text-[11px] text-slate-400">
+                        <p className="text-sm font-semibold text-foreground">{v.patientName}</p>
+                        <p className="text-[11px] text-foreground-lighter">
                           {v.mrn} · {v.doctorName}
                         </p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-lg font-bold text-slate-900">
+                      <p className="text-lg font-bold text-foreground">
                         {quoted ? `KES ${total.toLocaleString()}` : "…"}
                       </p>
-                      <p className="text-[11px] text-slate-400">
+                      <p className="text-[11px] text-foreground-lighter">
                         {v.billing?.consultFeeStatus === "PAID"
                           ? "Consult fee paid"
                           : "Consultation"}
@@ -551,8 +551,8 @@ export default function BillingPage() {
                     </div>
                   </div>
 
-                  <p className="mt-3 text-xs text-slate-500">
-                    <span className="font-medium text-slate-600">Diagnosis:</span>{" "}
+                  <p className="mt-3 text-xs text-foreground-light">
+                    <span className="font-medium text-foreground-light">Diagnosis:</span>{" "}
                     {v.diagnosis || "—"}
                   </p>
 
@@ -576,7 +576,7 @@ export default function BillingPage() {
                             type="button"
                             onClick={() => setCashConfirm(v)}
                             disabled={busyId === v.id || !quoted}
-                            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 transition hover:border-brand-300 disabled:opacity-50"
+                            className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-4 py-2 text-xs font-semibold text-foreground transition hover:border-brand-300 disabled:opacity-50"
                           >
                             <Wallet className="h-3.5 w-3.5" />
                             Collect cash
@@ -670,7 +670,7 @@ export default function BillingPage() {
             awaitingInsurer.length > 0 ? (
               <button
                 onClick={() => void refresh()}
-                className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:border-brand-300"
+                className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium text-foreground-light hover:border-brand-300"
               >
                 <RefreshCw className="h-3.5 w-3.5" /> Refresh
               </button>
@@ -678,7 +678,7 @@ export default function BillingPage() {
           }
         />
         {awaitingInsurer.length === 0 ? (
-          <p className="px-5 pb-5 text-sm text-slate-400">
+          <p className="px-5 pb-5 text-sm text-foreground-lighter">
             No claims pending. After you submit a claim, the visit waits here until the insurer responds.
           </p>
         ) : (
@@ -689,8 +689,8 @@ export default function BillingPage() {
                   <div className="flex items-center gap-3">
                     <Avatar name={v.patientName} />
                     <div>
-                      <p className="text-sm font-semibold text-slate-800">{v.patientName}</p>
-                      <p className="text-[11px] text-slate-400">
+                      <p className="text-sm font-semibold text-foreground">{v.patientName}</p>
+                      <p className="text-[11px] text-foreground-lighter">
                         {v.mrn} · {v.payment.provider} · claim{" "}
                         {v.billing?.claimId
                           ? `${v.billing.claimId.slice(0, 12)}…`
@@ -698,7 +698,7 @@ export default function BillingPage() {
                       </p>
                     </div>
                   </div>
-                  <p className="text-sm font-bold text-slate-900">
+                  <p className="text-sm font-bold text-foreground">
                     KES{" "}
                     {formatKes(
                       v.billing?.total ?? quotes[quoteKey(v)]?.totalAmount ?? 0,
@@ -726,7 +726,7 @@ export default function BillingPage() {
                       <button
                         onClick={() => pollClaim(v)}
                         disabled={checkingId === v.id}
-                        className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-brand-300 disabled:opacity-50"
+                        className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-3 py-1.5 text-xs font-semibold text-foreground hover:border-brand-300 disabled:opacity-50"
                       >
                         {checkingId === v.id ? (
                           <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -767,12 +767,12 @@ export default function BillingPage() {
                 <div className="flex items-center gap-3">
                   <Avatar name={v.patientName} size="sm" />
                   <div>
-                    <p className="text-sm font-semibold text-slate-800">{v.patientName}</p>
-                    <p className="text-[11px] text-slate-400">{v.mrn}</p>
+                    <p className="text-sm font-semibold text-foreground">{v.patientName}</p>
+                    <p className="text-[11px] text-foreground-lighter">{v.mrn}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-sm font-semibold text-slate-700">
+                  <span className="text-sm font-semibold text-foreground">
                     KES {v.billing?.total.toLocaleString()}
                   </span>
                   {v.billing?.mode === "CLAIM" ? (
@@ -815,7 +815,7 @@ export default function BillingPage() {
                     </button>
                   )}
                   {!v.billing?.receiptId && v.billing?.invoiceNumber && (
-                    <span className="text-[11px] text-slate-400">{v.billing.invoiceNumber}</span>
+                    <span className="text-[11px] text-foreground-lighter">{v.billing.invoiceNumber}</span>
                   )}
                 </div>
               </li>
@@ -825,12 +825,12 @@ export default function BillingPage() {
       )}
 
       {cashConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
           <div className="w-full max-w-md space-y-4 rounded-2xl bg-white p-5 shadow-xl">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h3 className="text-base font-semibold text-slate-900">Confirm cash collection</h3>
-                <p className="mt-1 text-sm text-slate-500">
+                <h3 className="text-base font-semibold text-foreground">Confirm cash collection</h3>
+                <p className="mt-1 text-sm text-foreground-light">
                   This will issue the invoice, post the payment to the ledger, and mark the visit
                   complete. This cannot be undone from here.
                 </p>
@@ -838,19 +838,19 @@ export default function BillingPage() {
               <button
                 type="button"
                 onClick={() => setCashConfirm(null)}
-                className="text-slate-400 hover:text-slate-600"
+                className="text-foreground-lighter hover:text-foreground-light"
                 aria-label="Close"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
             <div className="rounded-xl bg-[#f3f7f7] px-3.5 py-3 text-sm">
-              <p className="font-semibold text-slate-800">{cashConfirm.patientName}</p>
-              <p className="text-[11px] text-slate-500">
+              <p className="font-semibold text-foreground">{cashConfirm.patientName}</p>
+              <p className="text-[11px] text-foreground-light">
                 {cashConfirm.mrn}
                 {cashConfirm.diagnosis ? ` · ${cashConfirm.diagnosis}` : ""}
               </p>
-              <p className="mt-2 text-lg font-bold text-slate-900">
+              <p className="mt-2 text-lg font-bold text-foreground">
                 KES {visitAmount(cashConfirm).toLocaleString()}
               </p>
             </div>
@@ -872,7 +872,7 @@ export default function BillingPage() {
                 type="button"
                 disabled={busyId === cashConfirm.id}
                 onClick={() => setCashConfirm(null)}
-                className="rounded-full border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 disabled:opacity-50"
+                className="rounded-full border border-border px-4 py-2.5 text-sm font-medium text-foreground-light disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -889,11 +889,11 @@ export default function BillingPage() {
       )}
 
       {invoiceOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
           <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-base font-semibold text-slate-800">Create draft invoice</h3>
-              <button onClick={() => setInvoiceOpen(false)} className="text-slate-400 hover:text-slate-600">
+              <h3 className="text-base font-semibold text-foreground">Create draft invoice</h3>
+              <button onClick={() => setInvoiceOpen(false)} className="text-foreground-lighter hover:text-foreground-light">
                 <X className="h-4 w-4" />
               </button>
             </div>

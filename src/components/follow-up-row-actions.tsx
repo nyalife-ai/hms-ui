@@ -45,19 +45,19 @@ export function FollowUpRowActions({
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+        className="inline-flex h-8 w-8 items-center justify-center rounded-full text-foreground-lighter transition hover:bg-surface-200 hover:text-foreground"
       >
         <MoreVertical className="h-4 w-4" />
       </button>
       {open && (
         <div
           role="menu"
-          className="absolute right-0 z-30 mt-1 w-52 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg"
+          className="absolute right-0 z-30 mt-1 w-52 overflow-hidden rounded-xl border border-border bg-white py-1 shadow-lg"
         >
           <button
             type="button"
             role="menuitem"
-            className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-slate-700 hover:bg-brand-50 hover:text-brand-800"
+            className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-foreground hover:bg-brand-50 hover:text-brand-800"
             onClick={() => {
               setOpen(false);
               onQuickView();
@@ -68,7 +68,7 @@ export function FollowUpRowActions({
           <button
             type="button"
             role="menuitem"
-            className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-slate-700 hover:bg-brand-50 hover:text-brand-800"
+            className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-foreground hover:bg-brand-50 hover:text-brand-800"
             onClick={() => {
               setOpen(false);
               onDetailedView();
@@ -80,7 +80,7 @@ export function FollowUpRowActions({
             <button
               type="button"
               role="menuitem"
-              className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-slate-700 hover:bg-brand-50 hover:text-brand-800"
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-foreground hover:bg-brand-50 hover:text-brand-800"
               onClick={() => {
                 setOpen(false);
                 onOpenLinkedConsultation();
@@ -93,7 +93,7 @@ export function FollowUpRowActions({
             <button
               type="button"
               role="menuitem"
-              className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-slate-700 hover:bg-brand-50 hover:text-brand-800"
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-foreground hover:bg-brand-50 hover:text-brand-800"
               onClick={() => {
                 setOpen(false);
                 onMarkComplete();

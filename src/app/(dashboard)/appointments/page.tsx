@@ -32,12 +32,12 @@ import {
   Avatar,
   Badge,
   Card,
-  PageHeader,
   PrimaryButton,
   StatCard,
   Table,
   type BadgeTone,
 } from "@/components/ui";
+import { PageLayout, ScaffoldContainer } from "@/components/studio";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import {
@@ -65,7 +65,7 @@ const STATUS_TONES: Record<string, BadgeTone> = {
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
 
 const inputClass =
-  "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 type ViewMode = "list" | "calendar";
 type CalendarMode = "month" | "week" | "day";
@@ -398,10 +398,7 @@ export default function AppointmentsPage() {
 
   return (
     <RoleGuard module="appointments">
-      <div className="mb-2 text-[11px] font-medium uppercase tracking-wide text-slate-400">
-        Home / Appointments / {view === "list" ? "Appointments Ledger" : "Calendar View"}
-      </div>
-      <PageHeader
+      <PageLayout
         title="Schedules & Appointments"
         subtitle={
           selectedDate
@@ -410,16 +407,21 @@ export default function AppointmentsPage() {
               ? "Appointments ledger — book, check in, and track the day’s schedule"
               : "Calendar view — pick a day to highlight and filter"
         }
-        action={
+        breadcrumbs={[
+          { label: "Home", href: "/dashboard" },
+          { label: "Appointments" },
+          { label: view === "list" ? "Appointments Ledger" : "Calendar View" },
+        ]}
+        primaryActions={
           <div className="flex flex-wrap items-center gap-2">
-            <div className="inline-flex rounded-full border border-slate-200 bg-white p-0.5">
+            <div className="inline-flex rounded-full border border-border bg-surface p-0.5">
               <button
                 type="button"
                 onClick={() => setView("list")}
                 className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition ${
                   view === "list"
-                    ? "bg-slate-900 text-white"
-                    : "text-slate-600 hover:text-slate-900"
+                    ? "bg-foreground text-white"
+                    : "text-foreground-light hover:text-foreground"
                 }`}
               >
                 <LayoutList className="h-3.5 w-3.5" /> List view
@@ -429,8 +431,8 @@ export default function AppointmentsPage() {
                 onClick={() => setView("calendar")}
                 className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition ${
                   view === "calendar"
-                    ? "bg-slate-900 text-white"
-                    : "text-slate-600 hover:text-slate-900"
+                    ? "bg-foreground text-white"
+                    : "text-foreground-light hover:text-foreground"
                 }`}
               >
                 <CalendarDays className="h-3.5 w-3.5" /> Calendar view
@@ -443,8 +445,8 @@ export default function AppointmentsPage() {
             ) : null}
           </div>
         }
-      />
-
+      >
+        <ScaffoldContainer className="pt-6">
       <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           label="Total Appointments"
@@ -517,9 +519,9 @@ export default function AppointmentsPage() {
 
       {view === "list" ? (
         <Card>
-          <div className="border-b border-slate-100 px-5 py-3">
-            <h2 className="text-sm font-semibold text-slate-800">Appointments Ledger</h2>
-            <p className="text-xs text-slate-400">
+          <div className="border-b border-border px-5 py-3">
+            <h2 className="text-sm font-semibold text-foreground">Appointments Ledger</h2>
+            <p className="text-xs text-foreground-lighter">
               {loading
                 ? "Loading…"
                 : `${total.toLocaleString()} record${total === 1 ? "" : "s"}${
@@ -535,7 +537,7 @@ export default function AppointmentsPage() {
                 return (
                   <tr
                     key={a.id}
-                    className={`hover:bg-slate-50/60 ${
+                    className={`hover:bg-surface-200/60 ${
                       isSelectedDay ? "bg-amber-50/70" : ""
                     }`}
                   >
@@ -543,19 +545,19 @@ export default function AppointmentsPage() {
                       <div className="flex items-center gap-3">
                         <Avatar name={a.patient} size="sm" />
                         <div>
-                          <p className="font-medium text-slate-800">{a.patient}</p>
-                          <p className="text-[11px] text-slate-400">{a.mrn}</p>
+                          <p className="font-medium text-foreground">{a.patient}</p>
+                          <p className="text-[11px] text-foreground-lighter">{a.mrn}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-2.5 text-slate-500">{a.doctor}</td>
+                    <td className="px-4 py-2.5 text-foreground-light">{a.doctor}</td>
                     <td className="px-4 py-2.5">
                       <button
                         type="button"
                         className={`text-left text-sm ${
                           isSelectedDay
                             ? "font-semibold text-amber-800"
-                            : "text-slate-500 hover:text-brand-700"
+                            : "text-foreground-light hover:text-brand-700"
                         }`}
                         onClick={() => selectDay(a.date)}
                         title="Filter by this day"
@@ -563,8 +565,8 @@ export default function AppointmentsPage() {
                         {a.date}
                       </button>
                     </td>
-                    <td className="px-4 py-2.5 text-slate-500">{a.time}</td>
-                    <td className="px-4 py-2.5 text-slate-500">{a.type}</td>
+                    <td className="px-4 py-2.5 text-foreground-light">{a.time}</td>
+                    <td className="px-4 py-2.5 text-foreground-light">{a.type}</td>
                     <td className="px-4 py-2.5">
                       <Badge tone={STATUS_TONES[a.status] ?? "slate"}>{a.status}</Badge>
                     </td>
@@ -575,7 +577,7 @@ export default function AppointmentsPage() {
                         <button
                           type="button"
                           disabled={actionId === a.id}
-                          className="rounded-full border border-slate-200 px-2 py-1 text-[10px] font-medium text-slate-700 hover:border-brand-300 disabled:opacity-40"
+                          className="rounded-full border border-border px-2 py-1 text-[10px] font-medium text-foreground hover:border-brand-300 disabled:opacity-40"
                           onClick={() => void checkInFromSchedule(a)}
                         >
                           Check in
@@ -607,12 +609,12 @@ export default function AppointmentsPage() {
           {loading && (
             <div className="space-y-2 px-4 py-6">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-10 animate-pulse rounded-xl bg-slate-100" />
+                <div key={i} className="h-10 animate-pulse rounded-xl bg-surface-200" />
               ))}
             </div>
           )}
           {!loading && appointments.length === 0 && (
-            <p className="px-5 py-10 text-center text-sm text-slate-400">
+            <p className="px-5 py-10 text-center text-sm text-foreground-lighter">
               No appointments match this filter.
             </p>
           )}
@@ -620,12 +622,12 @@ export default function AppointmentsPage() {
         </Card>
       ) : (
         <Card className="overflow-hidden">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-4 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
             <div className="flex items-center gap-1">
               <button
                 type="button"
                 aria-label="Previous"
-                className="rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-50"
+                className="rounded-lg border border-border p-2 text-foreground-light hover:bg-surface-200"
                 onClick={() => {
                   if (calendarMode === "month") setCursor((c) => addMonths(c, -1));
                   else if (calendarMode === "week") setCursor((c) => addDays(c, -7));
@@ -637,7 +639,7 @@ export default function AppointmentsPage() {
               <button
                 type="button"
                 aria-label="Next"
-                className="rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-50"
+                className="rounded-lg border border-border p-2 text-foreground-light hover:bg-surface-200"
                 onClick={() => {
                   if (calendarMode === "month") setCursor((c) => addMonths(c, 1));
                   else if (calendarMode === "week") setCursor((c) => addDays(c, 7));
@@ -648,7 +650,7 @@ export default function AppointmentsPage() {
               </button>
               <button
                 type="button"
-                className="ml-1 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                className="ml-1 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-surface-200"
                 onClick={() => {
                   const now = new Date();
                   setCursor(startOfMonth(now));
@@ -659,14 +661,14 @@ export default function AppointmentsPage() {
                 Today
               </button>
             </div>
-            <p className="text-sm font-semibold text-slate-800">
+            <p className="text-sm font-semibold text-foreground">
               {calendarMode === "month"
                 ? formatMonthLabel(cursor)
                 : calendarMode === "week"
                   ? `Week of ${toYmd(startOfWeek(cursor))}`
                   : selectedDate || toYmd(cursor)}
             </p>
-            <div className="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-0.5">
+            <div className="inline-flex rounded-lg border border-border bg-surface-200 p-0.5">
               {(["month", "week", "day"] as CalendarMode[]).map((mode) => (
                 <button
                   key={mode}
@@ -675,7 +677,7 @@ export default function AppointmentsPage() {
                   className={`rounded-md px-3 py-1.5 text-xs font-semibold capitalize ${
                     calendarMode === mode
                       ? "bg-slate-900 text-white"
-                      : "text-slate-600 hover:text-slate-900"
+                      : "text-foreground-light hover:text-foreground"
                   }`}
                 >
                   {mode}
@@ -685,15 +687,15 @@ export default function AppointmentsPage() {
           </div>
 
           {calendarLoading && (
-            <p className="px-4 py-3 text-xs text-slate-400">Loading calendar…</p>
+            <p className="px-4 py-3 text-xs text-foreground-lighter">Loading calendar…</p>
           )}
 
           {calendarMode === "month" && (
-            <div className="grid grid-cols-7 border-t border-slate-100">
+            <div className="grid grid-cols-7 border-t border-border">
               {WEEKDAYS.map((d) => (
                 <div
                   key={d}
-                  className="border-b border-slate-100 px-2 py-2 text-center text-[11px] font-semibold uppercase tracking-wide text-slate-400"
+                  className="border-b border-border px-2 py-2 text-center text-[11px] font-semibold uppercase tracking-wide text-foreground-lighter"
                 >
                   {d}
                 </div>
@@ -709,18 +711,18 @@ export default function AppointmentsPage() {
                     key={ymd}
                     type="button"
                     onClick={() => selectDay(ymd)}
-                    className={`min-h-28 border-b border-r border-slate-100 p-2 text-left transition ${
+                    className={`min-h-28 border-b border-r border-border p-2 text-left transition ${
                       selected
                         ? "bg-amber-50 ring-2 ring-inset ring-amber-300"
                         : isToday
                           ? "bg-[#fffbeb]"
-                          : "bg-white hover:bg-slate-50/80"
+                          : "bg-white hover:bg-surface-200/80"
                     } ${!inMonth ? "opacity-45" : ""}`}
                   >
                     <div className="mb-1 flex items-center justify-between">
                       <span
                         className={`text-xs font-semibold ${
-                          selected ? "text-amber-900" : "text-slate-700"
+                          selected ? "text-amber-900" : "text-foreground"
                         }`}
                       >
                         {day.getDate()}
@@ -780,13 +782,13 @@ export default function AppointmentsPage() {
                     className={`rounded-xl border p-3 text-left ${
                       selected
                         ? "border-amber-300 bg-amber-50"
-                        : "border-slate-200 bg-white hover:border-brand-200"
+                        : "border-border bg-white hover:border-brand-200"
                     }`}
                   >
-                    <p className="text-[11px] font-semibold uppercase text-slate-400">
+                    <p className="text-[11px] font-semibold uppercase text-foreground-lighter">
                       {WEEKDAYS[day.getDay()]}
                     </p>
-                    <p className="text-sm font-bold text-slate-800">{day.getDate()}</p>
+                    <p className="text-sm font-bold text-foreground">{day.getDate()}</p>
                     <ul className="mt-2 space-y-1">
                       {items.map((a) => (
                         <li key={a.id} className="text-[11px] text-accent-700">
@@ -794,7 +796,7 @@ export default function AppointmentsPage() {
                         </li>
                       ))}
                       {items.length === 0 && (
-                        <li className="text-[11px] text-slate-300">No appointments</li>
+                        <li className="text-[11px] text-foreground-muted">No appointments</li>
                       )}
                     </ul>
                   </button>
@@ -809,27 +811,27 @@ export default function AppointmentsPage() {
                 className={`mb-3 rounded-xl border px-4 py-3 ${
                   selectedDate
                     ? "border-amber-300 bg-amber-50"
-                    : "border-slate-200 bg-slate-50"
+                    : "border-border bg-surface-200"
                 }`}
               >
-                <p className="text-sm font-semibold text-slate-800">
+                <p className="text-sm font-semibold text-foreground">
                   {selectedDate || toYmd(cursor)}
                 </p>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-foreground-light">
                   {(byDate.get(selectedDate || toYmd(cursor)) ?? []).length} appointment(s)
                 </p>
               </div>
-              <ul className="divide-y divide-slate-100 rounded-xl border border-slate-100">
+              <ul className="divide-y divide-border rounded-xl border border-border">
                 {(byDate.get(selectedDate || toYmd(cursor)) ?? []).map((a) => (
                   <li
                     key={a.id}
                     className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
                   >
                     <div>
-                      <p className="text-sm font-semibold text-slate-800">
+                      <p className="text-sm font-semibold text-foreground">
                         {formatTime12(a.time)} · {a.patient}
                       </p>
-                      <p className="text-xs text-slate-400">
+                      <p className="text-xs text-foreground-lighter">
                         {a.doctor} · {a.type}
                       </p>
                     </div>
@@ -840,7 +842,7 @@ export default function AppointmentsPage() {
                           <button
                             type="button"
                             disabled={actionId === a.id}
-                            className="rounded-full border border-slate-200 px-2 py-1 text-[10px] font-medium text-slate-700"
+                            className="rounded-full border border-border px-2 py-1 text-[10px] font-medium text-foreground"
                             onClick={() => void checkInFromSchedule(a)}
                           >
                             Check in
@@ -866,7 +868,7 @@ export default function AppointmentsPage() {
                   </li>
                 ))}
                 {(byDate.get(selectedDate || toYmd(cursor)) ?? []).length === 0 && (
-                  <li className="px-4 py-8 text-center text-sm text-slate-400">
+                  <li className="px-4 py-8 text-center text-sm text-foreground-lighter">
                     No appointments on this day.
                   </li>
                 )}
@@ -875,7 +877,7 @@ export default function AppointmentsPage() {
           )}
 
           {selectedDate && (
-            <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3">
+            <div className="flex items-center justify-between border-t border-border px-4 py-3">
               <p className="text-xs text-amber-800">
                 Day filter active: <span className="font-semibold">{selectedDate}</span> — switch to
                 List view to work the ledger for that day.
@@ -893,7 +895,7 @@ export default function AppointmentsPage() {
       )}
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
           <div className="max-h-[90vh] w-full max-w-lg space-y-3 overflow-y-auto rounded-2xl bg-white p-5 shadow-xl">
             <div className="flex justify-between">
               <h2 className="font-semibold">Book appointment</h2>
@@ -924,7 +926,7 @@ export default function AppointmentsPage() {
               </div>
               {addPatientOpen ? (
                 <div className="space-y-3 rounded-xl border border-brand-100 bg-brand-50/40 p-3">
-                  <p className="text-[11px] text-slate-500">
+                  <p className="text-[11px] text-foreground-light">
                     Register the patient, then they will be selected for this
                     appointment.
                   </p>
@@ -1016,6 +1018,8 @@ export default function AppointmentsPage() {
           onClose={() => setQuickViewId(null)}
         />
       )}
+        </ScaffoldContainer>
+      </PageLayout>
     </RoleGuard>
   );
 }

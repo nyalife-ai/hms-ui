@@ -22,7 +22,7 @@ import { useDebouncedValue } from "@/lib/use-debounced-value";
 import { useVisits } from "@/lib/visits";
 
 const inputClass =
-  "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 type PaymentRow = {
   id: string;
@@ -176,11 +176,11 @@ export default function BillingPaymentsPage() {
           headers={["Payment", "Patient", "Method", "Amount", "Unallocated", "Date", "Status"]}
         >
           {rows.map((p) => (
-            <tr key={p.id} className="hover:bg-slate-50/60">
-              <td className="px-5 py-3.5 font-semibold text-slate-800">
+            <tr key={p.id} className="hover:bg-surface-200/60">
+              <td className="px-5 py-3.5 font-semibold text-foreground">
                 {p.paymentNumber}
                 {p.transactionReference && (
-                  <span className="block text-[11px] font-normal text-slate-400">
+                  <span className="block text-[11px] font-normal text-foreground-lighter">
                     {p.transactionReference}
                   </span>
                 )}
@@ -189,15 +189,15 @@ export default function BillingPaymentsPage() {
                 <div className="flex items-center gap-3">
                   <Avatar name={p.patientName} size="sm" />
                   <div>
-                    <p className="text-sm text-slate-700">{p.patientName}</p>
-                    <p className="text-[11px] text-slate-400">{p.patientMrn}</p>
+                    <p className="text-sm text-foreground">{p.patientName}</p>
+                    <p className="text-[11px] text-foreground-lighter">{p.patientMrn}</p>
                   </div>
                 </div>
               </td>
-              <td className="px-5 py-3.5 text-slate-500">{p.methodCode || "—"}</td>
-              <td className="px-5 py-3.5 text-slate-600">{formatKes(p.amount)}</td>
-              <td className="px-5 py-3.5 text-slate-600">{formatKes(p.unallocated)}</td>
-              <td className="px-5 py-3.5 text-slate-500">{formatDate(p.paymentDate)}</td>
+              <td className="px-5 py-3.5 text-foreground-light">{p.methodCode || "—"}</td>
+              <td className="px-5 py-3.5 text-foreground-light">{formatKes(p.amount)}</td>
+              <td className="px-5 py-3.5 text-foreground-light">{formatKes(p.unallocated)}</td>
+              <td className="px-5 py-3.5 text-foreground-light">{formatDate(p.paymentDate)}</td>
               <td className="px-5 py-3.5">
                 <Badge tone={STATUS_TONES[p.status] ?? "slate"}>{p.status}</Badge>
               </td>
@@ -205,7 +205,7 @@ export default function BillingPaymentsPage() {
           ))}
         </Table>
         {rows.length === 0 && !loading && (
-          <p className="px-5 pb-5 text-sm text-slate-400">No payments found.</p>
+          <p className="px-5 pb-5 text-sm text-foreground-lighter">No payments found.</p>
         )}
         <PaginationBar meta={meta} onPageChange={setPage} disabled={loading} />
       </Card>

@@ -135,7 +135,7 @@ export default function PharmacyOverviewPage() {
             <Link href="/pharmacy/purchase-orders">
               <button
                 type="button"
-                className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:border-brand-300 hover:text-brand-700"
+                className="rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground-light hover:border-brand-300 hover:text-brand-700"
               >
                 Purchase orders
               </button>
@@ -143,7 +143,7 @@ export default function PharmacyOverviewPage() {
             <button
               type="button"
               onClick={() => void load()}
-              className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:border-brand-300 hover:text-brand-700"
+              className="rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground-light hover:border-brand-300 hover:text-brand-700"
             >
               Refresh
             </button>
@@ -172,7 +172,7 @@ export default function PharmacyOverviewPage() {
           subtitle="Cash visits with prescriptions awaiting dispense & payment"
         />
         {dispenseQueue.length === 0 ? (
-          <p className="px-5 pb-5 text-sm text-slate-400">
+          <p className="px-5 pb-5 text-sm text-foreground-lighter">
             No cash visits with prescriptions waiting. Formal Rx queue is under Prescriptions.
           </p>
         ) : (
@@ -183,17 +183,17 @@ export default function PharmacyOverviewPage() {
                   <div className="flex items-center gap-3">
                     <Avatar name={v.patientName} />
                     <div>
-                      <p className="text-sm font-semibold text-slate-800">{v.patientName}</p>
-                      <p className="text-[11px] text-slate-400">
+                      <p className="text-sm font-semibold text-foreground">{v.patientName}</p>
+                      <p className="text-[11px] text-foreground-lighter">
                         {v.mrn} · {v.prescriptions?.length} medication(s) · Dr {v.doctorName}
                       </p>
                     </div>
                   </div>
-                  <p className="text-sm font-bold text-slate-900">
+                  <p className="text-sm font-bold text-foreground">
                     KES {visitTotal(v, fees).toLocaleString()}
                   </p>
                 </div>
-                <ul className="mt-3 space-y-1 text-xs text-slate-600">
+                <ul className="mt-3 space-y-1 text-xs text-foreground-light">
                   {v.prescriptions?.map((p, i) => (
                     <li key={i}>
                       {p.medication} — {p.dosage}, {p.frequency}, {p.duration}
@@ -205,7 +205,7 @@ export default function PharmacyOverviewPage() {
                     type="button"
                     disabled={dispensingId === v.id}
                     onClick={() => void dispenseVisit(v)}
-                    className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:border-brand-200 disabled:opacity-50"
+                    className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-4 py-2 text-xs font-semibold text-foreground hover:border-brand-200 disabled:opacity-50"
                   >
                     <Syringe className="h-3.5 w-3.5" />
                     {dispensingId === v.id ? "Dispensing…" : "Dispense stock (FEFO)"}
@@ -253,10 +253,10 @@ export default function PharmacyOverviewPage() {
           <Link
             key={l.href}
             href={l.href}
-            className="rounded-2xl border border-slate-100 bg-white p-4 shadow-[0_1px_3px_rgba(23,40,46,0.05)] hover:border-brand-200"
+            className="rounded-2xl border border-border bg-white p-4 shadow-[0_1px_3px_rgba(23,40,46,0.05)] hover:border-brand-200"
           >
-            <p className="font-semibold text-slate-800">{l.label}</p>
-            <p className="mt-1 text-xs text-slate-400">{l.hint}</p>
+            <p className="font-semibold text-foreground">{l.label}</p>
+            <p className="mt-1 text-xs text-foreground-lighter">{l.hint}</p>
           </Link>
         ))}
       </div>

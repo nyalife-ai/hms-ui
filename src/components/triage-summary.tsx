@@ -41,7 +41,7 @@ export function TriageSummary({ visit }: { visit: Visit }) {
         <div className="flex flex-wrap items-center gap-2">
           <Badge tone={priorityTone(priority)}>{priority}</Badge>
           {t?.priorityReason && (
-            <span className="text-xs text-slate-500">{t.priorityReason}</span>
+            <span className="text-xs text-foreground-light">{t.priorityReason}</span>
           )}
           {(t?.assessment?.redFlags?.length ?? 0) > 0 && (
             <Badge tone="red">Red flags</Badge>
@@ -50,27 +50,27 @@ export function TriageSummary({ visit }: { visit: Visit }) {
 
         <div className="grid gap-2 text-sm sm:grid-cols-2">
           <div>
-            <p className="text-[10px] font-semibold uppercase text-slate-400">
+            <p className="text-[10px] font-semibold uppercase text-foreground-lighter">
               Reason for visit
             </p>
-            <p className="text-slate-800">
+            <p className="text-foreground">
               {t?.reasonForVisit || visit.reasonForVisit || "—"}
             </p>
           </div>
           <div>
-            <p className="text-[10px] font-semibold uppercase text-slate-400">
+            <p className="text-[10px] font-semibold uppercase text-foreground-lighter">
               Chief complaint
             </p>
-            <p className="text-slate-800">{t?.chiefComplaint || "—"}</p>
+            <p className="text-foreground">{t?.chiefComplaint || "—"}</p>
           </div>
         </div>
 
         {t?.symptoms?.length ? (
           <div>
-            <p className="text-[10px] font-semibold uppercase text-slate-400">
+            <p className="text-[10px] font-semibold uppercase text-foreground-lighter">
               Reported symptoms
             </p>
-            <ul className="mt-1 list-disc space-y-0.5 pl-5 text-sm text-slate-700">
+            <ul className="mt-1 list-disc space-y-0.5 pl-5 text-sm text-foreground">
               {t.symptoms.map((s, i) => (
                 <li key={`${s.symptomId}-${i}`}>{symptomLine(s)}</li>
               ))}
@@ -80,7 +80,7 @@ export function TriageSummary({ visit }: { visit: Visit }) {
 
         {visit.vitals && (
           <div>
-            <p className="mb-2 text-[10px] font-semibold uppercase text-slate-400">
+            <p className="mb-2 text-[10px] font-semibold uppercase text-foreground-lighter">
               Vital signs
             </p>
             <VitalsGrid visit={visit} />
@@ -91,10 +91,10 @@ export function TriageSummary({ visit }: { visit: Visit }) {
           <div className="grid gap-2 text-sm sm:grid-cols-2">
             {visit.vitals?.painScore && (
               <div>
-                <p className="text-[10px] font-semibold uppercase text-slate-400">
+                <p className="text-[10px] font-semibold uppercase text-foreground-lighter">
                   Pain
                 </p>
-                <p className="text-slate-800">
+                <p className="text-foreground">
                   {visit.vitals.painScore}/10
                   {visit.vitals.painLocation
                     ? ` · ${visit.vitals.painLocation}`
@@ -104,10 +104,10 @@ export function TriageSummary({ visit }: { visit: Visit }) {
             )}
             {t?.notes && (
               <div>
-                <p className="text-[10px] font-semibold uppercase text-slate-400">
+                <p className="text-[10px] font-semibold uppercase text-foreground-lighter">
                   Triage notes
                 </p>
-                <p className="whitespace-pre-wrap text-slate-800">{t.notes}</p>
+                <p className="whitespace-pre-wrap text-foreground">{t.notes}</p>
               </div>
             )}
           </div>
@@ -122,13 +122,13 @@ export function TriageSummary({ visit }: { visit: Visit }) {
         </button>
 
         {open && t && (
-          <div className="space-y-3 rounded-xl border border-slate-100 bg-slate-50/80 p-4 text-sm">
+          <div className="space-y-3 rounded-xl border border-border bg-surface-200/80 p-4 text-sm">
             {t.relevantHistory && (
               <div>
-                <p className="text-[10px] font-semibold uppercase text-slate-400">
+                <p className="text-[10px] font-semibold uppercase text-foreground-lighter">
                   Relevant history
                 </p>
-                <p className="text-slate-700">
+                <p className="text-foreground">
                   {[
                     t.relevantHistory.conditions?.join(", "),
                     t.relevantHistory.conditionsOther,
@@ -158,14 +158,14 @@ export function TriageSummary({ visit }: { visit: Visit }) {
                 ).map(([label, val]) =>
                   val ? (
                     <div key={label}>
-                      <p className="text-[10px] uppercase text-slate-400">{label}</p>
-                      <p className="text-slate-700">{val}</p>
+                      <p className="text-[10px] uppercase text-foreground-lighter">{label}</p>
+                      <p className="text-foreground">{val}</p>
                     </div>
                   ) : null,
                 )}
                 {t.assessment.redFlags?.length ? (
                   <div className="sm:col-span-2">
-                    <p className="text-[10px] uppercase text-slate-400">Red flags</p>
+                    <p className="text-[10px] uppercase text-foreground-lighter">Red flags</p>
                     <p className="text-rose-700">{t.assessment.redFlags.join(", ")}</p>
                   </div>
                 ) : null}
@@ -173,18 +173,18 @@ export function TriageSummary({ visit }: { visit: Visit }) {
             )}
             {t.contextsEnabled?.length ? (
               <div>
-                <p className="text-[10px] font-semibold uppercase text-slate-400">
+                <p className="text-[10px] font-semibold uppercase text-foreground-lighter">
                   Screening contexts
                 </p>
-                <p className="text-slate-700">{t.contextsEnabled.join(", ")}</p>
+                <p className="text-foreground">{t.contextsEnabled.join(", ")}</p>
               </div>
             ) : null}
             {visit.additionalNotes && (
               <div>
-                <p className="text-[10px] font-semibold uppercase text-slate-400">
+                <p className="text-[10px] font-semibold uppercase text-foreground-lighter">
                   Reception administrative notes
                 </p>
-                <p className="whitespace-pre-wrap text-slate-600">
+                <p className="whitespace-pre-wrap text-foreground-light">
                   {visit.additionalNotes}
                 </p>
               </div>

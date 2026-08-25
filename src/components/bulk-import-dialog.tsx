@@ -78,27 +78,27 @@ export function BulkImportDialog({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 p-4 sm:items-center">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-foreground/40 p-4 sm:items-center">
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="bulk-import-title"
         className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-slate-100"
       >
-        <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-5 py-4">
+        <div className="flex items-start justify-between gap-3 border-b border-border px-5 py-4">
           <div>
             <h2
               id="bulk-import-title"
-              className="text-base font-semibold text-slate-800"
+              className="text-base font-semibold text-foreground"
             >
               {title}
             </h2>
-            <p className="mt-0.5 text-sm text-slate-500">{description}</p>
+            <p className="mt-0.5 text-sm text-foreground-light">{description}</p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full p-2 text-slate-400 hover:bg-slate-50 hover:text-slate-600"
+            className="rounded-full p-2 text-foreground-lighter hover:bg-surface-200 hover:text-foreground-light"
             aria-label="Close"
           >
             <X className="h-4 w-4" />
@@ -131,7 +131,7 @@ export function BulkImportDialog({
                         ),
                     )
                   }
-                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 hover:bg-brand-50"
+                  className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-3.5 py-2 text-sm font-medium text-foreground hover:bg-brand-50"
                 >
                   <Download className="h-4 w-4" />
                   Download template
@@ -149,19 +149,19 @@ export function BulkImportDialog({
                         ),
                     )
                   }
-                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 hover:bg-brand-50"
+                  className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-3.5 py-2 text-sm font-medium text-foreground hover:bg-brand-50"
                 >
                   <FileSpreadsheet className="h-4 w-4" />
                   Download example
                 </button>
               </div>
 
-              <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-slate-300 bg-slate-50/80 px-4 py-10 text-center transition hover:border-brand-400 hover:bg-brand-50/40">
+              <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border bg-surface-200/80 px-4 py-10 text-center transition hover:border-brand-400 hover:bg-brand-50/40">
                 <Upload className="h-8 w-8 text-brand-600" />
-                <span className="text-sm font-medium text-slate-800">
+                <span className="text-sm font-medium text-foreground">
                   {busy ? "Checking file…" : "Choose a CSV file"}
                 </span>
-                <span className="text-xs text-slate-500">
+                <span className="text-xs text-foreground-light">
                   Prepare your file from the template, then upload to review before importing.
                 </span>
                 <input
@@ -178,8 +178,8 @@ export function BulkImportDialog({
 
           {step === "preview" && preview && (
             <div className="space-y-4">
-              <p className="text-sm text-slate-600">
-                File: <span className="font-medium text-slate-800">{fileName}</span>
+              <p className="text-sm text-foreground-light">
+                File: <span className="font-medium text-foreground">{fileName}</span>
               </p>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 <Stat label="Total rows" value={preview.totalRows} />
@@ -204,8 +204,8 @@ export function BulkImportDialog({
 
               {(preview.errors.length > 0 || preview.warnings.length > 0) && (
                 <div className="overflow-hidden rounded-xl ring-1 ring-slate-100">
-                  <div className="flex items-center justify-between bg-slate-50 px-3 py-2">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  <div className="flex items-center justify-between bg-surface-200 px-3 py-2">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-foreground-light">
                       Review details
                     </p>
                     <button
@@ -227,18 +227,18 @@ export function BulkImportDialog({
                       Download report
                     </button>
                   </div>
-                  <ul className="max-h-48 divide-y divide-slate-100 overflow-y-auto text-sm">
+                  <ul className="max-h-48 divide-y divide-border overflow-y-auto text-sm">
                     {[...preview.errors, ...preview.warnings]
                       .slice(0, 40)
                       .map((issue, i) => (
                         <li key={`${issue.row}-${i}`} className="px-3 py-2">
-                          <span className="font-medium text-slate-800">
+                          <span className="font-medium text-foreground">
                             Row {issue.row}
                           </span>
-                          <span className="text-slate-500">
+                          <span className="text-foreground-light">
                             {issue.field ? ` · ${issue.field}` : ""}
                           </span>
-                          <p className="text-slate-600">{issue.message}</p>
+                          <p className="text-foreground-light">{issue.message}</p>
                         </li>
                       ))}
                   </ul>
@@ -247,14 +247,14 @@ export function BulkImportDialog({
 
               {preview.previewSample.length > 0 && (
                 <div>
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-foreground-light">
                     Sample of records ready to import
                   </p>
-                  <ul className="space-y-1 text-sm text-slate-700">
+                  <ul className="space-y-1 text-sm text-foreground">
                     {preview.previewSample.map((row, i) => (
                       <li
                         key={i}
-                        className="rounded-lg bg-slate-50 px-3 py-2"
+                        className="rounded-lg bg-surface-200 px-3 py-2"
                       >
                         {[row.firstName, row.lastName].filter(Boolean).join(" ")}
                         {row.phone ? ` · ${row.phone}` : ""}
@@ -293,12 +293,12 @@ export function BulkImportDialog({
           )}
         </div>
 
-        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-slate-100 px-5 py-4">
+        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border px-5 py-4">
           {step === "upload" && (
             <button
               type="button"
               onClick={onClose}
-              className="rounded-full px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+              className="rounded-full px-4 py-2 text-sm font-medium text-foreground-light hover:bg-surface-200"
             >
               Cancel
             </button>
@@ -313,7 +313,7 @@ export function BulkImportDialog({
                   setPreview(null);
                   setError("");
                 }}
-                className="rounded-full px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+                className="rounded-full px-4 py-2 text-sm font-medium text-foreground-light hover:bg-surface-200"
               >
                 Upload again
               </button>
@@ -350,10 +350,10 @@ function Stat({
         ? "text-rose-700"
         : tone === "warn"
           ? "text-amber-800"
-          : "text-slate-800";
+          : "text-foreground";
   return (
-    <div className="rounded-xl bg-slate-50 px-3 py-2.5">
-      <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+    <div className="rounded-xl bg-surface-200 px-3 py-2.5">
+      <p className="text-[10px] font-semibold uppercase tracking-wide text-foreground-lighter">
         {label}
       </p>
       <p className={`mt-0.5 text-lg font-semibold ${color}`}>{value}</p>

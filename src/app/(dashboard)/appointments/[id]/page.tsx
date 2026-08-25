@@ -84,7 +84,7 @@ export default function AppointmentDetailPage() {
 
   return (
     <RoleGuard module="appointments">
-      <div className="mb-2 text-[11px] font-medium uppercase tracking-wide text-slate-400">
+      <div className="mb-2 text-[11px] font-medium uppercase tracking-wide text-foreground-lighter">
         Home / Appointments / {detail?.appointmentNumber ?? "Visit"}
       </div>
       <PageHeader
@@ -112,7 +112,7 @@ export default function AppointmentDetailPage() {
                 appointmentId: detail?.id ?? id,
                 patientName: detail?.patient.name,
               })}
-              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-brand-300"
+              className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-foreground hover:border-brand-300"
             >
               Labs
             </Link>
@@ -122,13 +122,13 @@ export default function AppointmentDetailPage() {
                 appointmentId: detail?.id ?? id,
                 patientName: detail?.patient.name,
               })}
-              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-brand-300"
+              className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-foreground hover:border-brand-300"
             >
               Prescriptions
             </Link>
             <Link
               href="/appointments"
-              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-brand-300"
+              className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-foreground hover:border-brand-300"
             >
               <ArrowLeft className="h-3.5 w-3.5" /> Back
             </Link>
@@ -140,7 +140,7 @@ export default function AppointmentDetailPage() {
       {loading && (
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-28 animate-pulse rounded-2xl bg-slate-100" />
+            <div key={i} className="h-28 animate-pulse rounded-2xl bg-surface-200" />
           ))}
         </div>
       )}
@@ -152,19 +152,19 @@ export default function AppointmentDetailPage() {
               <CardHeader title="Visit record" subtitle={detail.type} />
               <dl className="grid grid-cols-2 gap-3 px-5 pb-5 text-sm">
                 <div>
-                  <dt className="text-xs text-slate-400">Visit date</dt>
-                  <dd className="font-semibold text-slate-900">{detail.date}</dd>
+                  <dt className="text-xs text-foreground-lighter">Visit date</dt>
+                  <dd className="font-semibold text-foreground">{detail.date}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs text-slate-400">Scheduled time</dt>
-                  <dd className="font-semibold text-slate-900">{detail.time}</dd>
+                  <dt className="text-xs text-foreground-lighter">Scheduled time</dt>
+                  <dd className="font-semibold text-foreground">{detail.time}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs text-slate-400">Visit type</dt>
-                  <dd className="font-semibold text-slate-900">{detail.type}</dd>
+                  <dt className="text-xs text-foreground-lighter">Visit type</dt>
+                  <dd className="font-semibold text-foreground">{detail.type}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs text-slate-400">Visit status</dt>
+                  <dt className="text-xs text-foreground-lighter">Visit status</dt>
                   <dd className="mt-1">
                     <Badge tone={STATUS_TONES[detail.status] ?? "slate"}>
                       {detail.status}
@@ -172,8 +172,8 @@ export default function AppointmentDetailPage() {
                   </dd>
                 </div>
                 <div className="col-span-2">
-                  <dt className="text-xs text-slate-400">Consultations</dt>
-                  <dd className="font-semibold text-slate-900">
+                  <dt className="text-xs text-foreground-lighter">Consultations</dt>
+                  <dd className="font-semibold text-foreground">
                     {detail.counts.consultations} consultation
                     {detail.counts.consultations === 1 ? "" : "s"}
                   </dd>
@@ -187,24 +187,24 @@ export default function AppointmentDetailPage() {
                 action={<Avatar name={detail.patient.name} size="sm" />}
               />
               <div className="space-y-2 px-5 pb-5 text-sm">
-                <p className="text-base font-bold text-slate-900">{detail.patient.name}</p>
-                <p className="text-xs text-slate-400">
+                <p className="text-base font-bold text-foreground">{detail.patient.name}</p>
+                <p className="text-xs text-foreground-lighter">
                   PAT-ID: {detail.patient.mrn}
                 </p>
                 <Badge tone={STATUS_TONES[detail.status] ?? "slate"}>
                   {detail.status}
                 </Badge>
-                <p className="pt-2 text-slate-600">
-                  <span className="text-xs text-slate-400">Phone</span>
+                <p className="pt-2 text-foreground-light">
+                  <span className="text-xs text-foreground-lighter">Phone</span>
                   <br />
                   {detail.patient.phone || "—"}
                 </p>
-                <p className="text-slate-600">
-                  <span className="text-xs text-slate-400">Email</span>
+                <p className="text-foreground-light">
+                  <span className="text-xs text-foreground-lighter">Email</span>
                   <br />
                   {detail.patient.email || "—"}
                 </p>
-                <p className="text-xs capitalize text-slate-500">
+                <p className="text-xs capitalize text-foreground-light">
                   {detail.patient.gender.toLowerCase()}
                   {detail.patient.bloodGroup
                     ? ` · ${detail.patient.bloodGroup}`
@@ -216,17 +216,17 @@ export default function AppointmentDetailPage() {
             <Card>
               <CardHeader title="Assigned provider" />
               <div className="space-y-2 px-5 pb-5 text-sm">
-                <p className="text-xs text-slate-400">{detail.provider.title}</p>
-                <p className="text-base font-bold text-slate-900">
+                <p className="text-xs text-foreground-lighter">{detail.provider.title}</p>
+                <p className="text-base font-bold text-foreground">
                   {detail.provider.name}
                 </p>
-                <p className="text-slate-600">
-                  <span className="text-xs text-slate-400">Specialization</span>
+                <p className="text-foreground-light">
+                  <span className="text-xs text-foreground-lighter">Specialization</span>
                   <br />
                   {detail.provider.specialization}
                 </p>
-                <p className="text-slate-600">
-                  <span className="text-xs text-slate-400">Department</span>
+                <p className="text-foreground-light">
+                  <span className="text-xs text-foreground-lighter">Department</span>
                   <br />
                   {detail.provider.department}
                 </p>
@@ -238,38 +238,38 @@ export default function AppointmentDetailPage() {
             <CardHeader title="Visit summary" />
             <div className="grid grid-cols-1 gap-4 px-5 pb-5 md:grid-cols-2">
               <div>
-                <p className="text-xs font-semibold text-slate-500">Reason for visit</p>
-                <p className="mt-1.5 rounded-xl bg-slate-50 px-3.5 py-3 text-sm text-slate-700">
+                <p className="text-xs font-semibold text-foreground-light">Reason for visit</p>
+                <p className="mt-1.5 rounded-xl bg-surface-200 px-3.5 py-3 text-sm text-foreground">
                   {detail.reason || "—"}
                 </p>
               </div>
               <div>
-                <p className="text-xs font-semibold text-slate-500">
+                <p className="text-xs font-semibold text-foreground-light">
                   Additional / reception notes
                 </p>
-                <p className="mt-1.5 rounded-xl bg-slate-50 px-3.5 py-3 text-sm text-slate-700 whitespace-pre-wrap">
+                <p className="mt-1.5 rounded-xl bg-surface-200 px-3.5 py-3 text-sm text-foreground whitespace-pre-wrap">
                   {detail.additionalNotes || detail.notes || "—"}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-slate-400">Booked on</p>
-                <p className="text-sm font-medium text-slate-800">
+                <p className="text-xs text-foreground-lighter">Booked on</p>
+                <p className="text-sm font-medium text-foreground">
                   {formatWhen(detail.bookedAt)}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-slate-400">Last updated</p>
-                <p className="text-sm font-medium text-slate-800">
+                <p className="text-xs text-foreground-lighter">Last updated</p>
+                <p className="text-sm font-medium text-foreground">
                   {formatWhen(detail.updatedAt)}
                 </p>
               </div>
               <div className="flex gap-6 text-sm md:col-span-2">
                 <p>
-                  <span className="text-slate-400">Lab requests</span>{" "}
+                  <span className="text-foreground-lighter">Lab requests</span>{" "}
                   <span className="font-semibold">{detail.counts.labRequests}</span>
                 </p>
                 <p>
-                  <span className="text-slate-400">Prescriptions</span>{" "}
+                  <span className="text-foreground-lighter">Prescriptions</span>{" "}
                   <span className="font-semibold">{detail.counts.prescriptions}</span>
                 </p>
               </div>
@@ -290,10 +290,10 @@ export default function AppointmentDetailPage() {
                 detail.clinicalNotes.map((note) => (
                   <div
                     key={note.id}
-                    className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm text-slate-700 whitespace-pre-wrap"
+                    className="rounded-xl border border-border bg-surface-200 px-4 py-3 text-sm text-foreground whitespace-pre-wrap"
                   >
                     <div className="mb-1 flex items-center justify-between gap-2">
-                      <span className="text-[11px] text-slate-400">
+                      <span className="text-[11px] text-foreground-lighter">
                         {formatWhen(note.date)}
                       </span>
                       <Badge tone={STATUS_TONES[note.status] ?? "slate"}>
@@ -311,14 +311,14 @@ export default function AppointmentDetailPage() {
             <CardHeader title="Clinical consultations" />
             <Table headers={["Record", "Date", "Diagnosis", "Status", "Actions"]}>
               {detail.consultations.map((c) => (
-                <tr key={c.id} className="hover:bg-slate-50/60">
-                  <td className="px-4 py-2.5 font-medium text-slate-800">
+                <tr key={c.id} className="hover:bg-surface-200/60">
+                  <td className="px-4 py-2.5 font-medium text-foreground">
                     {c.id.slice(0, 8).toUpperCase()}
                   </td>
-                  <td className="px-4 py-2.5 text-slate-500">
+                  <td className="px-4 py-2.5 text-foreground-light">
                     {new Date(c.date).toLocaleString()}
                   </td>
-                  <td className="px-4 py-2.5 text-slate-600">{c.diagnosis}</td>
+                  <td className="px-4 py-2.5 text-foreground-light">{c.diagnosis}</td>
                   <td className="px-4 py-2.5">
                     <Badge tone={STATUS_TONES[c.status] ?? "slate"}>{c.status}</Badge>
                   </td>
@@ -356,12 +356,12 @@ export default function AppointmentDetailPage() {
             <CardHeader title="Laboratory requests" />
             <Table headers={["Request", "Test", "Priority", "Status", "Actions"]}>
               {detail.labRequests.map((lab) => (
-                <tr key={lab.id} className="hover:bg-slate-50/60">
-                  <td className="px-4 py-2.5 font-medium text-slate-800">
+                <tr key={lab.id} className="hover:bg-surface-200/60">
+                  <td className="px-4 py-2.5 font-medium text-foreground">
                     {lab.requestNumber}
                   </td>
-                  <td className="px-4 py-2.5 text-slate-600">{lab.test}</td>
-                  <td className="px-4 py-2.5 text-slate-500">{lab.priority}</td>
+                  <td className="px-4 py-2.5 text-foreground-light">{lab.test}</td>
+                  <td className="px-4 py-2.5 text-foreground-light">{lab.priority}</td>
                   <td className="px-4 py-2.5">
                     <Badge tone={STATUS_TONES[lab.status] ?? "slate"}>
                       {lab.status}
@@ -410,12 +410,12 @@ export default function AppointmentDetailPage() {
               headers={["Prescription", "Medication", "Regimen", "Status", "Actions"]}
             >
               {detail.prescriptions.map((rx) => (
-                <tr key={rx.id} className="hover:bg-slate-50/60">
-                  <td className="px-4 py-2.5 font-medium text-slate-800">
+                <tr key={rx.id} className="hover:bg-surface-200/60">
+                  <td className="px-4 py-2.5 font-medium text-foreground">
                     {rx.prescriptionNumber}
                   </td>
-                  <td className="px-4 py-2.5 text-slate-600">{rx.medication}</td>
-                  <td className="px-4 py-2.5 text-slate-500">{rx.regimen}</td>
+                  <td className="px-4 py-2.5 text-foreground-light">{rx.medication}</td>
+                  <td className="px-4 py-2.5 text-foreground-light">{rx.regimen}</td>
                   <td className="px-4 py-2.5">
                     <Badge tone={STATUS_TONES[rx.status] ?? "slate"}>
                       {rx.status}

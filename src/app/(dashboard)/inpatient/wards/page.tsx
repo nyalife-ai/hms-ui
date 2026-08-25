@@ -20,7 +20,7 @@ import { buildListQuery, toPageMeta, unwrapPage } from "@/lib/pagination";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 
 const inputClass =
-  "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 const WARD_TYPES = [
   "GENERAL",
@@ -179,22 +179,22 @@ export default function IpdWardsPage() {
           ]}
         >
           {wards.map((w) => (
-            <tr key={w.id} className="hover:bg-slate-50/60">
-              <td className="px-5 py-3.5 font-medium text-slate-800">{w.name}</td>
+            <tr key={w.id} className="hover:bg-surface-200/60">
+              <td className="px-5 py-3.5 font-medium text-foreground">{w.name}</td>
               <td className="px-5 py-3.5">
                 <Badge>{w.wardType}</Badge>
               </td>
-              <td className="px-5 py-3.5 text-slate-500">{w.capacity}</td>
-              <td className="px-5 py-3.5 text-slate-500">{w.totalBeds}</td>
-              <td className="px-5 py-3.5 text-slate-500">{w.availableBeds}</td>
-              <td className="px-5 py-3.5 text-slate-500">{w.occupiedBeds}</td>
-              <td className="px-5 py-3.5 text-slate-500">{w.reservedBeds}</td>
-              <td className="px-5 py-3.5 text-slate-500">{w.dailyRate}</td>
+              <td className="px-5 py-3.5 text-foreground-light">{w.capacity}</td>
+              <td className="px-5 py-3.5 text-foreground-light">{w.totalBeds}</td>
+              <td className="px-5 py-3.5 text-foreground-light">{w.availableBeds}</td>
+              <td className="px-5 py-3.5 text-foreground-light">{w.occupiedBeds}</td>
+              <td className="px-5 py-3.5 text-foreground-light">{w.reservedBeds}</td>
+              <td className="px-5 py-3.5 text-foreground-light">{w.dailyRate}</td>
               <td className="px-5 py-3.5">
                 <button
                   type="button"
                   onClick={() => void deactivate(w.id)}
-                  className="rounded-full border border-slate-200 px-3 py-1 text-xs font-medium text-slate-600 hover:border-rose-300 hover:text-rose-600"
+                  className="rounded-full border border-border px-3 py-1 text-xs font-medium text-foreground-light hover:border-rose-300 hover:text-rose-600"
                 >
                   Deactivate
                 </button>
@@ -206,11 +206,11 @@ export default function IpdWardsPage() {
       </Card>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
           <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-base font-semibold text-slate-900">Add ward</h2>
-              <button onClick={() => setOpen(false)} className="rounded-lg p-1 text-slate-400 hover:bg-slate-50">
+              <h2 className="text-base font-semibold text-foreground">Add ward</h2>
+              <button onClick={() => setOpen(false)} className="rounded-lg p-1 text-foreground-lighter hover:bg-surface-200">
                 <X className="h-4 w-4" />
               </button>
             </div>

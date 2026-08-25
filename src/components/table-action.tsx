@@ -6,13 +6,13 @@ import { Loader2 } from "lucide-react";
 type ActionTone = "neutral" | "edit" | "add" | "danger";
 
 const TONE: Record<ActionTone, string> = {
-  neutral: "text-slate-500 hover:text-slate-800",
-  edit: "text-sky-600 hover:text-sky-700",
-  add: "text-emerald-600 hover:text-emerald-700",
-  danger: "text-rose-600 hover:text-rose-700",
+  neutral: "text-foreground-light hover:bg-surface-200 hover:text-foreground",
+  edit: "text-sky-600 hover:bg-sky-50 hover:text-sky-700",
+  add: "text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700",
+  danger: "text-rose-600 hover:bg-rose-50 hover:text-rose-700",
 };
 
-/** Compact icon action for tables — no colored background; tooltip via title. */
+/** Compact icon action for tables — Studio density (rounded-md, quiet hover). */
 export function TableAction({
   icon: Icon,
   label,
@@ -36,12 +36,12 @@ export function TableAction({
       aria-label={label}
       disabled={busy}
       onClick={onClick}
-      className={`inline-flex h-8 w-8 items-center justify-center rounded-full transition disabled:opacity-40 ${TONE[tone]}`}
+      className={`inline-flex h-7 w-7 items-center justify-center rounded-md transition disabled:opacity-40 ${TONE[tone]}`}
     >
       {loading ? (
-        <Loader2 className="h-4 w-4 animate-spin" />
+        <Loader2 className="h-3.5 w-3.5 animate-spin" />
       ) : (
-        <Icon className="h-4 w-4" />
+        <Icon className="h-3.5 w-3.5" />
       )}
     </button>
   );

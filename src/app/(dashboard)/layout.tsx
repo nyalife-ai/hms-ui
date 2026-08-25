@@ -5,8 +5,10 @@ import { useEffect, type ReactNode } from "react";
 import { PushNotificationsBootstrap } from "@/components/push-notifications-bootstrap";
 import { Sidebar } from "@/components/sidebar";
 import { Topbar } from "@/components/topbar";
+import { PADDING_CLASSES } from "@/components/studio";
 import { useAuth } from "@/lib/auth";
 import { ShellProvider } from "@/lib/shell";
+import { cn } from "@/components/ui-studio";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
@@ -18,7 +20,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   if (loading || !user) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#faf7f9]">
+      <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />
       </div>
     );
@@ -26,11 +28,15 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   return (
     <ShellProvider>
-      <div className="min-h-screen bg-[#faf7f9]">
+      <div className="min-h-screen bg-background">
         <Sidebar />
         <div className="lg:pl-60">
           <Topbar />
-          <main className="p-4 sm:p-6 lg:p-8">{children}</main>
+          <main className="min-h-[calc(100vh-3rem)]">
+            <div className={cn("mx-auto w-full max-w-[1600px] pb-12 pt-6", PADDING_CLASSES)}>
+              {children}
+            </div>
+          </main>
         </div>
         <PushNotificationsBootstrap />
       </div>

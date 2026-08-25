@@ -67,7 +67,7 @@ import type { Role } from "@/lib/roles";
 const MAX_KPI_CARDS = 8;
 
 const inputClass =
-  "rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "rounded-xl border border-border bg-white px-3 py-2 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 const KPI_ICONS: Record<string, LucideIcon> = {
   patients: Users,
@@ -313,8 +313,8 @@ export default function ReportsAnalyticsPage() {
         }
       />
 
-      <div className="mb-4 flex flex-wrap items-end gap-3 rounded-2xl border border-slate-100 bg-white p-4">
-        <label className="flex flex-col gap-1 text-xs font-medium text-slate-500">
+      <div className="mb-4 flex flex-wrap items-end gap-3 rounded-2xl border border-border bg-white p-4">
+        <label className="flex flex-col gap-1 text-xs font-medium text-foreground-light">
           Date range
           <select
             className={inputClass}
@@ -330,7 +330,7 @@ export default function ReportsAnalyticsPage() {
         </label>
         {preset === "custom" && (
           <>
-            <label className="flex flex-col gap-1 text-xs font-medium text-slate-500">
+            <label className="flex flex-col gap-1 text-xs font-medium text-foreground-light">
               From
               <input
                 type="date"
@@ -339,7 +339,7 @@ export default function ReportsAnalyticsPage() {
                 onChange={(e) => setFrom(e.target.value)}
               />
             </label>
-            <label className="flex flex-col gap-1 text-xs font-medium text-slate-500">
+            <label className="flex flex-col gap-1 text-xs font-medium text-foreground-light">
               To
               <input
                 type="date"
@@ -350,7 +350,7 @@ export default function ReportsAnalyticsPage() {
             </label>
           </>
         )}
-        <label className="flex flex-col gap-1 text-xs font-medium text-slate-500">
+        <label className="flex flex-col gap-1 text-xs font-medium text-foreground-light">
           Comparison
           <select
             className={inputClass}
@@ -365,7 +365,7 @@ export default function ReportsAnalyticsPage() {
             <option value="none">None</option>
           </select>
         </label>
-        <label className="flex flex-col gap-1 text-xs font-medium text-slate-500">
+        <label className="flex flex-col gap-1 text-xs font-medium text-foreground-light">
           Granularity
           <select
             className={inputClass}
@@ -382,7 +382,7 @@ export default function ReportsAnalyticsPage() {
           </select>
         </label>
         {tabFilters.includes("status") && (
-          <label className="flex flex-col gap-1 text-xs font-medium text-slate-500">
+          <label className="flex flex-col gap-1 text-xs font-medium text-foreground-light">
             Status
             <input
               className={inputClass}
@@ -393,7 +393,7 @@ export default function ReportsAnalyticsPage() {
           </label>
         )}
         {tabFilters.includes("doctor") && (
-          <label className="flex flex-col gap-1 text-xs font-medium text-slate-500">
+          <label className="flex flex-col gap-1 text-xs font-medium text-foreground-light">
             Doctor
             <select
               className={inputClass}
@@ -410,7 +410,7 @@ export default function ReportsAnalyticsPage() {
           </label>
         )}
         {tabFilters.includes("ward") && (
-          <label className="flex flex-col gap-1 text-xs font-medium text-slate-500">
+          <label className="flex flex-col gap-1 text-xs font-medium text-foreground-light">
             Ward
             <select
               className={inputClass}
@@ -427,7 +427,7 @@ export default function ReportsAnalyticsPage() {
           </label>
         )}
         {tabFilters.includes("department") && (
-          <label className="flex flex-col gap-1 text-xs font-medium text-slate-500">
+          <label className="flex flex-col gap-1 text-xs font-medium text-foreground-light">
             Department
             <select
               className={inputClass}
@@ -444,7 +444,7 @@ export default function ReportsAnalyticsPage() {
           </label>
         )}
         {tabFilters.includes("paymentMethod") && (
-          <label className="flex flex-col gap-1 text-xs font-medium text-slate-500">
+          <label className="flex flex-col gap-1 text-xs font-medium text-foreground-light">
             Payment method
             <select
               className={inputClass}
@@ -460,7 +460,7 @@ export default function ReportsAnalyticsPage() {
             </select>
           </label>
         )}
-        <div className="ml-auto text-xs text-slate-400">
+        <div className="ml-auto text-xs text-foreground-lighter">
           {payload?.meta.generatedAt
             ? `Last updated: ${formatUpdated(payload.meta.generatedAt)}`
             : loading
@@ -474,7 +474,7 @@ export default function ReportsAnalyticsPage() {
         </div>
       </div>
 
-      <div className="mb-5 flex gap-1 overflow-x-auto border-b border-slate-100 pb-px">
+      <div className="mb-5 flex gap-1 overflow-x-auto border-b border-border pb-px">
         {tabs.map((t) => {
           const active = t.id === tab;
           return (
@@ -485,7 +485,7 @@ export default function ReportsAnalyticsPage() {
               className={`whitespace-nowrap rounded-t-xl px-4 py-2.5 text-sm font-medium transition ${
                 active
                   ? "bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-100"
-                  : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
+                  : "text-foreground-light hover:bg-surface-200 hover:text-foreground"
               }`}
             >
               {t.label}
@@ -501,7 +501,7 @@ export default function ReportsAnalyticsPage() {
       )}
 
       {!activeTab ? (
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-foreground-light">
           No analytics tabs are available for your role.
         </p>
       ) : (
@@ -536,11 +536,11 @@ function DomainPanel({
           ))}
         </div>
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <div className="h-72 animate-pulse rounded-2xl border border-slate-100 bg-slate-50" />
-          <div className="h-72 animate-pulse rounded-2xl border border-slate-100 bg-slate-50" />
-          <div className="h-64 animate-pulse rounded-2xl border border-slate-100 bg-slate-50 lg:col-span-2" />
-          <div className="h-64 animate-pulse rounded-2xl border border-slate-100 bg-slate-50" />
-          <div className="h-64 animate-pulse rounded-2xl border border-slate-100 bg-slate-50" />
+          <div className="h-72 animate-pulse rounded-2xl border border-border bg-surface-200" />
+          <div className="h-72 animate-pulse rounded-2xl border border-border bg-surface-200" />
+          <div className="h-64 animate-pulse rounded-2xl border border-border bg-surface-200 lg:col-span-2" />
+          <div className="h-64 animate-pulse rounded-2xl border border-border bg-surface-200" />
+          <div className="h-64 animate-pulse rounded-2xl border border-border bg-surface-200" />
         </div>
       </div>
     );
@@ -607,7 +607,7 @@ function DomainPanel({
       ) : (
         <>
           <section aria-label="Trends">
-            <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
+            <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-foreground-lighter">
               Trends
             </h2>
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -682,7 +682,7 @@ function DomainPanel({
 
           {breakdowns.length > 0 ? (
             <section aria-label="Breakdowns">
-              <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
+              <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-foreground-lighter">
                 Breakdowns
               </h2>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-2">
@@ -697,7 +697,7 @@ function DomainPanel({
 
       {payload.tables.length > 0 ? (
         <section aria-label="Detail tables" className="space-y-4">
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-foreground-lighter">
             Detail
           </h2>
           {payload.tables.map((t) => (
@@ -706,14 +706,14 @@ function DomainPanel({
         </section>
       ) : null}
 
-      <details className="rounded-xl border border-slate-100 bg-white p-4 text-xs text-slate-500">
-        <summary className="cursor-pointer font-medium text-slate-700">
+      <details className="rounded-xl border border-border bg-white p-4 text-xs text-foreground-light">
+        <summary className="cursor-pointer font-medium text-foreground">
           Metric definitions
         </summary>
         <ul className="mt-3 space-y-2">
           {payload.kpis.map((k) => (
             <li key={k.key}>
-              <span className="font-semibold text-slate-700">{k.label}:</span>{" "}
+              <span className="font-semibold text-foreground">{k.label}:</span>{" "}
               {k.definition}
             </li>
           ))}
@@ -765,7 +765,7 @@ function AnalyticsTableCard({ table }: { table: AnalyticsTable }) {
     <Card className="p-4">
       <CardHeader title={table.label} subtitle="Exact values behind the charts" />
       {!table.hasData ? (
-        <p className="px-2 py-8 text-center text-sm text-slate-400">
+        <p className="px-2 py-8 text-center text-sm text-foreground-lighter">
           No data available for this period.
         </p>
       ) : (
@@ -774,15 +774,15 @@ function AnalyticsTableCard({ table }: { table: AnalyticsTable }) {
             {table.rows.map((row, idx) => (
               <li
                 key={idx}
-                className="rounded-xl border border-slate-100 bg-slate-50/80 px-3 py-2.5 text-sm"
+                className="rounded-xl border border-border bg-surface-200/80 px-3 py-2.5 text-sm"
               >
                 {previewCols.map((c) => (
                   <div
                     key={c}
                     className="flex items-baseline justify-between gap-3 py-0.5"
                   >
-                    <span className="text-xs text-slate-400">{c}</span>
-                    <span className="min-w-0 truncate font-medium text-slate-800">
+                    <span className="text-xs text-foreground-lighter">{c}</span>
+                    <span className="min-w-0 truncate font-medium text-foreground">
                       {formatCell(row[c])}
                     </span>
                   </div>

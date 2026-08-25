@@ -1,4 +1,7 @@
 @import "tailwindcss";
+@import "../styles/typography.css";
+
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
   /*
@@ -26,16 +29,131 @@
   --color-accent-700: #0f6f7a;
   --color-accent-800: #125961;
   --color-accent-900: #134a50;
+
+  /*
+   * Studio Inter-optimized type scale + weight
+   */
+  --text-xs: 0.75rem;
+  --text-sm: 0.8125rem;
+  --text-base: 0.9375rem;
+  --text-lg: 1rem;
+  --text-xl: 1.125rem;
+  --text-2xl: 1.375rem;
+  --text-3xl: 1.75rem;
+  --text-4xl: 2.125rem;
+  --text-5xl: 2.875rem;
+  --text-6xl: 3.625rem;
+  --text-7xl: 4.375rem;
+  --text-8xl: 5.875rem;
+  --text-9xl: 7.875rem;
+  --font-weight-normal: 450;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --shadow-xs: 0 1px 2px rgba(26, 18, 32, 0.04);
+  --shadow-sm: 0 1px 3px rgba(26, 18, 32, 0.06);
 }
 
 @theme inline {
-  --font-sans: var(--font-jakarta);
+  /* Semantic colors resolve from runtime :root / .dark tokens (Studio pattern) */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-foreground-light: var(--foreground-light);
+  --color-foreground-lighter: var(--foreground-lighter);
+  --color-foreground-muted: var(--foreground-muted);
+  --color-surface: var(--surface);
+  --color-surface-100: var(--surface-100);
+  --color-surface-200: var(--surface-200);
+  --color-border: var(--border);
+  --color-sidebar: var(--sidebar);
+  --color-bg: var(--background);
+  --font-sans: var(--font-inter), system-ui, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-heading: var(--font-manrope), var(--font-inter), system-ui, sans-serif;
+  --font-mono: var(--font-source-code-pro), "Office Code Pro", Menlo, monospace;
+}
+
+/*
+ * Light (default) — NyaLife mapped Studio semantics
+ * Dark — Studio .dark / [data-theme=dark] approach, NyaLife magenta/teal brand kept
+ */
+:root,
+.light {
+  color-scheme: light;
+  --background: #faf7f9;
+  --foreground: #1a1220;
+  --foreground-light: #64748b;
+  --foreground-lighter: #94a3b8;
+  --foreground-muted: #cbd5e1;
+  --surface: #ffffff;
+  --surface-100: #ffffff;
+  --surface-200: #fff7fa;
+  --border: #f0d6e2;
+  --sidebar: #ffffff;
+  --scrollbar-thumb: #e8c4d4;
+}
+
+.dark {
+  color-scheme: dark;
+  --background: #120c14;
+  --foreground: #f5eef2;
+  --foreground-light: #b7a8b2;
+  --foreground-lighter: #8a7a85;
+  --foreground-muted: #5c4f58;
+  --surface: #1a131c;
+  --surface-100: #1a131c;
+  --surface-200: #241b27;
+  --border: #3a2a35;
+  --sidebar: #160f18;
+  --scrollbar-thumb: #4a3844;
+}
+
+html {
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 body {
-  background: #faf7f9;
-  color: #1a1220;
-  font-family: var(--font-sans), system-ui, sans-serif;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  font-weight: 450;
+  font-feature-settings: "cv11", "ss01", "ss03";
+  font-variation-settings: "opsz" 14;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-heading);
+  font-weight: 600;
+}
+
+code,
+kbd,
+pre,
+samp {
+  font-family: var(--font-source-code-pro), "Office Code Pro", Menlo, monospace;
+}
+
+@layer base {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+  select,
+  textarea {
+    border-color: var(--border);
+    background-color: var(--surface);
+    color: var(--foreground);
+    font-weight: 450;
+    border-radius: 0.375rem;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--foreground-lighter);
+  }
 }
 
 ::-webkit-scrollbar {
@@ -44,6 +162,6 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #e8c4d4;
+  background: var(--scrollbar-thumb);
   border-radius: 8px;
 }

@@ -3,7 +3,7 @@
 import { FieldLabel } from "@/components/field-label";
 
 const inputClass =
-  "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 export type PatientFormGender = "Male" | "Female" | "Other";
 
@@ -347,15 +347,15 @@ export function PatientForm({
             {insurance.map((pol, i) => (
               <li
                 key={`${pol.providerName}-${i}`}
-                className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2"
+                className="rounded-xl border border-border bg-surface-200 px-3 py-2"
               >
-                <span className="font-medium text-slate-800">
+                <span className="font-medium text-foreground">
                   {pol.providerName}
                 </span>
                 {pol.memberId ? (
-                  <span className="text-slate-500"> · {pol.memberId}</span>
+                  <span className="text-foreground-light"> · {pol.memberId}</span>
                 ) : null}
-                <span className="ml-2 text-xs text-slate-400">{pol.status}</span>
+                <span className="ml-2 text-xs text-foreground-lighter">{pol.status}</span>
               </li>
             ))}
           </ul>
