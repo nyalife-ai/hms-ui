@@ -44,7 +44,10 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
     return null;
   }
   try {
-    return await navigator.serviceWorker.register("/sw.js", { scope: "/" });
+    return await navigator.serviceWorker.register("/sw.js", {
+      scope: "/",
+      updateViaCache: "none",
+    });
   } catch {
     return null;
   }

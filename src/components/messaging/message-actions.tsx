@@ -91,14 +91,17 @@ export function MessageActions({
   const [reactOpen, setReactOpen] = useState(false);
   const [hoverReact, setHoverReact] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const ignoreCloseUntilRef = useRef(0);
 
   useEffect(() => {
     if (!open) setReactOpen(false);
+    else ignoreCloseUntilRef.current = Date.now() + 450;
   }, [open]);
 
   useEffect(() => {
     if (!open && !hoverReact) return;
     const onDoc = (e: Event) => {
+      if (Date.now() < ignoreCloseUntilRef.current) return;
       if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
         onClose();
         setHoverReact(false);
@@ -121,6 +124,14 @@ export function MessageActions({
   }, [open, hoverReact, onClose]);
 
   const closeAll = () => {
+    if (Date.now() < ignoreCloseUntilRef.current) return;
+    onClose();
+    setReactOpen(false);
+    setHoverReact(false);
+  };
+
+  const forceClose = () => {
+    ignoreCloseUntilRef.current = 0;
     onClose();
     setReactOpen(false);
     setHoverReact(false);
@@ -130,26 +141,26 @@ export function MessageActions({
     switch (id) {
       case "reply":
         handlers.onReply();
-        closeAll();
+        forceClose();
         break;
       case "react":
         setReactOpen(true);
         break;
       case "copy":
         handlers.onCopy();
-        closeAll();
+        forceClose();
         break;
       case "forward":
         handlers.onForward?.();
-        closeAll();
+        forceClose();
         break;
       case "edit":
         handlers.onEdit?.();
-        closeAll();
+        forceClose();
         break;
       case "delete":
         handlers.onDelete?.();
-        closeAll();
+        forceClose();
         break;
     }
   };
@@ -172,7 +183,7 @@ export function MessageActions({
   };
 
   const itemClass =
-    "flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50";
+    "flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-slate-700 hover:bg-slate-50 active:bg-slate-100";
 
   const reactionPicker = (
     <div
@@ -189,7 +200,7 @@ export function MessageActions({
           aria-label={`React with ${emoji}`}
           onClick={() => {
             handlers.onReact(emoji);
-            closeAll();
+            forceClose();
           }}
         >
           {emoji}
@@ -259,11 +270,26 @@ export function MessageActions({
             type="button"
             className="absolute inset-0 bg-slate-900/40"
             aria-label="Close menu"
-            onClick={closeAll}
+            onPointerUp={(e) => {
+              if (Date.now() < ignoreCloseUntilRef.current) {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+              }
+              closeAll();
+            }}
+            onClick={(e) => {
+              if (Date.now() < ignoreCloseUntilRef.current) {
+                e.preventDefault();
+                return;
+              }
+              closeAll();
+            }}
           />
           <div
             role="menu"
             className="absolute inset-x-0 bottom-0 max-h-[70vh] overflow-y-auto rounded-t-2xl bg-white pb-[max(1rem,env(safe-area-inset-bottom))] pt-2 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
           >
             <div className="mx-auto mb-2 h-1 w-10 rounded-full bg-slate-200" />
             {reactOpen ? reactionPicker : menuItems}

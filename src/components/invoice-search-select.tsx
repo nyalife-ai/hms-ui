@@ -13,6 +13,12 @@ export type InvoiceHit = {
   patientMrn: string;
   totalAmount: string;
   outstanding: string;
+  /** Alias of allocated — amount paid toward this invoice */
+  amountPaid?: string;
+  allocated?: string;
+  balance?: string;
+  subtotal?: string;
+  tax?: string;
   discount: string;
   status: string;
 };

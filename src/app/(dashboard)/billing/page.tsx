@@ -63,7 +63,9 @@ function formatKes(value: string | number | undefined | null): string {
 function quoteKey(visit: Visit): string {
   const lab = visit.labOrder?.tests.length ?? 0;
   const med = visit.prescriptions?.length ?? 0;
-  const consult = visit.billing?.consultFeeStatus === "PAID" ? 0 : 1;
+  const consultStatus = visit.billing?.consultFeeStatus;
+  const consult =
+    consultStatus === "PAID" || consultStatus === "WAIVED" ? 0 : 1;
   return `${consult}-${lab}-${med}`;
 }
 
@@ -140,10 +142,12 @@ export default function BillingPage() {
           const [consult, lab, med] = key.split("-").map(Number);
           try {
             const qs = buildListQuery({
-              consultCount: consult || 1,
+              consultCount: consult > 0 ? consult : undefined,
               labCount: lab || undefined,
               medCount: med || undefined,
             });
+            // Skip empty quotes (all zeros) — never force consultCount: 1.
+            if (!consult && !lab && !med) return;
             const quote = await api<VisitQuote>(`/billing/quote/visit?${qs}`);
             next[key] = quote;
           } catch {
@@ -534,7 +538,9 @@ export default function BillingPage() {
                         {quoted ? `KES ${total.toLocaleString()}` : "…"}
                       </p>
                       <p className="text-[11px] text-slate-400">
-                        Consultation
+                        {v.billing?.consultFeeStatus === "PAID"
+                          ? "Consult fee paid"
+                          : "Consultation"}
                         {(v.labOrder?.tests.length ?? 0) > 0
                           ? ` + ${v.labOrder?.tests.length} lab test(s)`
                           : ""}

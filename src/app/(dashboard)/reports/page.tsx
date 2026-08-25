@@ -18,11 +18,12 @@ import {
   BarChart3,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AnalyticsBarChart,
   AnalyticsDonutChart,
   AnalyticsLineChart,
+  ChartEmptyState,
 } from "@/components/charts";
 import { RoleGuard } from "@/components/role-guard";
 import {
@@ -61,6 +62,9 @@ import {
   type CatalogWard,
 } from "@/lib/catalog";
 import type { Role } from "@/lib/roles";
+
+/** Cap KPI strip so analytics stays chart-first (homepage already surfaces many KPIs). */
+const MAX_KPI_CARDS = 8;
 
 const inputClass =
   "rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
@@ -113,9 +117,9 @@ function formatCell(value: string | number | null | undefined) {
   return String(value);
 }
 
-/** Prefer overlay for billed+collected; otherwise stack up to 4 series cards. */
+/** Prefer overlay for billed+collected; otherwise stack up to 6 series cards. */
 function seriesChartBlocks(seriesList: AnalyticsSeries[]) {
-  const list = seriesList.slice(0, 4);
+  const list = seriesList.slice(0, 6);
   const billed = list.find((s) => /billed/i.test(s.key));
   const collected = list.find((s) => /collected/i.test(s.key));
   if (billed && collected) {
@@ -162,6 +166,7 @@ export default function ReportsAnalyticsPage() {
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethodOption[]>(
     [],
   );
+  const requestSeq = useRef(0);
 
   const { data: doctors } = useDoctors();
   const { data: wards } = useWards();
@@ -189,6 +194,10 @@ export default function ReportsAnalyticsPage() {
     setDepartmentId("");
     setPaymentMethodId("");
     setStatus("");
+    // Clear previous tab visuals immediately so Financial never shows Overview charts.
+    setPayload(null);
+    setError("");
+    setLoading(true);
   }, [tab]);
 
   const filters = useMemo<AnalyticsFilters>(
@@ -218,26 +227,35 @@ export default function ReportsAnalyticsPage() {
     ],
   );
 
-  const load = useCallback(async () => {
+  useEffect(() => {
     if (!activeTab) return;
+    const seq = ++requestSeq.current;
+    const controller = new AbortController();
     setLoading(true);
     setError("");
-    try {
-      const data = await fetchAnalytics(activeTab.id, filters);
-      setPayload(data);
-    } catch (err) {
-      setPayload(null);
-      setError(
-        err instanceof Error ? err.message : "Unable to load this report.",
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, [activeTab, filters]);
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+    void fetchAnalytics(activeTab.id, filters, { signal: controller.signal })
+      .then((data) => {
+        if (seq !== requestSeq.current) return;
+        if (data.meta?.domain && data.meta.domain !== activeTab.id) return;
+        setPayload(data);
+      })
+      .catch((err) => {
+        if (controller.signal.aborted || seq !== requestSeq.current) return;
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        setPayload(null);
+        setError(
+          err instanceof Error ? err.message : "Unable to load this report.",
+        );
+      })
+      .finally(() => {
+        if (seq === requestSeq.current) setLoading(false);
+      });
+
+    return () => {
+      controller.abort();
+    };
+  }, [activeTab, filters]);
 
   const onExport = async () => {
     if (!activeTab) return;
@@ -251,6 +269,32 @@ export default function ReportsAnalyticsPage() {
     }
   };
 
+  const refresh = () => {
+    // Bump seq + re-run by toggling loading; simplest: recreate effect via force
+    setPayload(null);
+    setLoading(true);
+    setError("");
+    const seq = ++requestSeq.current;
+    const controller = new AbortController();
+    if (!activeTab) return;
+    void fetchAnalytics(activeTab.id, filters, { signal: controller.signal })
+      .then((data) => {
+        if (seq !== requestSeq.current) return;
+        setPayload(data);
+      })
+      .catch((err) => {
+        if (controller.signal.aborted || seq !== requestSeq.current) return;
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        setPayload(null);
+        setError(
+          err instanceof Error ? err.message : "Unable to load this report.",
+        );
+      })
+      .finally(() => {
+        if (seq === requestSeq.current) setLoading(false);
+      });
+  };
+
   return (
     <RoleGuard module="reports">
       <PageHeader
@@ -258,7 +302,7 @@ export default function ReportsAnalyticsPage() {
         subtitle="Live operational intelligence from hospital records — not estimates."
         action={
           <div className="flex flex-wrap items-center gap-2">
-            <OutlineButton onClick={() => void load()}>
+            <OutlineButton onClick={() => refresh()}>
               <RefreshCw className="h-3.5 w-3.5" /> Refresh
             </OutlineButton>
             <PrimaryButton onClick={() => void onExport()} disabled={exportBusy}>
@@ -464,7 +508,9 @@ export default function ReportsAnalyticsPage() {
         <DomainPanel
           key={tab}
           loading={loading}
-          payload={payload}
+          payload={
+            payload && payload.meta?.domain === tab ? payload : null
+          }
           domainLabel={activeTab.label}
         />
       )}
@@ -481,147 +527,191 @@ function DomainPanel({
   payload: AnalyticsPayload | null;
   domainLabel: string;
 }) {
-  if (loading && !payload) {
+  if (loading) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-4" aria-busy="true" aria-label={`Loading ${domainLabel}`}>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <StatCardSkeleton key={i} />
           ))}
         </div>
-        <div className="h-72 animate-pulse rounded-2xl border border-slate-100 bg-slate-50" />
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div className="h-72 animate-pulse rounded-2xl border border-slate-100 bg-slate-50" />
+          <div className="h-72 animate-pulse rounded-2xl border border-slate-100 bg-slate-50" />
+          <div className="h-64 animate-pulse rounded-2xl border border-slate-100 bg-slate-50 lg:col-span-2" />
+          <div className="h-64 animate-pulse rounded-2xl border border-slate-100 bg-slate-50" />
+          <div className="h-64 animate-pulse rounded-2xl border border-slate-100 bg-slate-50" />
+        </div>
       </div>
     );
   }
 
   if (!payload) {
     return (
-      <Card className="p-8 text-center text-sm text-slate-500">
-        Unable to load {domainLabel} analytics.
+      <Card className="p-8 text-center">
+        <ChartEmptyState
+          title={`Unable to load ${domainLabel}`}
+          description="There was a problem loading this report. Try refreshing or pick another date range."
+        />
       </Card>
     );
   }
 
-  const kpis = payload.kpis;
+  const kpis = payload.kpis.slice(0, MAX_KPI_CARDS);
   const seriesBlocks = seriesChartBlocks(payload.series);
-  const breakdowns = payload.breakdowns.slice(0, 4);
+  const breakdowns = payload.breakdowns.slice(0, 8);
   const noCharts =
     payload.series.every((s) => !s.hasData) &&
     payload.breakdowns.every((b) => !b.hasData);
 
   return (
-    <div className="space-y-5">
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {loading
-          ? Array.from({ length: Math.max(kpis.length, 4) }).map((_, i) => (
-              <StatCardSkeleton key={i} />
-            ))
-          : kpis.map((k) => {
-              const down =
-                typeof k.changePercent === "number" && k.changePercent < 0;
-              const delta =
-                k.changePercent === null || k.changePercent === undefined
-                  ? k.previousValue === 0 && k.value > 0
-                    ? "n/a"
-                    : undefined
-                  : `${k.changePercent > 0 ? "↑" : k.changePercent < 0 ? "↓" : ""} ${Math.abs(k.changePercent)}%`;
-              return (
-                <StatCard
-                  key={k.key}
-                  label={k.label}
-                  value={formatMetricValue(k.value, k.unit)}
-                  delta={delta}
-                  deltaLabel={
-                    delta
-                      ? "vs previous period"
-                      : k.definition.slice(0, 48) +
-                        (k.definition.length > 48 ? "…" : "")
-                  }
-                  down={down}
-                  icon={iconForKey(k.key)}
-                />
-              );
-            })}
-      </div>
-
-      {noCharts ? (
-        <Card className="p-8 text-center text-sm text-slate-400">
-          No chart data available for this period.
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          {seriesBlocks.map((block) => {
-            if (block.kind === "overlay") {
-              const [a, b] = block.items;
-              const periods = a.points.map((p) => p.period);
-              const data = periods.map((period, i) => ({
-                period,
-                [a.key]: a.points[i]?.value ?? 0,
-                [b.key]: b.points[i]?.value ?? 0,
-              }));
-              const empty =
-                !a.hasData && !b.hasData
-                  ? "No data available for this period."
-                  : undefined;
-              return (
-                <Card key={`${a.key}+${b.key}`} className="p-4">
-                  <CardHeader
-                    title={`${a.label} vs ${b.label}`}
-                    subtitle={`${payload.meta.from} → ${payload.meta.to}`}
-                  />
-                  <AnalyticsLineChart
-                    data={data}
-                    lines={[
-                      { dataKey: a.key, name: a.label, stroke: "#f02878" },
-                      { dataKey: b.key, name: b.label, stroke: "#0d9488" },
-                    ]}
-                    emptyLabel={empty}
-                  />
-                </Card>
-              );
-            }
-
-            const s = block.items[0];
-            const showPrev = seriesHasPrevious(s);
+    <div className="space-y-6">
+      <section aria-label="KPI summary">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {kpis.map((k) => {
+            const down =
+              typeof k.changePercent === "number" && k.changePercent < 0;
+            const delta =
+              k.changePercent === null || k.changePercent === undefined
+                ? k.previousValue === 0 && k.value > 0
+                  ? "n/a"
+                  : undefined
+                : `${k.changePercent > 0 ? "↑" : k.changePercent < 0 ? "↓" : ""} ${Math.abs(k.changePercent)}%`;
             return (
-              <Card key={s.key} className="p-4">
-                <CardHeader
-                  title={s.label}
-                  subtitle={`${payload.meta.from} → ${payload.meta.to}`}
-                />
-                <AnalyticsLineChart
-                  data={s.points.map((p) => ({
-                    period: p.period,
-                    value: p.value,
-                    previous: p.previousValue ?? null,
-                  }))}
-                  previousKey={showPrev ? "previous" : undefined}
-                  emptyLabel={
-                    s.hasData
-                      ? undefined
-                      : "No data available for this period."
-                  }
-                />
-              </Card>
+              <StatCard
+                key={k.key}
+                label={k.label}
+                value={formatMetricValue(k.value, k.unit)}
+                delta={delta}
+                deltaLabel={
+                  delta
+                    ? "vs previous period"
+                    : k.definition.slice(0, 48) +
+                      (k.definition.length > 48 ? "…" : "")
+                }
+                down={down}
+                icon={iconForKey(k.key)}
+              />
             );
           })}
-
-          {breakdowns.map((b) => (
-            <BreakdownChart key={b.key} breakdown={b} />
-          ))}
         </div>
+      </section>
+
+      {noCharts ? (
+        <Card className="p-8">
+          <ChartEmptyState
+            title="No data available"
+            description="There is no data for the selected period."
+          />
+        </Card>
+      ) : (
+        <>
+          <section aria-label="Trends">
+            <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
+              Trends
+            </h2>
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              {seriesBlocks.map((block) => {
+                if (block.kind === "overlay") {
+                  const [a, b] = block.items;
+                  const periods = a.points.map((p) => p.period);
+                  const data = periods.map((period, i) => ({
+                    period,
+                    [a.key]: a.points[i]?.value ?? 0,
+                    [b.key]: b.points[i]?.value ?? 0,
+                  }));
+                  const empty =
+                    !a.hasData && !b.hasData
+                      ? "There is no data for the selected period."
+                      : undefined;
+                  return (
+                    <Card
+                      key={`${a.key}+${b.key}`}
+                      className="min-w-0 overflow-x-auto p-4 lg:col-span-2"
+                    >
+                      <CardHeader
+                        title={`${a.label} vs ${b.label}`}
+                        subtitle={`${payload.meta.from} → ${payload.meta.to}`}
+                      />
+                      <AnalyticsLineChart
+                        data={data}
+                        lines={[
+                          {
+                            dataKey: a.key,
+                            name: a.label,
+                            stroke: "#f02878",
+                          },
+                          {
+                            dataKey: b.key,
+                            name: b.label,
+                            stroke: "#0d9488",
+                          },
+                        ]}
+                        emptyLabel={empty}
+                      />
+                    </Card>
+                  );
+                }
+
+                const s = block.items[0];
+                const showPrev = seriesHasPrevious(s);
+                return (
+                  <Card key={s.key} className="min-w-0 overflow-x-auto p-4">
+                    <CardHeader
+                      title={s.label}
+                      subtitle={`${payload.meta.from} → ${payload.meta.to}`}
+                    />
+                    <AnalyticsLineChart
+                      data={s.points.map((p) => ({
+                        period: p.period,
+                        value: p.value,
+                        previous: p.previousValue ?? null,
+                      }))}
+                      previousKey={showPrev ? "previous" : undefined}
+                      emptyLabel={
+                        s.hasData
+                          ? undefined
+                          : "There is no data for the selected period."
+                      }
+                    />
+                  </Card>
+                );
+              })}
+            </div>
+          </section>
+
+          {breakdowns.length > 0 ? (
+            <section aria-label="Breakdowns">
+              <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                Breakdowns
+              </h2>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-2">
+                {breakdowns.map((b) => (
+                  <BreakdownChart key={b.key} breakdown={b} />
+                ))}
+              </div>
+            </section>
+          ) : null}
+        </>
       )}
 
-      {payload.tables.map((t) => (
-        <AnalyticsTableCard key={t.key} table={t} />
-      ))}
+      {payload.tables.length > 0 ? (
+        <section aria-label="Detail tables" className="space-y-4">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+            Detail
+          </h2>
+          {payload.tables.map((t) => (
+            <AnalyticsTableCard key={t.key} table={t} />
+          ))}
+        </section>
+      ) : null}
 
       <details className="rounded-xl border border-slate-100 bg-white p-4 text-xs text-slate-500">
         <summary className="cursor-pointer font-medium text-slate-700">
           Metric definitions
         </summary>
         <ul className="mt-3 space-y-2">
-          {kpis.map((k) => (
+          {payload.kpis.map((k) => (
             <li key={k.key}>
               <span className="font-semibold text-slate-700">{k.label}:</span>{" "}
               {k.definition}
@@ -634,21 +724,26 @@ function DomainPanel({
 }
 
 function BreakdownChart({ breakdown }: { breakdown: AnalyticsBreakdown }) {
-  const useDonut = breakdown.rows.length <= 8;
+  const useDonut = breakdown.rows.length > 0 && breakdown.rows.length <= 8;
+  const preferBar =
+    /department|doctor|age|medication|service|modality|ward|diagnos/i.test(
+      breakdown.key,
+    );
   return (
-    <Card className="p-4">
+    <Card className="min-w-0 overflow-x-auto p-4">
       <CardHeader title={breakdown.label} />
-      {useDonut ? (
+      {!breakdown.hasData ? (
+        <ChartEmptyState
+          title="No data available"
+          description="There is no data for the selected period."
+        />
+      ) : useDonut && !preferBar ? (
         <AnalyticsDonutChart
           data={breakdown.rows.map((r) => ({
             name: r.name,
             value: r.value,
           }))}
-          emptyLabel={
-            breakdown.hasData
-              ? undefined
-              : "No data available for this period."
-          }
+          emptyLabel="There is no data for the selected period."
         />
       ) : (
         <AnalyticsBarChart
@@ -656,11 +751,7 @@ function BreakdownChart({ breakdown }: { breakdown: AnalyticsBreakdown }) {
             name: r.name.length > 14 ? `${r.name.slice(0, 12)}…` : r.name,
             value: r.value,
           }))}
-          emptyLabel={
-            breakdown.hasData
-              ? undefined
-              : "No data available for this period."
-          }
+          emptyLabel="There is no data for the selected period."
         />
       )}
     </Card>

@@ -210,19 +210,19 @@ export function VoiceNotePlayer({
       <button
         type="button"
         onClick={togglePlay}
-        className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${btn}`}
+        className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${btn}`}
         aria-label={playing ? "Pause voice note" : "Play voice note"}
       >
         {playing ? (
-          <Pause className="h-3.5 w-3.5 fill-current" />
+          <Pause className="h-4 w-4 fill-current" />
         ) : (
-          <Play className="h-3.5 w-3.5 fill-current" />
+          <Play className="h-4 w-4 fill-current" />
         )}
       </button>
 
       <button
         type="button"
-        className="flex h-8 min-w-0 flex-1 items-end gap-px"
+        className="flex h-10 min-w-0 flex-1 items-end gap-px py-1"
         aria-label="Seek voice note"
         onClick={onWaveClick}
         onPointerDown={onWavePointer}

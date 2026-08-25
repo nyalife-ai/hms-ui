@@ -331,7 +331,15 @@ function MediaLightbox({
           className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain"
           onClick={(e) => e.stopPropagation()}
         />
-      ) : null}
+      ) : (
+        <div
+          className="flex h-40 w-64 flex-col items-center justify-center gap-2 rounded-lg bg-white/10 text-sm text-white/80"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Loader2 className="h-6 w-6 animate-spin" />
+          Loading media…
+        </div>
+      )}
 
       {items.length > 1 ? (
         <p className="absolute bottom-6 left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-3 py-1 text-xs text-white">
@@ -465,6 +473,7 @@ function MessageBubble({
   const dominantAxis = useRef<"h" | "v" | null>(null);
   const longPressTimer = useRef<number | null>(null);
   const longPressOrigin = useRef<{ x: number; y: number } | null>(null);
+  const longPressOpened = useRef(false);
   const swipeStarted = useRef(false);
   const reducedMotion = usePrefersReducedMotion();
 
@@ -485,6 +494,7 @@ function MessageBubble({
   };
 
   const openMenuAt = (x: number, y: number, sheet: boolean) => {
+    longPressOpened.current = true;
     setMenuPos({ x, y });
     setUseSheet(sheet);
     setMenuOpen(true);
@@ -493,6 +503,7 @@ function MessageBubble({
   const closeMenu = useCallback(() => {
     setMenuOpen(false);
     setMenuPos(null);
+    longPressOpened.current = false;
   }, []);
 
   const imageGridClass =
@@ -508,6 +519,7 @@ function MessageBubble({
     touchStart.current = { x: t.clientX, y: t.clientY };
     dominantAxis.current = null;
     swipeStarted.current = false;
+    longPressOpened.current = false;
     setSwipeX(0);
 
     if (!deleted) {
@@ -555,7 +567,11 @@ function MessageBubble({
   const onTouchEnd = () => {
     clearLongPress();
     const threshold = SWIPE_REPLY_PX;
-    if (Math.abs(swipeX) >= threshold && !deleted) {
+    if (
+      !longPressOpened.current &&
+      Math.abs(swipeX) >= threshold &&
+      !deleted
+    ) {
       onReply(m);
     }
     touchStart.current = null;

@@ -3,7 +3,6 @@
 import { useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
 import { PushNotificationsBootstrap } from "@/components/push-notifications-bootstrap";
-import { PwaUpdateBanner } from "@/components/pwa-update-banner";
 import { Sidebar } from "@/components/sidebar";
 import { Topbar } from "@/components/topbar";
 import { useAuth } from "@/lib/auth";
@@ -34,7 +33,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           <main className="p-4 sm:p-6 lg:p-8">{children}</main>
         </div>
         <PushNotificationsBootstrap />
-        <PwaUpdateBanner />
       </div>
     </ShellProvider>
   );

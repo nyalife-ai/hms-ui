@@ -1,13 +1,37 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import {
+  activateWaitingWorker,
+  checkForServiceWorkerUpdate,
+  ensureServiceWorker,
+  getWaitingWorker,
+  pageHasUnsavedWork,
+} from "@/lib/pwa-update";
 
 /**
- * Subtle banner when a waiting service worker is ready.
- * Skips auto-reload when the page has unsaved work or the messaging composer is focused.
+ * Keeps the installed PWA / mobile browser on the latest build.
+ *
+ * Desktop often picks up updates casually; mobile keeps tabs/homescreen apps
+ * alive and rarely re-checks sw.js. This component:
+ *  - registers SW with updateViaCache: "none"
+ *  - checks for updates on load, focus, visibility, and periodically
+ *  - auto-applies (skipWaiting + reload) when safe
+ *  - shows a high-visibility banner only if reload must wait (unsaved work)
  */
 export function PwaUpdateBanner() {
   const [waiting, setWaiting] = useState<ServiceWorker | null>(null);
+  const [needsConfirm, setNeedsConfirm] = useState(false);
+
+  const tryActivate = useCallback((worker: ServiceWorker) => {
+    setWaiting(worker);
+    if (pageHasUnsavedWork()) {
+      setNeedsConfirm(true);
+      return;
+    }
+    setNeedsConfirm(false);
+    activateWaitingWorker(worker);
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined" || !("serviceWorker" in navigator)) {
@@ -16,73 +40,92 @@ export function PwaUpdateBanner() {
 
     let cancelled = false;
     let registration: ServiceWorkerRegistration | null = null;
+    let pollId = 0;
+
+    const adoptWaiting = (reg: ServiceWorkerRegistration | null) => {
+      if (cancelled || !reg) return;
+      const w = getWaitingWorker(reg);
+      if (w) tryActivate(w);
+    };
 
     const onUpdateFound = () => {
       const installing = registration?.installing;
       if (!installing) return;
       installing.addEventListener("statechange", () => {
+        if (cancelled) return;
         if (
           installing.state === "installed" &&
-          navigator.serviceWorker.controller &&
-          !cancelled
+          (registration?.waiting || navigator.serviceWorker.controller)
         ) {
-          setWaiting(registration?.waiting ?? installing);
+          const w = registration?.waiting ?? installing;
+          if (w) tryActivate(w);
         }
       });
     };
 
-    void navigator.serviceWorker.ready.then((reg) => {
-      if (cancelled) return;
+    const runCheck = async () => {
+      const reg = await checkForServiceWorkerUpdate(registration);
+      if (cancelled || !reg) return;
       registration = reg;
-      if (reg.waiting) setWaiting(reg.waiting);
-      reg.addEventListener("updatefound", onUpdateFound);
-    });
+      adoptWaiting(reg);
+    };
+
+    void (async () => {
+      registration = await ensureServiceWorker();
+      if (cancelled || !registration) return;
+      registration.addEventListener("updatefound", onUpdateFound);
+      adoptWaiting(registration);
+      await runCheck();
+    })();
+
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void runCheck();
+    };
+    const onFocus = () => {
+      void runCheck();
+    };
+
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onFocus);
+    // Mobile PWAs often sit in memory — poll while the tab is open.
+    pollId = window.setInterval(() => {
+      if (document.visibilityState === "visible") void runCheck();
+    }, 60_000);
 
     return () => {
       cancelled = true;
       registration?.removeEventListener("updatefound", onUpdateFound);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onFocus);
+      window.clearInterval(pollId);
     };
-  }, []);
+  }, [tryActivate]);
 
-  if (!waiting) return null;
+  if (!waiting || !needsConfirm) return null;
 
   const applyUpdate = () => {
-    const hasUnsaved = Boolean(document.querySelector('[data-unsaved="true"]'));
-    const active = document.activeElement as HTMLElement | null;
-    const composerFocused = Boolean(
-      active?.closest?.("#msg-composer, [data-messaging-composer]"),
-    );
-    waiting.postMessage({ type: "SKIP_WAITING" });
-    if (hasUnsaved || composerFocused) {
-      setWaiting(null);
-      return;
-    }
-    window.location.reload();
+    activateWaitingWorker(waiting);
+    setNeedsConfirm(false);
+    setWaiting(null);
   };
 
   return (
     <div
-      className="fixed bottom-4 left-1/2 z-[70] flex w-[min(92vw,28rem)] -translate-x-1/2 items-center gap-3 rounded-2xl border border-brand-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-lg"
+      className="fixed inset-x-0 top-0 z-[100] flex justify-center px-3 pt-[max(0.75rem,env(safe-area-inset-top))]"
       role="status"
     >
-      <p className="min-w-0 flex-1">
-        An updated version of NyaLife is ready.
-      </p>
-      <button
-        type="button"
-        onClick={applyUpdate}
-        className="shrink-0 rounded-full bg-brand-500 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-brand-600"
-      >
-        Update now
-      </button>
-      <button
-        type="button"
-        onClick={() => setWaiting(null)}
-        className="shrink-0 rounded-full px-2 py-1 text-xs font-medium text-slate-400 hover:text-slate-600"
-        aria-label="Dismiss update notice"
-      >
-        Later
-      </button>
+      <div className="flex w-full max-w-lg items-center gap-3 rounded-2xl border border-brand-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-lg">
+        <p className="min-w-0 flex-1">
+          A new version of NyaLife is ready. Save your work, then update.
+        </p>
+        <button
+          type="button"
+          onClick={applyUpdate}
+          className="shrink-0 rounded-full bg-brand-500 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-brand-600"
+        >
+          Update now
+        </button>
+      </div>
     </div>
   );
 }

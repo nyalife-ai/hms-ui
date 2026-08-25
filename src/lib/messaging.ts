@@ -247,10 +247,18 @@ export function attachmentContentUrl(attachmentId: string): string {
 export async function fetchAttachmentBlobUrl(
   attachmentId: string,
 ): Promise<string> {
-  const res = await authenticatedFetch(attachmentContentUrl(attachmentId));
-  if (!res.ok) throw new ApiError(res.status, await parseError(res));
-  const blob = await res.blob();
-  return URL.createObjectURL(blob);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 30_000);
+  try {
+    const res = await authenticatedFetch(attachmentContentUrl(attachmentId), {
+      signal: controller.signal,
+    });
+    if (!res.ok) throw new ApiError(res.status, await parseError(res));
+    const blob = await res.blob();
+    return URL.createObjectURL(blob);
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 export function createConversation(
@@ -325,6 +333,30 @@ export function removeConversationParticipant(
     `/messages/conversations/${conversationId}/participants/${userId}`,
     { method: "DELETE" },
   );
+}
+
+export function updateParticipantRole(
+  conversationId: string,
+  userId: string,
+  role: "ADMIN" | "MEMBER",
+): Promise<ConversationDetail> {
+  return api(
+    `/messages/conversations/${conversationId}/participants/${userId}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ role }),
+    },
+  );
+}
+
+export function updateConversation(
+  conversationId: string,
+  input: { name: string },
+): Promise<ConversationDetail> {
+  return api(`/messages/conversations/${conversationId}`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
 }
 
 export function downloadAttachment(

@@ -14,6 +14,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { BarChart3 } from "lucide-react";
 
 const tooltipStyle = {
   borderRadius: 12,
@@ -23,6 +24,24 @@ const tooltipStyle = {
 };
 
 const axisTick = { fontSize: 11, fill: "#94a3b8" };
+
+export function ChartEmptyState({
+  title = "No data available",
+  description = "There is no data for the selected period.",
+}: {
+  title?: string;
+  description?: string;
+}) {
+  return (
+    <div className="flex flex-col items-center justify-center px-4 py-14 text-center">
+      <span className="mb-3 flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-50 text-slate-400">
+        <BarChart3 className="h-5 w-5" />
+      </span>
+      <p className="text-sm font-medium text-slate-700">{title}</p>
+      <p className="mt-1 max-w-xs text-xs text-slate-400">{description}</p>
+    </div>
+  );
+}
 
 export function AgeStagesChart({
   data = [],
@@ -247,9 +266,7 @@ export function AnalyticsLineChart({
     keysToCheck.some((k) => Number(d[k] ?? 0) !== 0),
   );
   if (!data.length || !hasData) {
-    return (
-      <p className="px-4 py-16 text-center text-sm text-slate-400">{emptyLabel}</p>
-    );
+    return <ChartEmptyState description={emptyLabel} />;
   }
 
   const palette = ["#f02878", "#0d9488", "#2563eb", "#f59e0b"];
@@ -310,9 +327,7 @@ export function AnalyticsBarChart({
   emptyLabel?: string;
 }) {
   if (!data.length || data.every((d) => d.value === 0)) {
-    return (
-      <p className="px-4 py-16 text-center text-sm text-slate-400">{emptyLabel}</p>
-    );
+    return <ChartEmptyState description={emptyLabel} />;
   }
   return (
     <ResponsiveContainer width="100%" height={260}>
@@ -336,9 +351,7 @@ export function AnalyticsDonutChart({
 }) {
   const total = data.reduce((s, d) => s + d.value, 0);
   if (!data.length || total === 0) {
-    return (
-      <p className="px-4 py-16 text-center text-sm text-slate-400">{emptyLabel}</p>
-    );
+    return <ChartEmptyState description={emptyLabel} />;
   }
   const slice = data.slice(0, 8).map((d, i) => ({
     ...d,

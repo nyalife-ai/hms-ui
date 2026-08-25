@@ -1,6 +1,13 @@
 "use client";
 
-import { Loader2, UserMinus, UserPlus, X } from "lucide-react";
+import {
+  Loader2,
+  Shield,
+  ShieldOff,
+  UserMinus,
+  UserPlus,
+  X,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Modal } from "@/components/modal";
 import { Avatar } from "@/components/ui";
@@ -8,6 +15,8 @@ import {
   addConversationParticipants,
   removeConversationParticipant,
   searchUsers,
+  updateConversation,
+  updateParticipantRole,
   type ConversationListItem,
   type ConversationParticipant,
   type StaffSearchUser,
@@ -38,6 +47,8 @@ export function GroupMembersSheet({
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [adding, setAdding] = useState(false);
+  const [nameDraft, setNameDraft] = useState("");
+  const [renaming, setRenaming] = useState(false);
 
   const canManageType = conversation
     ? MANAGEABLE.has(String(conversation.type))
@@ -61,8 +72,11 @@ export function GroupMembersSheet({
       setResults([]);
       setError("");
       setAdding(false);
+      setRenaming(false);
+    } else if (conversation) {
+      setNameDraft(conversation.name ?? "");
     }
-  }, [open]);
+  }, [open, conversation]);
 
   useEffect(() => {
     if (!open || !adding) return;
@@ -133,6 +147,52 @@ export function GroupMembersSheet({
     }
   };
 
+  const setRole = async (
+    userId: string,
+    role: "ADMIN" | "MEMBER",
+    label: string,
+  ) => {
+    const ok = window.confirm(
+      role === "ADMIN"
+        ? `Make ${label} a group admin?`
+        : `Remove admin privileges from ${label}?`,
+    );
+    if (!ok) return;
+    setBusyId(userId);
+    setError("");
+    try {
+      const updated = await updateParticipantRole(
+        conversation.id,
+        userId,
+        role,
+      );
+      onUpdated(updated);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not update role");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const saveName = async () => {
+    const next = nameDraft.trim();
+    if (!next || next === (conversation.name ?? "")) {
+      setRenaming(false);
+      return;
+    }
+    setBusyId("rename");
+    setError("");
+    try {
+      const updated = await updateConversation(conversation.id, { name: next });
+      onUpdated(updated);
+      setRenaming(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not rename group");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
   const roleBadge = (p: ConversationParticipant) => {
     const pr = p.participantRole ?? "MEMBER";
     return (
@@ -149,12 +209,7 @@ export function GroupMembersSheet({
   };
 
   return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      title="Participants"
-      size="sm"
-    >
+    <Modal open={open} onClose={onClose} title="Group details" size="sm">
       <div className="space-y-4 px-5 py-4">
         {error ? (
           <p className="text-sm text-rose-500" role="alert">
@@ -162,47 +217,126 @@ export function GroupMembersSheet({
           </p>
         ) : null}
 
-        <ul className="max-h-64 space-y-2 overflow-y-auto">
-          {conversation.participants.map((p) => {
-            const isSelf = p.userId === currentUserId;
-            const canRemove =
-              isSelf || (isConvAdmin && p.userId !== currentUserId);
-            return (
-              <li
-                key={p.userId}
-                className="flex items-center gap-3 rounded-xl border border-slate-100 px-3 py-2"
+        <div className="rounded-xl border border-slate-100 bg-slate-50/80 px-3 py-2">
+          {renaming && isConvAdmin ? (
+            <div className="flex gap-2">
+              <input
+                value={nameDraft}
+                onChange={(e) => setNameDraft(e.target.value)}
+                className="min-w-0 flex-1 rounded-lg border border-slate-200 px-2 py-1.5 text-sm"
+                aria-label="Group name"
+                autoFocus
+              />
+              <button
+                type="button"
+                onClick={() => void saveName()}
+                disabled={busyId === "rename"}
+                className="rounded-lg bg-brand-500 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-40"
               >
-                <Avatar name={p.displayName} size="sm" />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-slate-800">
-                    {p.displayName}
-                    {isSelf ? (
-                      <span className="ml-1 text-xs text-slate-400">(you)</span>
+                Save
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                  Group name
+                </p>
+                <p className="truncate text-sm font-semibold text-slate-800">
+                  {conversation.name || "Untitled group"}
+                </p>
+              </div>
+              {isConvAdmin ? (
+                <button
+                  type="button"
+                  onClick={() => setRenaming(true)}
+                  className="shrink-0 text-xs font-medium text-brand-700 hover:underline"
+                >
+                  Edit
+                </button>
+              ) : null}
+            </div>
+          )}
+        </div>
+
+        <div>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+            Members ({conversation.participants.length})
+          </p>
+          <ul className="max-h-64 space-y-2 overflow-y-auto">
+            {conversation.participants.map((p) => {
+              const isSelf = p.userId === currentUserId;
+              const isAdmin = (p.participantRole ?? "MEMBER") === "ADMIN";
+              const canRemove =
+                isSelf || (isConvAdmin && p.userId !== currentUserId);
+              const canChangeRole = isConvAdmin && !isSelf;
+              return (
+                <li
+                  key={p.userId}
+                  className="flex items-center gap-3 rounded-xl border border-slate-100 px-3 py-2"
+                >
+                  <Avatar name={p.displayName} size="sm" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-slate-800">
+                      {p.displayName}
+                      {isSelf ? (
+                        <span className="ml-1 text-xs text-slate-400">(you)</span>
+                      ) : null}
+                    </p>
+                    <p className="truncate text-xs text-slate-400">{p.role}</p>
+                  </div>
+                  {roleBadge(p)}
+                  <div className="flex items-center gap-0.5">
+                    {canChangeRole ? (
+                      <button
+                        type="button"
+                        disabled={busyId === p.userId}
+                        onClick={() =>
+                          void setRole(
+                            p.userId,
+                            isAdmin ? "MEMBER" : "ADMIN",
+                            p.displayName,
+                          )
+                        }
+                        className="rounded-lg p-2 text-slate-400 hover:bg-brand-50 hover:text-brand-700 disabled:opacity-40"
+                        aria-label={
+                          isAdmin ? "Demote to member" : "Promote to admin"
+                        }
+                        title={isAdmin ? "Demote" : "Make admin"}
+                      >
+                        {busyId === p.userId ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : isAdmin ? (
+                          <ShieldOff className="h-4 w-4" />
+                        ) : (
+                          <Shield className="h-4 w-4" />
+                        )}
+                      </button>
                     ) : null}
-                  </p>
-                  <p className="truncate text-xs text-slate-400">{p.role}</p>
-                </div>
-                {roleBadge(p)}
-                {canRemove ? (
-                  <button
-                    type="button"
-                    disabled={busyId === p.userId}
-                    onClick={() => void removeUser(p.userId, p.displayName)}
-                    className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600 disabled:opacity-40"
-                    aria-label={isSelf ? "Leave conversation" : "Remove member"}
-                    title={isSelf ? "Leave" : "Remove"}
-                  >
-                    {busyId === p.userId ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <UserMinus className="h-4 w-4" />
-                    )}
-                  </button>
-                ) : null}
-              </li>
-            );
-          })}
-        </ul>
+                    {canRemove ? (
+                      <button
+                        type="button"
+                        disabled={busyId === p.userId}
+                        onClick={() => void removeUser(p.userId, p.displayName)}
+                        className="rounded-lg p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600 disabled:opacity-40"
+                        aria-label={
+                          isSelf ? "Leave conversation" : "Remove member"
+                        }
+                        title={isSelf ? "Leave" : "Remove"}
+                      >
+                        {busyId === p.userId ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <UserMinus className="h-4 w-4" />
+                        )}
+                      </button>
+                    ) : null}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
 
         {isConvAdmin ? (
           <div className="space-y-2 border-t border-slate-100 pt-3">
@@ -210,7 +344,7 @@ export function GroupMembersSheet({
               <button
                 type="button"
                 onClick={() => setAdding(true)}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-600"
+                className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-brand-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-600"
               >
                 <UserPlus className="h-4 w-4" /> Add member
               </button>
@@ -221,7 +355,7 @@ export function GroupMembersSheet({
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder="Search staff…"
-                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20"
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20"
                     autoFocus
                   />
                   <button
@@ -231,7 +365,7 @@ export function GroupMembersSheet({
                       setQuery("");
                       setResults([]);
                     }}
-                    className="rounded-lg p-2 text-slate-400 hover:bg-slate-50"
+                    className="rounded-lg p-2.5 text-slate-400 hover:bg-slate-50"
                     aria-label="Cancel add"
                   >
                     <X className="h-4 w-4" />
@@ -249,7 +383,7 @@ export function GroupMembersSheet({
                         type="button"
                         disabled={busyId === u.userId}
                         onClick={() => void addUser(u)}
-                        className="flex w-full items-center gap-2 rounded-xl px-2 py-2 text-left hover:bg-brand-50 disabled:opacity-40"
+                        className="flex min-h-11 w-full items-center gap-2 rounded-xl px-2 py-2 text-left hover:bg-brand-50 disabled:opacity-40"
                       >
                         <Avatar name={u.displayName} size="sm" />
                         <span className="min-w-0 flex-1 truncate text-sm text-slate-700">
@@ -267,7 +401,19 @@ export function GroupMembersSheet({
               </>
             )}
           </div>
-        ) : null}
+        ) : (
+          <button
+            type="button"
+            onClick={() =>
+              currentUserId
+                ? void removeUser(currentUserId, "yourself")
+                : undefined
+            }
+            className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-rose-200 px-5 py-2.5 text-sm font-semibold text-rose-600 hover:bg-rose-50"
+          >
+            Leave group
+          </button>
+        )}
       </div>
     </Modal>
   );

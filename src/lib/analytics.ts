@@ -27,6 +27,8 @@ export type AnalyticsPreset =
   | "last_7_days"
   | "last_30_days"
   | "last_90_days"
+  | "last_180_days"
+  | "last_365_days"
   | "this_week"
   | "last_week"
   | "this_month"
@@ -242,7 +244,9 @@ export const PRESET_OPTIONS: Array<{ value: AnalyticsPreset; label: string }> =
     { value: "yesterday", label: "Yesterday" },
     { value: "last_7_days", label: "Last 7 days" },
     { value: "last_30_days", label: "Last 30 days" },
-    { value: "last_90_days", label: "Last 90 days" },
+    { value: "last_90_days", label: "Last 90 days (3 months)" },
+    { value: "last_180_days", label: "Last 180 days (6 months)" },
+    { value: "last_365_days", label: "Last 12 months" },
     { value: "this_week", label: "This week" },
     { value: "last_week", label: "Last week" },
     { value: "this_month", label: "This month" },
@@ -260,6 +264,7 @@ export function tabsForRole(role: Role) {
 export async function fetchAnalytics(
   domain: AnalyticsDomain,
   filters: AnalyticsFilters,
+  init?: RequestInit,
 ): Promise<AnalyticsPayload> {
   const qs = buildListQuery({
     preset: filters.preset,
@@ -274,7 +279,7 @@ export async function fetchAnalytics(
     paymentMethodId: filters.paymentMethodId,
     insurerId: filters.insurerId,
   });
-  return api<AnalyticsPayload>(`/analytics/${domain}?${qs}`);
+  return api<AnalyticsPayload>(`/analytics/${domain}?${qs}`, init);
 }
 
 export async function exportAnalytics(

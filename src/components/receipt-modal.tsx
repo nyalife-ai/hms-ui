@@ -72,6 +72,15 @@ export function ReceiptModal({
     ),
   };
 
+  const taxAmount = Number(receipt.meta?.tax ?? NaN);
+  const subtotalAmount = Number(receipt.meta?.subtotal ?? NaN);
+  const taxRateLabel = receipt.meta?.taxRatePercentage
+    ? String(receipt.meta.taxRatePercentage)
+    : null;
+
+  const showTaxBreakdown =
+    Number.isFinite(taxAmount) && taxAmount > 0;
+
   const showContext =
     Number.isFinite(ctx.invoiceTotal) ||
     Number.isFinite(ctx.previousPaid) ||
@@ -238,6 +247,20 @@ export function ReceiptModal({
                 <span className="font-medium">KES {line.amount.toLocaleString()}</span>
               </li>
             ))}
+            {showTaxBreakdown && (
+              <>
+                {Number.isFinite(subtotalAmount) && (
+                  <li className="flex justify-between gap-3 text-slate-500">
+                    <span>Subtotal</span>
+                    <span>KES {money(subtotalAmount)}</span>
+                  </li>
+                )}
+                <li className="flex justify-between gap-3 text-slate-500">
+                  <span>Tax{taxRateLabel ? ` (${taxRateLabel}%)` : ""}</span>
+                  <span>KES {money(taxAmount)}</span>
+                </li>
+              </>
+            )}
           </ul>
 
           {showContext ? (

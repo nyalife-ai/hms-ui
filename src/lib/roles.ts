@@ -82,6 +82,11 @@ export const MODULE_ACCESS: Record<string, Role[]> = {
  * but cannot grant modules the role is not supposed to operate.
  * SUPER_ADMIN always bypasses (matches backend RolesGuard) — stale JWT
  * permission lists must never lock the system administrator out of new modules.
+ *
+ * `account` is self-service (own profile/password/2FA/prefs) and must remain
+ * reachable for every role that has it in MODULE_ACCESS, even when the DB
+ * permission list is stale/incomplete. That is distinct from `settings`
+ * (system administration), which stays fully permission-gated.
  */
 export function canAccess(
   role: Role,
@@ -93,6 +98,10 @@ export function canAccess(
   }
   if (!(MODULE_ACCESS[module]?.includes(role) ?? false)) {
     return false;
+  }
+  // Personal account is never blocked by stale module:account JWT/DB lists.
+  if (module === "account") {
+    return true;
   }
   if (!permissions?.length) {
     return true;

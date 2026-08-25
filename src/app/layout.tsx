@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth";
 import { VisitProvider } from "@/lib/visits";
+import { PwaUpdateRoot } from "@/components/pwa-update-root";
 
 const jakarta = Plus_Jakarta_Sans({
   variable: "--font-jakarta",
@@ -38,7 +39,10 @@ export default function RootLayout({
     <html lang="en" className={`${jakarta.variable} h-full antialiased`}>
       <body className="min-h-full">
         <AuthProvider>
-          <VisitProvider>{children}</VisitProvider>
+          <VisitProvider>
+            {children}
+            <PwaUpdateRoot />
+          </VisitProvider>
         </AuthProvider>
       </body>
     </html>

@@ -36,6 +36,10 @@ import {
   type MessageType,
 } from "@/lib/messaging";
 import {
+  mergeMessagesById,
+  normalizeChatMessage,
+} from "@/lib/message-normalize";
+import {
   playMessageReceivedSound,
   playMessageSentSound,
 } from "@/lib/notification-sound";
@@ -56,118 +60,6 @@ function inferMessageTypeFromMime(mime?: string | null): MessageType {
   if (m.startsWith("audio/")) return "AUDIO";
   if (mime) return "FILE";
   return "TEXT";
-}
-
-function mergeById(a: ChatMessage[], b: ChatMessage[]): ChatMessage[] {
-  const map = new Map<string, ChatMessage>();
-  const byClient = new Map<string, string>();
-
-  const put = (m: ChatMessage) => {
-    if (m.clientMessageId) {
-      const existingId = byClient.get(m.clientMessageId);
-      if (existingId && existingId !== m.id) {
-        map.delete(existingId);
-      }
-      byClient.set(m.clientMessageId, m.id);
-    }
-    const prev = map.get(m.id);
-    map.set(m.id, prev ? { ...prev, ...m } : m);
-  };
-
-  for (const m of a) put(m);
-  for (const m of b) put(m);
-
-  return [...map.values()].sort(
-    (x, y) => new Date(x.createdAt).getTime() - new Date(y.createdAt).getTime(),
-  );
-}
-
-function payloadToMessage(
-  payload: Record<string, unknown>,
-): ChatMessage | null {
-  const id =
-    (typeof payload.id === "string" && payload.id) ||
-    (typeof payload.messageId === "string" && payload.messageId) ||
-    null;
-  const conversationId =
-    typeof payload.conversationId === "string" ? payload.conversationId : null;
-  if (!id || !conversationId) return null;
-
-  // Ignore notification-center wake-ups (no chat body) so they cannot
-  // overwrite a rich message.created already merged from MessagingService.
-  const isRich =
-    "body" in payload ||
-    "attachments" in payload ||
-    typeof payload.senderName === "string";
-  if (!isRich) return null;
-
-  const attachments = Array.isArray(payload.attachments)
-    ? payload.attachments
-        .map((raw) => {
-          if (!raw || typeof raw !== "object") return null;
-          const a = raw as Record<string, unknown>;
-          if (typeof a.id !== "string") return null;
-          return {
-            id: a.id,
-            fileName: typeof a.fileName === "string" ? a.fileName : "file",
-            mimeType: typeof a.mimeType === "string" ? a.mimeType : null,
-            fileSize: typeof a.fileSize === "number" ? a.fileSize : null,
-          };
-        })
-        .filter((x): x is NonNullable<typeof x> => Boolean(x))
-    : [];
-
-  const mentions = Array.isArray(payload.mentions)
-    ? payload.mentions
-        .map((raw) => {
-          if (!raw || typeof raw !== "object") return null;
-          const m = raw as Record<string, unknown>;
-          if (typeof m.userId !== "string") return null;
-          return {
-            userId: m.userId,
-            displayName:
-              typeof m.displayName === "string" ? m.displayName : "Staff",
-          };
-        })
-        .filter((x): x is NonNullable<typeof x> => Boolean(x))
-    : [];
-
-  return {
-    id,
-    conversationId,
-    senderId: typeof payload.senderId === "string" ? payload.senderId : "",
-    senderName:
-      typeof payload.senderName === "string" ? payload.senderName : "Staff",
-    messageType:
-      typeof payload.messageType === "string" ? payload.messageType : "TEXT",
-    body: typeof payload.body === "string" ? payload.body : null,
-    isDeleted: Boolean(payload.isDeleted),
-    editedAt: typeof payload.editedAt === "string" ? payload.editedAt : null,
-    createdAt:
-      typeof payload.createdAt === "string"
-        ? payload.createdAt
-        : new Date().toISOString(),
-    parentMessageId:
-      typeof payload.parentMessageId === "string"
-        ? payload.parentMessageId
-        : null,
-    parentPreview:
-      typeof payload.parentPreview === "string" ? payload.parentPreview : null,
-    mentions,
-    attachments,
-    reactions: Array.isArray(payload.reactions)
-      ? (payload.reactions as ChatMessage["reactions"])
-      : [],
-    deliveryStatus:
-      typeof payload.deliveryStatus === "string"
-        ? payload.deliveryStatus
-        : "SENT",
-    clientMessageId:
-      typeof payload.clientMessageId === "string"
-        ? payload.clientMessageId
-        : null,
-    pending: false,
-  };
 }
 
 function applyReactionLocal(
@@ -430,7 +322,7 @@ export default function MessagesPage() {
         }
 
         if (type === "message.created") {
-          const mapped = payloadToMessage(payload);
+          const mapped = normalizeChatMessage(payload);
           const preview =
             typeof payload.preview === "string"
               ? payload.preview
@@ -461,7 +353,7 @@ export default function MessagesPage() {
                       m.id !== mapped.clientMessageId,
                   )
                 : prev;
-              return mergeById(withoutOptimistic, [mapped]);
+              return mergeMessagesById(withoutOptimistic, [mapped]);
             });
 
             if (!fromSelf && mapped.id && !deliveredRef.current.has(mapped.id)) {
@@ -489,6 +381,11 @@ export default function MessagesPage() {
               }
             }
           }
+          return;
+        }
+
+        // Notification-center wake-ups (distinct from rich message.created).
+        if (type === "message.notification" || type === "message.mention") {
           return;
         }
 
@@ -578,6 +475,52 @@ export default function MessagesPage() {
         }
 
         if (type === "conversation.created" || type === "conversation.updated") {
+          const action =
+            typeof payload.action === "string" ? payload.action : null;
+          const participants = Array.isArray(payload.participants)
+            ? (payload.participants as ConversationListItem["participants"])
+            : null;
+
+          if (
+            conversationId &&
+            participants &&
+            (action === "participants.added" ||
+              action === "participants.removed" ||
+              action === "participant.role_updated" ||
+              action === "conversation.updated")
+          ) {
+            const stillIn = participants.some((p) => p.userId === user.id);
+            const name =
+              typeof payload.name === "string" ? payload.name : undefined;
+            setConversations((prev) =>
+              prev.map((c) =>
+                c.id === conversationId
+                  ? {
+                      ...c,
+                      participants,
+                      ...(name !== undefined ? { name } : {}),
+                      updatedAt: new Date().toISOString(),
+                    }
+                  : c,
+              ),
+            );
+            setActive((a) => {
+              if (!a || a.id !== conversationId) return a;
+              if (!stillIn) return a;
+              return {
+                ...a,
+                participants,
+                ...(name !== undefined ? { name } : {}),
+              };
+            });
+            if (!stillIn && selectedIdRef.current === conversationId) {
+              setSelectedId(null);
+              setActive(null);
+              setMessages([]);
+              setMembersOpen(false);
+              setMobileShowThread(false);
+            }
+          }
           void refreshConversations();
         }
       },
@@ -594,7 +537,7 @@ export default function MessagesPage() {
     setLoadingOlder(true);
     try {
       const page = await listMessages(selectedId, { cursor: nextCursor, limit: 50 });
-      setMessages((prev) => mergeById(page.items, prev));
+      setMessages((prev) => mergeMessagesById(page.items, prev));
       setNextCursor(page.nextCursor);
     } finally {
       setLoadingOlder(false);
@@ -615,7 +558,7 @@ export default function MessagesPage() {
             cursor,
             limit: 50,
           });
-          setMessages((prev) => mergeById(page.items, prev));
+          setMessages((prev) => mergeMessagesById(page.items, prev));
           setNextCursor(page.nextCursor);
           nextCursorRef.current = page.nextCursor;
           found = page.items.some((m) => m.id === messageId) ||
@@ -737,7 +680,6 @@ export default function MessagesPage() {
         messageType,
         mentionedUserIds: input.mentionedUserIds,
       });
-      if (localPreviewUrl) URL.revokeObjectURL(localPreviewUrl);
       setMessages((prev) => {
         const withoutOptimistic = prev.filter(
           (m) =>
@@ -750,16 +692,28 @@ export default function MessagesPage() {
           pending: false,
           deliveryStatus: saved.deliveryStatus ?? "SENT",
           body: saved.body ?? optimistic.body,
+          messageType: saved.messageType || messageType,
           attachments: saved.attachments?.length
-            ? saved.attachments
-            : optimistic.attachments.map(({ previewUrl: _, ...rest }) => rest),
+            ? saved.attachments.map((a, i) => ({
+                ...a,
+                // Keep local object URL until authenticated blob fetch replaces it.
+                previewUrl:
+                  a.previewUrl ??
+                  optimistic.attachments[i]?.previewUrl ??
+                  localPreviewUrl,
+              }))
+            : optimistic.attachments,
           mentions: saved.mentions?.length
             ? saved.mentions
             : optimistic.mentions,
           clientMessageId,
         };
-        return mergeById(withoutOptimistic, [reconciled]);
+        return mergeMessagesById(withoutOptimistic, [reconciled]);
       });
+      // Revoke after a delay so the player/image can start from previewUrl.
+      if (localPreviewUrl) {
+        window.setTimeout(() => URL.revokeObjectURL(localPreviewUrl), 60_000);
+      }
       setReplyTo(null);
       if (messageSoundsEnabled) void playMessageSentSound();
     } catch (err) {

@@ -1,13 +1,16 @@
 /**
  * NyaLife PWA service worker.
- * Installability only — does NOT cache clinical/API responses (safety).
+ * Installability + push — does NOT cache clinical/API responses (safety).
+ *
+ * Bump SHELL whenever deploy-time SW behavior changes so waiting clients
+ * detect a new worker byte-for-byte (with updateViaCache: "none").
  */
 
-const SHELL = "nyalife-shell-v2";
+const SHELL = "nyalife-shell-v3";
 const SHELL_URLS = ["/manifest.webmanifest", "/logo-transparent.png"];
 
 self.addEventListener("install", (event) => {
-  // Do not skipWaiting here — wait for the app's "Update now" (SKIP_WAITING)
+  // Do not skipWaiting here — the page auto-sends SKIP_WAITING when safe,
   // so mid-compose / unsaved work is not interrupted.
   event.waitUntil(
     caches.open(SHELL).then((cache) => cache.addAll(SHELL_URLS)),
@@ -43,10 +46,12 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // App navigations: network first; offline fallback not clinical.
+  // App navigations: always network-first so mobile gets new Next.js bundles.
   if (req.mode === "navigate") {
     event.respondWith(
-      fetch(req).catch(() => caches.match("/logo-transparent.png")),
+      fetch(req, { cache: "no-store" }).catch(() =>
+        caches.match("/logo-transparent.png"),
+      ),
     );
     return;
   }

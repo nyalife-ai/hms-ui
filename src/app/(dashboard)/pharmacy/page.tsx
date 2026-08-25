@@ -44,7 +44,11 @@ function visitTotal(
 ) {
   const tests = visit.labOrder?.tests.length ?? 0;
   const meds = visit.prescriptions?.length ?? 0;
-  return fees.consult + tests * fees.lab + meds * fees.medication;
+  const consultPaid =
+    visit.billing?.consultFeeStatus === "PAID" ||
+    visit.billing?.consultFeeStatus === "WAIVED";
+  const consult = consultPaid ? 0 : fees.consult;
+  return consult + tests * fees.lab + meds * fees.medication;
 }
 
 export default function PharmacyOverviewPage() {
