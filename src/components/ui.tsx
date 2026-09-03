@@ -40,7 +40,7 @@ export function Card({ className = "", children }: { className?: string; childre
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-lg border border-border bg-surface-100 text-foreground shadow-xs",
+        "rounded-lg border border-border bg-surface-100 text-foreground shadow-xs",
         className,
       )}
     >
