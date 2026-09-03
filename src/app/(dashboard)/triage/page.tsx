@@ -1154,6 +1154,30 @@ export default function TriagePage() {
 
               {error && <p className="mb-3 text-sm text-rose-500">{error}</p>}
 
+              {(!coreVitalsComplete || !doctorReady || !clinicalReady) && (
+                <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-100">
+                  <p className="font-semibold">Complete these before sending:</p>
+                  <ul className="mt-1 list-disc space-y-0.5 pl-4">
+                    {!coreVitalsComplete && (
+                      <li>
+                        Core vitals (temperature, BP, pulse, resp rate, SpO₂, weight)
+                      </li>
+                    )}
+                    {!clinicalReady && (
+                      <li>
+                        Reason for visit, chief complaint
+                        {priority !== "NORMAL" ? ", and priority reason" : ""}
+                      </li>
+                    )}
+                    {!doctorReady && (
+                      <li>
+                        Assign a doctor — click the field and pick from the list
+                      </li>
+                    )}
+                  </ul>
+                </div>
+              )}
+
               <div className="hidden md:block">
                 <button
                   type="button"
@@ -1176,7 +1200,7 @@ export default function TriagePage() {
               </div>
 
               <div
-                className={`sticky bottom-0 z-30 -mx-1 border-t border-slate-200 bg-white/95 px-4 pt-3 backdrop-blur md:hidden ${
+                className={`sticky bottom-0 z-30 -mx-1 border-t border-border bg-surface/95 px-4 pt-3 backdrop-blur md:hidden ${
                   mobilePane === "intake" ? "" : "hidden"
                 }`}
                 style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
