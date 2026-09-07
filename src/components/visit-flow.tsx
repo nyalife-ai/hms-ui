@@ -103,7 +103,10 @@ export function VisitQueueList({
                 {v.mrn} · {v.age} yrs · {v.gender}
               </p>
               {(v.triage?.chiefComplaint || v.reasonForVisit) && (
-                <p className="mt-0.5 truncate text-[11px] text-foreground-light">
+                <p
+                  className="mt-0.5 line-clamp-2 break-words text-[11px] text-foreground-light"
+                  title={v.triage?.chiefComplaint || v.reasonForVisit}
+                >
                   {v.triage?.chiefComplaint || v.reasonForVisit}
                 </p>
               )}
