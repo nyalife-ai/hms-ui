@@ -88,6 +88,44 @@ export default function LabRequestDetailPage() {
   const [sampleType, setSampleType] = useState("BLOOD");
   const [sampleNotes, setSampleNotes] = useState("");
 
+  useEffect(() => {
+    if (!id) return;
+    let active = true;
+    const run = async () => {
+      setLoading(true);
+      try {
+        const d = await api<LabRequestDetail>(`/laboratory/requests/${id}`);
+        if (!active) return;
+        setDetail(d);
+        const vals: Record<string, string> = {};
+        const ints: Record<string, string> = {};
+        for (const p of d.resultEntryParameters) {
+          const existing = d.results.find((r) => r.parameterId === p.id);
+          vals[p.id] = existing?.resultValue ?? "";
+          ints[p.id] = existing?.interpretation ?? "NORMAL";
+        }
+        setResultValues(vals);
+        setInterpretations(ints);
+        setObservations(d.observations ?? "");
+        setConclusion(d.conclusion ?? "");
+        setEvidenceName(d.evidenceName ?? "");
+        setClinicalNotes(d.notes ?? "");
+        setError("");
+      } catch (err) {
+        if (!active) return;
+        setError(err instanceof Error ? err.message : "Failed to load request");
+        setDetail(null);
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+
+    void run();
+    return () => {
+      active = false;
+    };
+  }, [id]);
+
   const load = useCallback(async () => {
     if (!id) return;
     setLoading(true);
@@ -115,10 +153,6 @@ export default function LabRequestDetailPage() {
       setLoading(false);
     }
   }, [id]);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
 
   const registerSample = async () => {
     if (!detail) return;
@@ -150,18 +184,26 @@ export default function LabRequestDetailPage() {
     if (!detail) return;
     const lines = detail.resultEntryParameters
       .filter((p) => (resultValues[p.id] || "").trim())
+      .filter((p) => {
+        const existing = detail.results.find((r) => r.parameterId === p.id);
+        return !existing || !existing.isVerified;
+      })
       .map((p) => ({
         parameterId: p.id,
         resultValue: resultValues[p.id],
         interpretation: interpretations[p.id] || "NORMAL",
       }));
-    if (!lines.length) return;
+    if (!lines.length) {
+      setError("No new or editable results to save. Verified values are protected.");
+      return;
+    }
     setBusy(true);
     try {
       await api(`/laboratory/requests/${detail.id}/results`, {
         method: "POST",
         body: JSON.stringify({ lines }),
       });
+      setError("");
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Results failed");
