@@ -42,7 +42,6 @@ function roleRooms(role: string | undefined): string[] {
     case "RADIOLOGIST":
       return ["radiology"];
     case "ACCOUNTANT":
-    case "RECEPTIONIST":
       return ["billing"];
     case "NURSE":
       return ["ipd"];

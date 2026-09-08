@@ -161,7 +161,7 @@ function JourneyInner() {
   const editReception = canEdit(role, ["RECEPTIONIST"]);
   const editTriage = canEdit(role, ["NURSE"]);
   const editDoctor = canEdit(role, ["DOCTOR"]);
-  const editBilling = canEdit(role, ["ACCOUNTANT", "RECEPTIONIST"]);
+  const editBilling = canEdit(role, ["ACCOUNTANT"]);
 
   const run = async (fn: () => Promise<void>) => {
     setBusy(true);

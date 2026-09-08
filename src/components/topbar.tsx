@@ -30,32 +30,34 @@ import { connectRealtime } from "@/lib/realtime-client";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Avatar } from "./ui";
 
-const SEARCH_ROUTES: Array<{ label: string; href: string; keywords: string }> = [
-  { label: "Front Desk", href: "/front-desk", keywords: "check-in reception" },
-  { label: "Patients", href: "/patients", keywords: "register mrn" },
-  { label: "Appointments", href: "/appointments", keywords: "schedule booking" },
-  { label: "Triage", href: "/triage", keywords: "vitals nurse" },
-  { label: "Consultations", href: "/consultations", keywords: "doctor diagnosis" },
-  { label: "Follow-ups", href: "/follow-ups", keywords: "review schedule" },
-  { label: "Laboratory", href: "/laboratory", keywords: "lab results" },
-  { label: "Pharmacy", href: "/pharmacy", keywords: "medications stock" },
-  { label: "Billing", href: "/billing", keywords: "invoice mpesa claim" },
+const SEARCH_ROUTES: Array<{ label: string; href: string; keywords: string; module?: keyof typeof import("@/lib/roles").MODULE_ACCESS }> = [
+  { label: "Front Desk", href: "/front-desk", keywords: "check-in reception", module: "front-desk" },
+  { label: "Patients", href: "/patients", keywords: "register mrn", module: "patients" },
+  { label: "Appointments", href: "/appointments", keywords: "schedule booking", module: "appointments" },
+  { label: "Triage", href: "/triage", keywords: "vitals nurse", module: "triage" },
+  { label: "Consultations", href: "/consultations", keywords: "doctor diagnosis", module: "consultations" },
+  { label: "Follow-ups", href: "/follow-ups", keywords: "review schedule", module: "follow-ups" },
+  { label: "Laboratory", href: "/laboratory", keywords: "lab results", module: "laboratory" },
+  { label: "Pharmacy", href: "/pharmacy", keywords: "medications stock", module: "pharmacy" },
+  { label: "Billing", href: "/billing", keywords: "invoice mpesa claim", module: "billing" },
   {
     label: "Inpatient",
     href: "/inpatient",
     keywords: "ward bed discharge ipd admission reservation nursing",
+    module: "inpatient",
   },
-  { label: "Radiology", href: "/radiology", keywords: "scan imaging" },
-  { label: "Doctors", href: "/doctors", keywords: "clinicians" },
-  { label: "Staff", href: "/staff", keywords: "roles employees" },
-  { label: "Messages", href: "/messages", keywords: "chat conversation" },
-  { label: "My Account", href: "/account", keywords: "profile password 2fa security" },
-  { label: "Settings", href: "/settings", keywords: "hospital system" },
-  { label: "Dashboard", href: "/dashboard", keywords: "home overview" },
+  { label: "Radiology", href: "/radiology", keywords: "scan imaging", module: "radiology" },
+  { label: "Doctors", href: "/doctors", keywords: "clinicians", module: "doctors" },
+  { label: "Staff", href: "/staff", keywords: "roles employees", module: "staff" },
+  { label: "Messages", href: "/messages", keywords: "chat conversation", module: "messages" },
+  { label: "My Account", href: "/account", keywords: "profile password 2fa security", module: "account" },
+  { label: "Settings", href: "/settings", keywords: "hospital system", module: "settings" },
+  { label: "Dashboard", href: "/dashboard", keywords: "home overview", module: "dashboard" },
   {
     label: "Reports & Analytics",
     href: "/reports",
     keywords: "analytics kpi revenue reports charts",
+    module: "reports",
   },
 ];
 
@@ -89,16 +91,21 @@ export function Topbar() {
   const searchRef = useRef<HTMLDivElement>(null);
   const seenLiveIds = useRef(new Set<string>());
 
+  const role = user?.role as Role | undefined;
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return [];
-    return SEARCH_ROUTES.filter(
-      (r) =>
+    return SEARCH_ROUTES.filter((r) => {
+      if (r.module && role && !canAccess(role, r.module)) {
+        return false;
+      }
+      return (
         r.label.toLowerCase().includes(q) ||
         r.keywords.includes(q) ||
-        r.href.includes(q),
-    ).slice(0, 6);
-  }, [query]);
+        r.href.includes(q)
+      );
+    }).slice(0, 6);
+  }, [query, role]);
 
   const syncFromApi = useCallback(async () => {
     try {

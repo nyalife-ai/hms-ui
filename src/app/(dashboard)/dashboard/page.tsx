@@ -157,7 +157,6 @@ const WORKSPACE: Partial<Record<Role, { title: string; subtitle: string; links: 
       { href: "/front-desk", label: "Front desk", icon: ConciergeBell },
       { href: "/appointments", label: "Appointments", icon: CalendarDays },
       { href: "/patients", label: "Patients", icon: Users },
-      { href: "/billing", label: "Billing", icon: Receipt },
     ],
   },
   PHARMACIST: {
@@ -201,7 +200,6 @@ const WORKSPACE: Partial<Record<Role, { title: string; subtitle: string; links: 
 function reportHref(source: string, role: Role): string {
   if (source === "Billing") {
     return role === "ACCOUNTANT" ||
-      role === "RECEPTIONIST" ||
       role === "ADMIN" ||
       role === "SUPER_ADMIN"
       ? "/billing/invoices"
