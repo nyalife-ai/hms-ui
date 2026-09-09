@@ -161,11 +161,16 @@ const WORKSPACE: Partial<Record<Role, { title: string; subtitle: string; links: 
   },
   PHARMACIST: {
     title: "Pharmacy workspace",
-    subtitle: "Dispense and manage inventory from this desk",
+    subtitle: "Dispense, stock, and manage inventory from this desk",
     links: [
       { href: "/pharmacy", label: "Pharmacy overview", icon: Pill },
       { href: "/pharmacy/prescriptions", label: "Prescriptions", icon: ClipboardPlus },
       { href: "/pharmacy/medications", label: "Medications", icon: Pill },
+      { href: "/pharmacy/categories", label: "Categories", icon: Pill },
+      { href: "/pharmacy/batches", label: "Batches", icon: Pill },
+      { href: "/pharmacy/stock", label: "Stock ledger", icon: Pill },
+      { href: "/pharmacy/suppliers", label: "Suppliers", icon: Pill },
+      { href: "/pharmacy/purchase-orders", label: "Purchase orders", icon: Pill },
       { href: "/messages", label: "Messages", icon: MessageSquare },
     ],
   },
