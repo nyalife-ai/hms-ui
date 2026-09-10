@@ -14,7 +14,11 @@ type Props = {
 };
 
 const canImportRole = (role?: string) =>
-  role === "ADMIN" || role === "SUPER_ADMIN" || role === "RECEPTIONIST" || role === "PHARMACIST";
+  role === "ADMIN" ||
+  role === "SUPER_ADMIN" ||
+  role === "RECEPTIONIST" ||
+  role === "PHARMACIST" ||
+  role === "LAB_TECHNICIAN";
 
 export function BulkImportButton({
   resource,
