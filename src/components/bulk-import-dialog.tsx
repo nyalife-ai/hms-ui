@@ -83,7 +83,7 @@ export function BulkImportDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby="bulk-import-title"
-        className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-slate-100"
+        className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-surface shadow-xl ring-1 ring-border"
       >
         <div className="flex items-start justify-between gap-3 border-b border-border px-5 py-4">
           <div>
@@ -131,7 +131,7 @@ export function BulkImportDialog({
                         ),
                     )
                   }
-                  className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-3.5 py-2 text-sm font-medium text-foreground hover:bg-brand-50"
+                  className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3.5 py-2 text-sm font-medium text-foreground hover:bg-brand-50"
                 >
                   <Download className="h-4 w-4" />
                   Download template
@@ -149,7 +149,7 @@ export function BulkImportDialog({
                         ),
                     )
                   }
-                  className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-3.5 py-2 text-sm font-medium text-foreground hover:bg-brand-50"
+                  className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3.5 py-2 text-sm font-medium text-foreground hover:bg-brand-50"
                 >
                   <FileSpreadsheet className="h-4 w-4" />
                   Download example
@@ -203,7 +203,7 @@ export function BulkImportDialog({
               )}
 
               {(preview.errors.length > 0 || preview.warnings.length > 0) && (
-                <div className="overflow-hidden rounded-xl ring-1 ring-slate-100">
+                <div className="overflow-hidden rounded-xl ring-1 ring-border">
                   <div className="flex items-center justify-between bg-surface-200 px-3 py-2">
                     <p className="text-xs font-semibold uppercase tracking-wide text-foreground-light">
                       Review details

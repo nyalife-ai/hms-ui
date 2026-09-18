@@ -235,7 +235,7 @@ export function MessageActions({
 
   return (
     <div ref={rootRef}>
-      <div className="pointer-events-none absolute -top-1 right-1 z-10 hidden gap-0.5 rounded-full border border-border bg-white p-0.5 shadow-sm opacity-0 transition group-hover:pointer-events-auto group-hover:opacity-100 sm:flex">
+      <div className="pointer-events-none absolute -top-1 right-1 z-10 hidden gap-0.5 rounded-full border border-border bg-surface p-0.5 shadow-sm opacity-0 transition group-hover:pointer-events-auto group-hover:opacity-100 sm:flex">
         {actions.map((a) => (
           <IconBtn
             key={a.id}
@@ -258,7 +258,7 @@ export function MessageActions({
       {hoverReact && reactOpen ? (
         <div
           role="menu"
-          className="absolute -top-12 right-0 z-[60] hidden rounded-xl border border-border bg-white shadow-lg sm:block"
+          className="absolute -top-12 right-0 z-[60] hidden rounded-xl border border-border bg-surface shadow-lg sm:block"
         >
           {reactionPicker}
         </div>
@@ -288,7 +288,7 @@ export function MessageActions({
           />
           <div
             role="menu"
-            className="absolute inset-x-0 bottom-0 max-h-[70vh] overflow-y-auto rounded-t-2xl bg-white pb-[max(1rem,env(safe-area-inset-bottom))] pt-2 shadow-xl"
+            className="absolute inset-x-0 bottom-0 max-h-[70vh] overflow-y-auto rounded-t-2xl bg-surface pb-[max(1rem,env(safe-area-inset-bottom))] pt-2 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mx-auto mb-2 h-1 w-10 rounded-full bg-surface-200" />
@@ -300,7 +300,7 @@ export function MessageActions({
       {open && pos ? (
         <div
           role="menu"
-          className={`fixed z-[60] min-w-[168px] overflow-hidden rounded-xl border border-border bg-white py-1 shadow-lg ${
+          className={`fixed z-[60] min-w-[168px] overflow-hidden rounded-xl border border-border bg-surface py-1 shadow-lg ${
             useBottomSheet ? "hidden sm:block" : ""
           }`}
           style={popoverStyle}

@@ -10,11 +10,11 @@ import {
 } from "@/lib/messaging";
 
 const inputClass =
-  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground placeholder:text-foreground-lighter focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground placeholder:text-foreground-lighter focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 function Skeleton() {
   return (
-    <ul className="divide-y divide-slate-50" aria-hidden>
+    <ul className="divide-y divide-border" aria-hidden>
       {Array.from({ length: 7 }).map((_, i) => (
         <li key={i} className="flex items-center gap-3 px-4 py-3.5">
           <div className="h-10 w-10 animate-pulse rounded-full bg-surface-200" />
@@ -81,7 +81,7 @@ export function ConversationList({
             className="py-14"
           />
         ) : (
-          <ul className="divide-y divide-slate-50">
+          <ul className="divide-y divide-border">
             {conversations.map((c) => {
               const title = conversationDisplayName(c, currentUserId);
               const other =

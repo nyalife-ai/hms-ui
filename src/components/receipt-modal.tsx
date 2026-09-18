@@ -187,7 +187,7 @@ export function ReceiptModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
-      <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl">
+      <div className="w-full max-w-md rounded-2xl bg-surface p-5 shadow-xl">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-base font-semibold text-foreground">Payment receipt</h3>
           <div className="flex gap-2">
@@ -250,12 +250,12 @@ export function ReceiptModal({
             {showTaxBreakdown && (
               <>
                 {Number.isFinite(subtotalAmount) && (
-                  <li className="flex justify-between gap-3 text-slate-500">
+                  <li className="flex justify-between gap-3 text-foreground-lighter">
                     <span>Subtotal</span>
                     <span>KES {money(subtotalAmount)}</span>
                   </li>
                 )}
-                <li className="flex justify-between gap-3 text-slate-500">
+                <li className="flex justify-between gap-3 text-foreground-lighter">
                   <span>Tax{taxRateLabel ? ` (${taxRateLabel}%)` : ""}</span>
                   <span>KES {money(taxAmount)}</span>
                 </li>

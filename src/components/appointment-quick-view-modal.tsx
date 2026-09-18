@@ -108,8 +108,8 @@ export function AppointmentQuickViewModal({
                   onClick={() => setTab(item.id)}
                   className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm transition ${
                     active
-                      ? "bg-white font-semibold text-brand-700 shadow-sm"
-                      : "font-medium text-foreground-light hover:bg-white/70"
+                      ? "bg-surface font-semibold text-brand-700 shadow-sm"
+                      : "font-medium text-foreground-light hover:bg-surface/70"
                   }`}
                 >
                   <Icon

@@ -261,7 +261,7 @@ export const VoiceRecorder = forwardRef<VoiceRecorderHandle, VoiceRecorderProps>
           <button
             type="button"
             onClick={cancelRecording}
-            className="rounded-lg px-2 py-1 text-xs font-medium text-foreground-light hover:bg-white"
+            className="rounded-lg px-2 py-1 text-xs font-medium text-foreground-light hover:bg-surface-200"
           >
             Cancel
           </button>
@@ -292,7 +292,7 @@ export const VoiceRecorder = forwardRef<VoiceRecorderHandle, VoiceRecorderProps>
           <button
             type="button"
             onClick={discardPreview}
-            className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-foreground-light hover:bg-white"
+            className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-foreground-light hover:bg-surface-200"
             aria-label="Discard voice note"
           >
             <Trash2 className="h-3.5 w-3.5" />

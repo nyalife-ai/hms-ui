@@ -24,7 +24,7 @@ import { buildListQuery, toPageMeta, unwrapPage } from "@/lib/pagination";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 
 const inputClass =
-  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 const STATUS_TONE: Record<string, BadgeTone> = {
   PENDING: "amber",
@@ -185,7 +185,7 @@ export default function LabResultsPage() {
             </option>
           ))}
         </select>
-        <label className="flex items-center gap-2 rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground-light">
+        <label className="flex items-center gap-2 rounded-xl border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground-light">
           <input
             type="checkbox"
             checked={criticalOnly}
@@ -196,7 +196,7 @@ export default function LabResultsPage() {
           />
           Critical only
         </label>
-        <label className="flex items-center gap-2 rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground-light">
+        <label className="flex items-center gap-2 rounded-xl border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground-light">
           <input
             type="checkbox"
             checked={unverifiedOnly}

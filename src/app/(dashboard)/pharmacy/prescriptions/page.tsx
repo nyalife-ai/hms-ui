@@ -15,7 +15,7 @@ import { buildListQuery, toPageMeta, unwrapPage } from "@/lib/pagination";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 
 const inputClass =
-  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 type Rx = {
   id: string;
@@ -372,7 +372,7 @@ export default function PharmacyPrescriptionsPage() {
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
-          <div className="max-h-[90vh] w-full max-w-md space-y-3 overflow-y-auto rounded-2xl bg-white p-5 shadow-xl">
+          <div className="max-h-[90vh] w-full max-w-md space-y-3 overflow-y-auto rounded-2xl bg-surface p-5 shadow-xl">
             <div className="flex justify-between">
               <h2 className="font-semibold text-foreground">New prescription</h2>
               <button type="button" onClick={() => setOpen(false)}>
@@ -514,7 +514,7 @@ export default function PharmacyPrescriptionsPage() {
 
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
-          <div className="max-h-[90vh] w-full max-w-lg space-y-3 overflow-y-auto rounded-2xl bg-white p-5 shadow-xl">
+          <div className="max-h-[90vh] w-full max-w-lg space-y-3 overflow-y-auto rounded-2xl bg-surface p-5 shadow-xl">
             <div className="flex items-center justify-between">
               <h2 className="font-semibold text-foreground">
                 {detail.prescriptionNumber || detail.id.slice(0, 8)}
@@ -578,7 +578,7 @@ export default function PharmacyPrescriptionsPage() {
 
       {cancelId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
-          <div className="w-full max-w-md space-y-3 rounded-2xl bg-white p-5 shadow-xl">
+          <div className="w-full max-w-md space-y-3 rounded-2xl bg-surface p-5 shadow-xl">
             <h2 className="font-semibold text-foreground">Cancel prescription</h2>
             <div>
               <FieldLabel optional>Reason</FieldLabel>
@@ -598,7 +598,7 @@ export default function PharmacyPrescriptionsPage() {
 
       {voidId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
-          <div className="w-full max-w-md space-y-3 rounded-2xl bg-white p-5 shadow-xl">
+          <div className="w-full max-w-md space-y-3 rounded-2xl bg-surface p-5 shadow-xl">
             <h2 className="font-semibold text-foreground">Void prescription</h2>
             <p className="text-xs text-foreground-light">Use void after a clinical or legal correction. Reason is required.</p>
             <div>

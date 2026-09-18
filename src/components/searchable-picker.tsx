@@ -72,7 +72,7 @@ export function SearchablePicker({
   return (
     <div ref={rootRef} className="relative">
       <div
-        className={`flex items-center gap-2 rounded-xl border bg-white px-3 py-2.5 ${
+        className={`flex items-center gap-2 rounded-xl border bg-surface px-3 py-2.5 ${
           open ? "border-brand-400 ring-2 ring-brand-400/20" : "border-border"
         } ${disabled ? "opacity-50" : ""}`}
       >
@@ -103,7 +103,7 @@ export function SearchablePicker({
       </div>
 
       {open && !disabled && (
-        <div className="absolute z-30 mt-1 max-h-64 w-full overflow-y-auto rounded-xl border border-border bg-white py-1 shadow-lg">
+        <div className="absolute z-30 mt-1 max-h-64 w-full overflow-y-auto rounded-xl border border-border bg-surface py-1 shadow-lg">
           {filtered.length === 0 ? (
             <p className="px-3 py-2.5 text-xs text-foreground-lighter">{emptyMessage}</p>
           ) : (

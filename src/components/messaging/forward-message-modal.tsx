@@ -84,7 +84,7 @@ export function ForwardMessageModal({
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Search conversations…"
-          className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20"
+          className="w-full rounded-xl border border-border px-3 py-2 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20"
         />
         {error ? (
           <p className="text-sm text-rose-500" role="alert">
@@ -108,7 +108,7 @@ export function ForwardMessageModal({
                     className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-brand-50 disabled:opacity-50"
                   >
                     <Avatar name={name} size="sm" />
-                    <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-800">
+                    <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
                       {name}
                     </span>
                     {busyId === c.id ? (
@@ -123,7 +123,7 @@ export function ForwardMessageModal({
               );
             })}
             {!filtered.length ? (
-              <li className="py-6 text-center text-sm text-slate-400">
+              <li className="py-6 text-center text-sm text-foreground-lighter">
                 No conversations found
               </li>
             ) : null}

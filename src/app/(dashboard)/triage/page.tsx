@@ -20,7 +20,7 @@ import {
 import { useVisits, type Visit, type Vitals } from "@/lib/visits";
 
 const inputClass =
-  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground placeholder:text-foreground-lighter focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground placeholder:text-foreground-lighter focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 const EMPTY_VITALS: Vitals = {
   temperature: "",
@@ -350,7 +350,7 @@ export default function TriagePage() {
         }
       />
 
-      <div className="mb-3 flex gap-1 rounded-xl border border-slate-100 bg-white p-1 md:hidden">
+      <div className="mb-3 flex gap-1 rounded-xl border border-border bg-surface p-1 md:hidden">
         {(
           [
             ["queue", `Queue (${queue.length})`],
@@ -364,7 +364,7 @@ export default function TriagePage() {
             className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium transition ${
               mobilePane === id
                 ? "bg-brand-50 text-brand-700"
-                : "text-slate-500 hover:bg-slate-50"
+                : "text-foreground-light hover:bg-surface-200"
             }`}
           >
             {label}

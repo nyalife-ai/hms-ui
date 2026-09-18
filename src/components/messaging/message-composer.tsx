@@ -254,7 +254,7 @@ export function MessageComposer({
   const canSend = Boolean(text.trim() || file) && !busy && !disabled;
 
   return (
-    <div className="sticky bottom-0 shrink-0 border-t border-border bg-white px-3 py-3 sm:px-4">
+    <div className="sticky bottom-0 shrink-0 border-t border-border bg-surface px-3 py-3 sm:px-4">
       {replyTo ? (
         <div className="mb-2 flex items-start gap-2 rounded-xl bg-brand-50/70 px-3 py-2 text-xs text-foreground-light">
           <div className="min-w-0 flex-1">
@@ -264,7 +264,7 @@ export function MessageComposer({
           <button
             type="button"
             onClick={onClearReply}
-            className="rounded-lg p-1 text-foreground-lighter hover:bg-white hover:text-foreground-light"
+            className="rounded-lg p-1 text-foreground-lighter hover:bg-surface-200 hover:text-foreground-light"
             aria-label="Cancel reply"
             title="Cancel reply"
           >
@@ -300,7 +300,7 @@ export function MessageComposer({
               setAttachment(null);
               if (fileRef.current) fileRef.current.value = "";
             }}
-            className="rounded-lg p-1 text-foreground-lighter hover:bg-white"
+            className="rounded-lg p-1 text-foreground-lighter hover:bg-surface-200"
             aria-label="Remove attachment"
             title="Remove attachment"
           >
@@ -318,7 +318,7 @@ export function MessageComposer({
       <div className="relative flex items-end gap-2">
         {mentionQuery != null && mentionCandidates.length ? (
           <ul
-            className="absolute bottom-full left-12 z-20 mb-1 max-h-48 w-64 overflow-auto rounded-xl border border-border bg-white py-1 shadow-lg"
+            className="absolute bottom-full left-12 z-20 mb-1 max-h-48 w-64 overflow-auto rounded-xl border border-border bg-surface py-1 shadow-lg"
             role="listbox"
           >
             {mentionCandidates.map((p, i) => (
@@ -405,7 +405,7 @@ export function MessageComposer({
             detectMention(value, e.target.selectionStart ?? value.length);
           }}
           onKeyDown={onKeyDown}
-          className="max-h-32 min-h-[42px] flex-1 resize-none rounded-2xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20"
+          className="max-h-32 min-h-[42px] flex-1 resize-none rounded-2xl border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20"
         />
 
         <button

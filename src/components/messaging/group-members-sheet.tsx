@@ -200,7 +200,7 @@ export function GroupMembersSheet({
         className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
           pr === "ADMIN"
             ? "bg-brand-50 text-brand-700"
-            : "bg-slate-100 text-slate-500"
+            : "bg-surface-200 text-foreground-lighter"
         }`}
       >
         {pr}
@@ -217,13 +217,13 @@ export function GroupMembersSheet({
           </p>
         ) : null}
 
-        <div className="rounded-xl border border-slate-100 bg-slate-50/80 px-3 py-2">
+        <div className="rounded-xl border border-border bg-surface-200/80 px-3 py-2">
           {renaming && isConvAdmin ? (
             <div className="flex gap-2">
               <input
                 value={nameDraft}
                 onChange={(e) => setNameDraft(e.target.value)}
-                className="min-w-0 flex-1 rounded-lg border border-slate-200 px-2 py-1.5 text-sm"
+                className="min-w-0 flex-1 rounded-lg border border-border bg-surface px-2 py-1.5 text-sm text-foreground"
                 aria-label="Group name"
                 autoFocus
               />
@@ -239,10 +239,10 @@ export function GroupMembersSheet({
           ) : (
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-foreground-lighter">
                   Group name
                 </p>
-                <p className="truncate text-sm font-semibold text-slate-800">
+                <p className="truncate text-sm font-semibold text-foreground">
                   {conversation.name || "Untitled group"}
                 </p>
               </div>
@@ -260,7 +260,7 @@ export function GroupMembersSheet({
         </div>
 
         <div>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-foreground-lighter">
             Members ({conversation.participants.length})
           </p>
           <ul className="max-h-64 space-y-2 overflow-y-auto">
@@ -273,17 +273,17 @@ export function GroupMembersSheet({
               return (
                 <li
                   key={p.userId}
-                  className="flex items-center gap-3 rounded-xl border border-slate-100 px-3 py-2"
+                  className="flex items-center gap-3 rounded-xl border border-border px-3 py-2"
                 >
                   <Avatar name={p.displayName} size="sm" />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-slate-800">
+                    <p className="truncate text-sm font-medium text-foreground">
                       {p.displayName}
                       {isSelf ? (
-                        <span className="ml-1 text-xs text-slate-400">(you)</span>
+                        <span className="ml-1 text-xs text-foreground-lighter">(you)</span>
                       ) : null}
                     </p>
-                    <p className="truncate text-xs text-slate-400">{p.role}</p>
+                    <p className="truncate text-xs text-foreground-lighter">{p.role}</p>
                   </div>
                   {roleBadge(p)}
                   <div className="flex items-center gap-0.5">
@@ -298,7 +298,7 @@ export function GroupMembersSheet({
                             p.displayName,
                           )
                         }
-                        className="rounded-lg p-2 text-slate-400 hover:bg-brand-50 hover:text-brand-700 disabled:opacity-40"
+                        className="rounded-lg p-2 text-foreground-lighter hover:bg-brand-50 hover:text-brand-700 disabled:opacity-40"
                         aria-label={
                           isAdmin ? "Demote to member" : "Promote to admin"
                         }
@@ -318,7 +318,7 @@ export function GroupMembersSheet({
                         type="button"
                         disabled={busyId === p.userId}
                         onClick={() => void removeUser(p.userId, p.displayName)}
-                        className="rounded-lg p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600 disabled:opacity-40"
+                        className="rounded-lg p-2 text-foreground-lighter hover:bg-rose-50 hover:text-rose-600 disabled:opacity-40"
                         aria-label={
                           isSelf ? "Leave conversation" : "Remove member"
                         }
@@ -339,7 +339,7 @@ export function GroupMembersSheet({
         </div>
 
         {isConvAdmin ? (
-          <div className="space-y-2 border-t border-slate-100 pt-3">
+          <div className="space-y-2 border-t border-border pt-3">
             {!adding ? (
               <button
                 type="button"
@@ -355,7 +355,7 @@ export function GroupMembersSheet({
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder="Search staff…"
-                    className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20"
+                    className="w-full rounded-xl border border-border bg-surface px-3 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20"
                     autoFocus
                   />
                   <button
@@ -365,7 +365,7 @@ export function GroupMembersSheet({
                       setQuery("");
                       setResults([]);
                     }}
-                    className="rounded-lg p-2.5 text-slate-400 hover:bg-slate-50"
+                    className="rounded-lg p-2.5 text-foreground-lighter hover:bg-surface-200"
                     aria-label="Cancel add"
                   >
                     <X className="h-4 w-4" />
@@ -386,7 +386,7 @@ export function GroupMembersSheet({
                         className="flex min-h-11 w-full items-center gap-2 rounded-xl px-2 py-2 text-left hover:bg-brand-50 disabled:opacity-40"
                       >
                         <Avatar name={u.displayName} size="sm" />
-                        <span className="min-w-0 flex-1 truncate text-sm text-slate-700">
+                        <span className="min-w-0 flex-1 truncate text-sm text-foreground-light">
                           {u.displayName}
                         </span>
                         {busyId === u.userId ? (

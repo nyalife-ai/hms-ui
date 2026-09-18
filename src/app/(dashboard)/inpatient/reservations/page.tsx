@@ -19,7 +19,7 @@ import type { IpdBed } from "@/lib/catalog";
 import { unwrapPage } from "@/lib/pagination";
 
 const inputClass =
-  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 type Reservation = {
   id: string;
@@ -191,7 +191,7 @@ export default function IpdReservationsPage() {
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl">
+          <div className="w-full max-w-md rounded-2xl bg-surface p-5 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-base font-semibold text-foreground">Reserve bed</h2>
               <button onClick={() => setOpen(false)} className="rounded-lg p-1 text-foreground-lighter hover:bg-surface-200">
@@ -242,7 +242,7 @@ export default function IpdReservationsPage() {
 
       {convertId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl">
+          <div className="w-full max-w-md rounded-2xl bg-surface p-5 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-base font-semibold text-foreground">Convert to admission</h2>
               <button onClick={() => setConvertId("")} className="rounded-lg p-1 text-foreground-lighter hover:bg-surface-200">

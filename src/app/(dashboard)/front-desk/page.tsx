@@ -32,7 +32,7 @@ import type {
 } from "@/lib/insurance";
 
 const inputClass =
-  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground placeholder:text-foreground-lighter focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground placeholder:text-foreground-lighter focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 type VerifyState =
   | "IDLE"
@@ -532,7 +532,7 @@ export default function FrontDeskPage() {
                 {eligibility?.member &&
                   verifyState !== "IDLE" &&
                   verifyState !== "CHECKING" && (
-                    <div className="flex items-center gap-3 rounded-xl bg-white p-3.5">
+                    <div className="flex items-center gap-3 rounded-xl bg-surface p-3.5">
                       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700">
                         <UserCheck className="h-4 w-4" />
                       </span>

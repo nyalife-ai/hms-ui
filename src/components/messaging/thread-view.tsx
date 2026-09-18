@@ -350,7 +350,7 @@ function MediaLightbox({
       {index > 0 ? (
         <button
           type="button"
-          className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-white/90 p-2 text-foreground"
+          className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-surface/90 p-2 text-foreground"
           onClick={(e) => {
             e.stopPropagation();
             onIndexChange(index - 1);
@@ -363,7 +363,7 @@ function MediaLightbox({
       {index < items.length - 1 ? (
         <button
           type="button"
-          className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-white/90 p-2 text-foreground"
+          className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-surface/90 p-2 text-foreground"
           onClick={(e) => {
             e.stopPropagation();
             onIndexChange(index + 1);
@@ -376,7 +376,7 @@ function MediaLightbox({
 
       <button
         type="button"
-        className="absolute right-4 top-4 rounded-full bg-white/90 p-2 text-foreground"
+        className="absolute right-4 top-4 rounded-full bg-surface/90 p-2 text-foreground"
         onClick={onClose}
         aria-label="Close preview"
       >
@@ -401,7 +401,7 @@ function MediaFailState({
         tall ? "h-28" : "h-10"
       }`}
     >
-      <span className={`text-xs ${mine ? "text-white/80" : "text-slate-500"}`}>
+      <span className={`text-xs ${mine ? "text-white/80" : "text-foreground-lighter"}`}>
         Failed to load
       </span>
       <button
@@ -410,7 +410,7 @@ function MediaFailState({
         className={`rounded-lg px-2 py-1 text-xs font-medium ${
           mine
             ? "bg-white/20 text-white hover:bg-white/30"
-            : "bg-white text-brand-700 ring-1 ring-slate-200 hover:bg-brand-50"
+            : "bg-surface text-brand-700 ring-1 ring-border hover:bg-brand-50"
         }`}
       >
         Retry
@@ -640,7 +640,7 @@ function MessageBubble({
             ? "bg-surface-200 italic text-foreground-lighter"
             : mine
               ? "bg-brand-500 text-white"
-              : "bg-[#eef4f4] text-foreground"
+              : "bg-surface-200 text-foreground"
         } ${m.pending ? "opacity-70" : ""} ${
           highlighted
             ? mine
@@ -688,7 +688,7 @@ function MessageBubble({
             className={`mb-2 w-full rounded-lg border-l-2 px-2 py-1 text-left text-xs ${
               mine
                 ? "border-white/50 bg-white/15 text-white/90"
-                : "border-brand-400 bg-white/70 text-foreground-light"
+                : "border-brand-400 bg-surface/70 text-foreground-light"
             }`}
           >
             {replyPreview}
@@ -706,7 +706,7 @@ function MessageBubble({
               className={`w-full rounded-lg border px-2 py-1.5 text-sm ${
                 mine
                   ? "border-white/30 bg-white/15 text-white placeholder:text-white/50"
-                  : "border-slate-200 bg-white text-slate-700"
+                  : "border-border bg-surface text-foreground"
               }`}
               aria-label="Edit message"
             />
@@ -715,7 +715,7 @@ function MessageBubble({
                 type="button"
                 onClick={() => setEditing(false)}
                 className={`rounded-lg px-2 py-1 text-xs font-medium ${
-                  mine ? "bg-white/15 text-white" : "bg-white text-slate-600"
+                  mine ? "bg-white/15 text-white" : "bg-surface text-foreground-light"
                 }`}
                 disabled={editBusy}
               >
@@ -860,7 +860,7 @@ function MessageBubble({
                       className={`inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium ${
                         mine
                           ? "bg-white/15 text-white hover:bg-white/25"
-                          : "bg-white text-brand-700 hover:bg-brand-50"
+                          : "bg-surface text-brand-700 hover:bg-brand-50"
                       }`}
                     >
                       <Paperclip className="h-3 w-3" />
@@ -894,7 +894,7 @@ function MessageBubble({
                         : "bg-white/10 text-white/90"
                       : mineReact
                         ? "bg-brand-100 text-brand-800 ring-1 ring-brand-200"
-                        : "bg-white text-foreground-light ring-1 ring-slate-100"
+                        : "bg-surface text-foreground-light ring-1 ring-border"
                   }`}
                 >
                   {r.reactionType} {r.count}
@@ -1137,7 +1137,7 @@ export function ThreadView({
             <div key={m.clientMessageId ?? m.id}>
               {showDate ? (
                 <div className="my-3 flex justify-center">
-                  <span className="rounded-full bg-white px-3 py-1 text-[11px] font-medium text-foreground-light shadow-sm ring-1 ring-slate-100">
+                  <span className="rounded-full bg-surface px-3 py-1 text-[11px] font-medium text-foreground-light shadow-sm ring-1 ring-border">
                     {formatDateSeparator(m.createdAt)}
                   </span>
                 </div>

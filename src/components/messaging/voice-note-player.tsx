@@ -160,7 +160,7 @@ export function VoiceNotePlayer({
   const progress = duration > 0 ? current / duration : 0;
   const barFill = sent ? "bg-white" : "bg-brand-500";
   const barMuted = sent ? "bg-white/35" : "bg-brand-200";
-  const text = sent ? "text-white" : "text-slate-600";
+  const text = sent ? "text-white" : "text-foreground-light";
   const btn = sent
     ? "bg-white/20 text-white hover:bg-white/30"
     : "bg-brand-500 text-white hover:bg-brand-600";
@@ -174,7 +174,7 @@ export function VoiceNotePlayer({
             type="button"
             onClick={onRetry}
             className={`rounded-lg px-2 py-1 font-medium ${
-              sent ? "bg-white/20 hover:bg-white/30" : "bg-white ring-1 ring-slate-200 hover:bg-slate-50"
+              sent ? "bg-white/20 hover:bg-white/30" : "bg-surface ring-1 ring-border hover:bg-surface-200"
             }`}
           >
             Retry
@@ -248,7 +248,7 @@ export function VoiceNotePlayer({
           type="button"
           onClick={() => setRate((r) => (r === 1 ? 1.5 : 1))}
           className={`rounded px-1 text-[10px] font-semibold ${
-            sent ? "bg-white/15 hover:bg-white/25" : "bg-white/80 hover:bg-white"
+            sent ? "bg-white/15 hover:bg-white/25" : "bg-surface/80 hover:bg-surface"
           }`}
           aria-label={`Playback speed ${rate}x`}
           title={decodeError ? "Waveform approximate" : undefined}

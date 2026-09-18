@@ -543,7 +543,7 @@ export default function PatientProfilePage() {
 
           <Card>
             <CardHeader title="Clinical History" />
-            <p className="mb-3 px-1 text-xs text-slate-500">
+            <p className="mb-3 px-1 text-xs text-foreground-lighter">
               Previous visits, appointments, and consultations for this patient.
             </p>
             <Table headers={["Encounter", "When", "Provider", "Status", ""]}>

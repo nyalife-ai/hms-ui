@@ -30,7 +30,7 @@ import { statusLabel } from "@/lib/lab-types";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 
 const inputClass =
-  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 const STATUS_TONE: Record<string, BadgeTone> = {
   PENDING: "amber",
@@ -469,7 +469,7 @@ export default function LabRequestsPage() {
                       setSelectedDate(key);
                       if (items.length > 3) setCalendarMode("day");
                     }}
-                    className={`min-h-[88px] bg-white p-1.5 text-left ${
+                    className={`min-h-[88px] bg-surface p-1.5 text-left ${
                       inMonth ? "" : "opacity-40"
                     } ${isSelected ? "ring-2 ring-inset ring-brand-400" : ""}`}
                   >
@@ -604,7 +604,7 @@ export default function LabRequestsPage() {
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
-          <div className="w-full max-w-md space-y-3 rounded-2xl bg-white p-5 shadow-xl">
+          <div className="w-full max-w-md space-y-3 rounded-2xl bg-surface p-5 shadow-xl">
             <div className="flex justify-between">
               <h2 className="font-semibold">New lab request</h2>
               <button type="button" onClick={() => setOpen(false)}>

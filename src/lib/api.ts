@@ -168,4 +168,39 @@ export async function api<T>(
   return res.json() as Promise<T>;
 }
 
+/** Download a binary API response (e.g. a generated file) and save it via the browser. */
+export async function downloadFile(path: string, filename: string): Promise<void> {
+  const res = await authenticatedFetch(`${API_URL}${path}`);
+  if (!res.ok) {
+    const text = await res.text();
+    throw new ApiError(res.status, text || 'Download failed');
+  }
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/** Multipart upload — omit Content-Type so the browser sets the multipart boundary. */
+export async function uploadFile<T>(path: string, formData: FormData): Promise<T> {
+  const res = await authenticatedFetch(`${API_URL}${path}`, {
+    method: 'POST',
+    body: formData,
+  });
+  if (!res.ok) {
+    let message = await res.text();
+    try {
+      const body = JSON.parse(message);
+      message = body.message || message;
+    } catch {
+      // not JSON — use raw text
+    }
+    throw new ApiError(res.status, message || 'Upload failed');
+  }
+  return res.json() as Promise<T>;
+}
+
 export { API_URL };

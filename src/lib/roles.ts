@@ -54,7 +54,7 @@ export const MODULE_ACCESS: Record<string, Role[]> = {
   inpatient: ["SUPER_ADMIN", "ADMIN", "DOCTOR", "NURSE"],
   pharmacy: ["SUPER_ADMIN", "ADMIN", "PHARMACIST"],
   laboratory: ["SUPER_ADMIN", "ADMIN", "LAB_TECHNICIAN"],
-  radiology: ["SUPER_ADMIN", "ADMIN", "RADIOLOGIST"],
+  radiology: ["SUPER_ADMIN", "ADMIN", "RADIOLOGIST", "DOCTOR"],
   /** Cash desk / invoices / payments / claims */
   billing: ["SUPER_ADMIN", "ADMIN", "ACCOUNTANT"],
   /** Chart of accounts, journals, tax, periods, service catalog config */

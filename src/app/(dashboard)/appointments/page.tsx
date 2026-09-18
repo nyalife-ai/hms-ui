@@ -65,7 +65,7 @@ const STATUS_TONES: Record<string, BadgeTone> = {
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
 
 const inputClass =
-  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 type ViewMode = "list" | "calendar";
 type CalendarMode = "month" | "week" | "day";
@@ -716,7 +716,7 @@ export default function AppointmentsPage() {
                         ? "bg-amber-50 ring-2 ring-inset ring-amber-300"
                         : isToday
                           ? "bg-[#fffbeb]"
-                          : "bg-white hover:bg-surface-200/80"
+                          : "bg-surface hover:bg-surface-200/80"
                     } ${!inMonth ? "opacity-45" : ""}`}
                   >
                     <div className="mb-1 flex items-center justify-between">
@@ -782,7 +782,7 @@ export default function AppointmentsPage() {
                     className={`rounded-xl border p-3 text-left ${
                       selected
                         ? "border-amber-300 bg-amber-50"
-                        : "border-border bg-white hover:border-brand-200"
+                        : "border-border bg-surface hover:border-brand-200"
                     }`}
                   >
                     <p className="text-[11px] font-semibold uppercase text-foreground-lighter">
@@ -896,7 +896,7 @@ export default function AppointmentsPage() {
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
-          <div className="max-h-[90vh] w-full max-w-lg space-y-3 overflow-y-auto rounded-2xl bg-white p-5 shadow-xl">
+          <div className="max-h-[90vh] w-full max-w-lg space-y-3 overflow-y-auto rounded-2xl bg-surface p-5 shadow-xl">
             <div className="flex justify-between">
               <h2 className="font-semibold">Book appointment</h2>
               <button

@@ -239,7 +239,7 @@ export default function LabResultDetailPage() {
                 {panel.lines.map((r) => (
                   <div
                     key={r.id}
-                    className={`rounded-2xl border px-4 py-3 ${r.isCritical ? "border-rose-200 bg-rose-50/40" : "border-border bg-white"}`}
+                    className={`rounded-2xl border px-4 py-3 ${r.isCritical ? "border-rose-200 bg-rose-50/40" : "border-border bg-surface"}`}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div>

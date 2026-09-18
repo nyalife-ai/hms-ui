@@ -10,7 +10,7 @@ import { useAuth } from "@/lib/auth";
 import { buildListQuery, unwrapPage } from "@/lib/pagination";
 
 const inputClass =
-  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 const WEEKDAYS = [
   "Monday",
@@ -265,7 +265,7 @@ export default function SettingsPage() {
             <img
               src={value}
               alt="Clinic logo"
-              className="h-16 w-auto rounded-lg border border-border bg-white object-contain p-1"
+              className="h-16 w-auto rounded-lg border border-border bg-surface object-contain p-1"
             />
           ) : (
             <p className="text-xs text-foreground-lighter">No logo uploaded yet.</p>
@@ -302,7 +302,7 @@ export default function SettingsPage() {
               }
               className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
                 on
-                  ? "bg-slate-200 text-foreground hover:bg-slate-300"
+                  ? "bg-surface-200 text-foreground hover:bg-border"
                   : "bg-brand-500 text-white hover:bg-brand-600"
               }`}
             >
@@ -393,7 +393,7 @@ export default function SettingsPage() {
               type="color"
               value={value || "#058b7c"}
               onChange={(e) => setValue(group, key, e.target.value)}
-              className="h-10 w-14 cursor-pointer rounded border border-border bg-white"
+              className="h-10 w-14 cursor-pointer rounded border border-border bg-surface"
             />
             <input
               className={inputClass}
@@ -468,7 +468,7 @@ export default function SettingsPage() {
     <RoleGuard module="settings">
       <PageHeader title="Settings" subtitle="System configuration for NyaLife HMS" />
 
-      <p className="mb-5 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600 shadow-sm">
+      <p className="mb-5 rounded-xl border border-border bg-surface px-4 py-3 text-sm text-foreground-light shadow-sm">
         Personal profile, password, and 2FA are under{" "}
         <Link href="/account" className="font-semibold text-brand-700 hover:underline">
           My Account
@@ -494,7 +494,7 @@ export default function SettingsPage() {
             className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition ${
               section === tab.id
                 ? "bg-brand-500 text-white"
-                : "bg-white text-foreground-light shadow-sm hover:bg-brand-50 hover:text-brand-700"
+                : "bg-surface text-foreground-light shadow-sm hover:bg-brand-50 hover:text-brand-700"
             }`}
           >
             <tab.icon className="h-4 w-4" />

@@ -54,7 +54,7 @@ export function PushNotificationsBootstrap() {
 
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex justify-center px-4">
-      <div className="pointer-events-auto flex max-w-lg items-start gap-3 rounded-2xl border border-border bg-white p-4 shadow-lg">
+      <div className="pointer-events-auto flex max-w-lg items-start gap-3 rounded-2xl border border-border bg-surface p-4 shadow-lg">
         <div className="mt-0.5 rounded-full bg-brand-50 p-2 text-brand-700">
           <Bell className="h-4 w-4" />
         </div>
@@ -81,7 +81,7 @@ export function PushNotificationsBootstrap() {
             <button
               type="button"
               onClick={dismiss}
-              className="inline-flex items-center gap-1 rounded-full bg-surface-200 px-3.5 py-1.5 text-xs font-semibold text-foreground-light hover:bg-slate-200"
+              className="inline-flex items-center gap-1 rounded-full bg-surface-200 px-3.5 py-1.5 text-xs font-semibold text-foreground-light hover:bg-border"
             >
               <BellOff className="h-3.5 w-3.5" /> Not now
             </button>

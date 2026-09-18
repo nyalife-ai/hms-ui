@@ -28,7 +28,7 @@ import {
 } from "@/lib/visits";
 
 const inputClass =
-  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground placeholder:text-foreground-lighter focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground placeholder:text-foreground-lighter focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 const EMPTY_VITALS: Vitals = {
   temperature: "",
@@ -254,9 +254,9 @@ function JourneyInner() {
                 title="Clinical History"
                 subtitle="Link this visit to a patient record to see prior encounters"
               />
-              <p className="px-5 pb-5 text-sm text-slate-400">
+              <p className="px-5 pb-5 text-sm text-foreground-lighter">
                 No patient id on this visit yet. Open the patient registry by MRN{" "}
-                <span className="font-semibold text-slate-600">{visit.mrn}</span>{" "}
+                <span className="font-semibold text-foreground-light">{visit.mrn}</span>{" "}
                 to review prior history.
               </p>
             </Card>

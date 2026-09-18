@@ -78,7 +78,7 @@ export function PushDeviceSettings() {
             type="button"
             disabled={busy}
             onClick={() => void disable()}
-            className="rounded-full bg-surface-200 px-4 py-2 text-sm font-semibold text-foreground hover:bg-slate-200 disabled:opacity-50"
+            className="rounded-full bg-surface-200 px-4 py-2 text-sm font-semibold text-foreground hover:bg-border disabled:opacity-50"
           >
             Disable on this device
           </button>

@@ -55,7 +55,7 @@ export function ConsultationQuickViewModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4 backdrop-blur-[1px]">
-      <div className="flex max-h-[90vh] w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-xl">
+      <div className="flex max-h-[90vh] w-full max-w-3xl overflow-hidden rounded-2xl bg-surface shadow-xl">
         <aside className="flex w-[220px] shrink-0 flex-col border-r border-border bg-[#faf7f9]">
           <div className="px-4 pb-3 pt-5">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-brand-600">
@@ -83,8 +83,8 @@ export function ConsultationQuickViewModal({
                   onClick={() => setTab(item.id)}
                   className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm transition ${
                     active
-                      ? "bg-white font-semibold text-brand-700 shadow-sm"
-                      : "font-medium text-foreground-light hover:bg-white/70"
+                      ? "bg-surface font-semibold text-brand-700 shadow-sm"
+                      : "font-medium text-foreground-light hover:bg-surface/70"
                   }`}
                 >
                   <Icon
@@ -158,7 +158,7 @@ export function ConsultationQuickViewModal({
               {visit.appointmentId ? (
                 <Link
                   href={`/appointments/${visit.appointmentId}`}
-                  className="ml-2 inline-flex items-center justify-center rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-brand-300"
+                  className="ml-2 inline-flex items-center justify-center rounded-xl border border-border px-4 py-2 text-sm font-semibold text-foreground-light hover:border-brand-300"
                 >
                   Open appointment
                 </Link>
@@ -166,7 +166,7 @@ export function ConsultationQuickViewModal({
               {visit.patientId ? (
                 <Link
                   href={`/patients/${visit.patientId}`}
-                  className="ml-2 inline-flex items-center justify-center rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-brand-300"
+                  className="ml-2 inline-flex items-center justify-center rounded-xl border border-border px-4 py-2 text-sm font-semibold text-foreground-light hover:border-brand-300"
                 >
                   Open patient
                 </Link>

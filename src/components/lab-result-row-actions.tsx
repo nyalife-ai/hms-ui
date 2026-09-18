@@ -78,7 +78,7 @@ export function LabResultRowActions({
           left: coords.left,
           zIndex: 9999,
         }}
-        className="w-40 overflow-hidden rounded-xl border border-border bg-white py-1 shadow-lg"
+        className="w-40 overflow-hidden rounded-xl border border-border bg-surface py-1 shadow-lg"
       >
         <button
           type="button"

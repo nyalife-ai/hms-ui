@@ -8,7 +8,7 @@ import {
 } from "@/lib/clinical-record";
 
 const inputClass =
-  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground placeholder:text-foreground-lighter focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground placeholder:text-foreground-lighter focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 function Section({
   title,
@@ -20,7 +20,7 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="space-y-3 rounded-2xl border border-border bg-white p-4 sm:p-5">
+    <section className="space-y-3 rounded-2xl border border-border bg-surface p-4 sm:p-5">
       <div>
         <h3 className="text-sm font-semibold text-foreground">{title}</h3>
         {subtitle && <p className="mt-0.5 text-xs text-foreground-lighter">{subtitle}</p>}
@@ -395,7 +395,7 @@ export function ConsultationClinicalForm({
                                 ),
                             })
                           }
-                          className="self-center rounded-lg p-2 text-foreground-muted hover:bg-white hover:text-rose-500"
+                          className="self-center rounded-lg p-2 text-foreground-muted hover:bg-surface-200 hover:text-rose-500"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>

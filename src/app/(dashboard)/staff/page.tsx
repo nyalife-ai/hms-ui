@@ -19,7 +19,7 @@ import { MODULE_ACCESS, ROLE_LABELS, type Role } from "@/lib/roles";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 
 const inputClass =
-  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 const STAFF_ROLES = [
   "DOCTOR",
@@ -257,7 +257,7 @@ export default function StaffPage() {
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-50">
+              <tbody className="divide-y divide-border">
                 {Object.entries(MODULE_ACCESS).map(([module, roles]) => (
                   <tr key={module}>
                     <td className="py-2.5 pr-4 font-medium capitalize text-foreground">{module}</td>
@@ -266,7 +266,7 @@ export default function StaffPage() {
                         {roles.includes(r) ? (
                           <span className="inline-block h-2.5 w-2.5 rounded-full bg-brand-500" />
                         ) : (
-                          <span className="inline-block h-2.5 w-2.5 rounded-full bg-slate-200" />
+                          <span className="inline-block h-2.5 w-2.5 rounded-full bg-surface-200" />
                         )}
                       </td>
                     ))}
@@ -280,7 +280,7 @@ export default function StaffPage() {
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl">
+          <div className="w-full max-w-md rounded-2xl bg-surface p-5 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-base font-semibold text-foreground">Add staff member</h2>
               <button onClick={() => setOpen(false)} className="rounded-lg p-1 text-foreground-lighter hover:bg-surface-200">
@@ -334,7 +334,7 @@ export default function StaffPage() {
 
       {edit && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl">
+          <div className="w-full max-w-md rounded-2xl bg-surface p-5 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-base font-semibold text-foreground">
                 Edit staff · {edit.employeeId}

@@ -213,7 +213,7 @@ export default function LaboratoryOverviewPage() {
           <Link
             key={l.href}
             href={l.href}
-            className="rounded-2xl border border-border bg-white p-4 shadow-[0_1px_3px_rgba(23,40,46,0.05)] hover:border-brand-200"
+            className="rounded-2xl border border-border bg-surface p-4 shadow-[0_1px_3px_rgba(23,40,46,0.05)] hover:border-brand-200"
           >
             <p className="font-semibold text-foreground">{l.label}</p>
             <p className="mt-1 text-xs text-foreground-lighter">{l.hint}</p>

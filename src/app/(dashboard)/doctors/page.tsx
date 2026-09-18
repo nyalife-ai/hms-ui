@@ -20,7 +20,7 @@ import { toPageMeta } from "@/lib/pagination";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 
 const inputClass =
-  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 export default function DoctorsPage() {
   const router = useRouter();
@@ -145,7 +145,7 @@ export default function DoctorsPage() {
                   Details
                 </button>
                 {menuId === doc.id && (
-                  <div className="absolute right-0 z-10 mt-1 w-44 rounded-xl bg-white p-1.5 shadow-lg ring-1 ring-slate-100">
+                  <div className="absolute right-0 z-10 mt-1 w-44 rounded-xl bg-surface p-1.5 shadow-lg ring-1 ring-border">
                     <button
                       type="button"
                       className="block w-full rounded-lg px-3 py-2 text-left text-xs text-foreground-light hover:bg-surface-200"
@@ -197,7 +197,7 @@ export default function DoctorsPage() {
                 className={`rounded-full border border-border p-2.5 transition ${
                   doc.phone
                     ? "text-foreground-lighter hover:border-brand-300 hover:text-brand-600"
-                    : "pointer-events-none text-slate-200"
+                    : "pointer-events-none text-foreground-lighter"
                 }`}
               >
                 <Phone className="h-4 w-4" />
@@ -227,13 +227,13 @@ export default function DoctorsPage() {
       {!loading && doctors.length === 0 && (
         <p className="py-10 text-center text-sm text-foreground-lighter">No doctors found.</p>
       )}
-      <div className="mt-4 rounded-2xl border border-border bg-white">
+      <div className="mt-4 rounded-2xl border border-border bg-surface">
         <PaginationBar meta={meta} onPageChange={setPage} disabled={loading} />
       </div>
 
       {assignDoctor && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl">
+          <div className="w-full max-w-md rounded-2xl bg-surface p-5 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-base font-semibold text-foreground">
                 Assign patient · {assignDoctor.name}
@@ -309,7 +309,7 @@ export default function DoctorsPage() {
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl">
+          <div className="w-full max-w-md rounded-2xl bg-surface p-5 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-base font-semibold text-foreground">Add doctor</h2>
               <button onClick={() => setOpen(false)} className="rounded-lg p-1 text-foreground-lighter hover:bg-surface-200">

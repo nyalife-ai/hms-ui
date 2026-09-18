@@ -16,7 +16,7 @@ import {
 import { api } from "@/lib/api";
 
 const inputClass =
-  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 type Category = {
   id: string;
@@ -146,7 +146,7 @@ export default function PharmacyCategoriesPage() {
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
-          <div className="w-full max-w-md space-y-3 rounded-2xl bg-white p-5 shadow-xl">
+          <div className="w-full max-w-md space-y-3 rounded-2xl bg-surface p-5 shadow-xl">
             <div className="flex items-center justify-between">
               <h2 className="font-semibold text-foreground">
                 {editing ? "Edit category" : "Add category"}

@@ -13,7 +13,7 @@ import { toPageMeta } from "@/lib/pagination";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 
 const inputClass =
-  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 const DEPARTMENT_TYPES = ["CLINICAL", "ADMINISTRATIVE", "SUPPORT"] as const;
 
@@ -243,7 +243,7 @@ export default function DepartmentsPage() {
             setPage(1);
           }}
           placeholder="Search Departments"
-          className="w-full rounded-full border border-border bg-white py-2.5 pl-11 pr-4 text-sm text-foreground placeholder:text-foreground-lighter focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20"
+          className="w-full rounded-full border border-border bg-surface py-2.5 pl-11 pr-4 text-sm text-foreground placeholder:text-foreground-lighter focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20"
         />
       </div>
 
@@ -280,13 +280,13 @@ export default function DepartmentsPage() {
           </Card>
         ))}
       </div>
-      <div className="mt-4 rounded-2xl border border-border bg-white">
+      <div className="mt-4 rounded-2xl border border-border bg-surface">
         <PaginationBar meta={meta} onPageChange={setPage} disabled={loading} />
       </div>
 
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
-          <div className="w-full max-w-lg space-y-4 rounded-2xl bg-white p-5 shadow-xl">
+          <div className="w-full max-w-lg space-y-4 rounded-2xl bg-surface p-5 shadow-xl">
             <div className="flex items-center justify-between">
               <h2 className="font-semibold text-foreground">
                 {editingId ? "Edit department" : "New department"}

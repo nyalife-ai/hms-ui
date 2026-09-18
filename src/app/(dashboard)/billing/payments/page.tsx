@@ -22,7 +22,7 @@ import { useDebouncedValue } from "@/lib/use-debounced-value";
 import { useVisits } from "@/lib/visits";
 
 const inputClass =
-  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 type PaymentRow = {
   id: string;

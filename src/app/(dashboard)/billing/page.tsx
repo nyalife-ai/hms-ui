@@ -38,7 +38,7 @@ import { buildListQuery } from "@/lib/pagination";
 import { useVisits, type Visit } from "@/lib/visits";
 
 const inputClass =
-  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 type BillingOverview = {
   todayIssuedInvoicesTotal: string;
@@ -483,7 +483,7 @@ export default function BillingPage() {
                     <button
                       type="button"
                       onClick={() => setMpesaVisit(v)}
-                      className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-4 py-2 text-sm font-semibold text-foreground"
+                      className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-4 py-2 text-sm font-semibold text-foreground"
                     >
                       <Smartphone className="h-4 w-4" />
                       Pay via M-Pesa
@@ -576,7 +576,7 @@ export default function BillingPage() {
                             type="button"
                             onClick={() => setCashConfirm(v)}
                             disabled={busyId === v.id || !quoted}
-                            className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-4 py-2 text-xs font-semibold text-foreground transition hover:border-brand-300 disabled:opacity-50"
+                            className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-4 py-2 text-xs font-semibold text-foreground transition hover:border-brand-300 disabled:opacity-50"
                           >
                             <Wallet className="h-3.5 w-3.5" />
                             Collect cash
@@ -726,7 +726,7 @@ export default function BillingPage() {
                       <button
                         onClick={() => pollClaim(v)}
                         disabled={checkingId === v.id}
-                        className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-3 py-1.5 text-xs font-semibold text-foreground hover:border-brand-300 disabled:opacity-50"
+                        className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-foreground hover:border-brand-300 disabled:opacity-50"
                       >
                         {checkingId === v.id ? (
                           <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -761,7 +761,7 @@ export default function BillingPage() {
       {completedToday.length > 0 && (
         <Card className="mb-5">
           <CardHeader title="Signed off today" subtitle="Cash settled or insurer-approved claims" />
-          <ul className="divide-y divide-slate-50 px-5 pb-4">
+          <ul className="divide-y divide-border px-5 pb-4">
             {completedToday.map((v) => (
               <li key={v.id} className="flex items-center justify-between gap-3 py-3">
                 <div className="flex items-center gap-3">
@@ -826,7 +826,7 @@ export default function BillingPage() {
 
       {cashConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
-          <div className="w-full max-w-md space-y-4 rounded-2xl bg-white p-5 shadow-xl">
+          <div className="w-full max-w-md space-y-4 rounded-2xl bg-surface p-5 shadow-xl">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <h3 className="text-base font-semibold text-foreground">Confirm cash collection</h3>
@@ -890,7 +890,7 @@ export default function BillingPage() {
 
       {invoiceOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl">
+          <div className="w-full max-w-md rounded-2xl bg-surface p-5 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-base font-semibold text-foreground">Create draft invoice</h3>
               <button onClick={() => setInvoiceOpen(false)} className="text-foreground-lighter hover:text-foreground-light">

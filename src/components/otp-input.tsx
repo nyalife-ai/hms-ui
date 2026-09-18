@@ -106,10 +106,10 @@ export function OtpInput({
               setDigit(index, digit);
               if (index < length - 1) focusAt(index + 1);
             }}
-            className={`h-12 w-10 rounded-xl border bg-white text-center text-lg font-semibold text-slate-800 outline-none transition focus:ring-2 disabled:opacity-50 sm:w-11 ${
+            className={`h-12 w-10 rounded-xl border bg-surface text-center text-lg font-semibold text-foreground outline-none transition focus:ring-2 disabled:opacity-50 sm:w-11 ${
               error
                 ? "border-rose-400 focus:border-rose-500 focus:ring-rose-400/20"
-                : "border-slate-200 focus:border-brand-400 focus:ring-brand-400/20"
+                : "border-border focus:border-brand-400 focus:ring-brand-400/20"
             }`}
           />
         );

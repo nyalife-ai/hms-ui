@@ -6,7 +6,7 @@ import { api } from "@/lib/api";
 import { ReceiptModal, type ReceiptData } from "@/components/receipt-modal";
 
 const inputClass =
-  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 /** Poll cadence (ms) — backs off; stops on terminal status. */
 const POLL_DELAYS_MS = [0, 2000, 3000, 5000, 5000, 8000, 10000, 15000, 15000, 20000];
@@ -279,7 +279,7 @@ export function MpesaCheckoutModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
-      <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl">
+      <div className="w-full max-w-md rounded-2xl bg-surface p-5 shadow-xl">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-base font-semibold text-foreground">M-Pesa payment</h3>
           <button

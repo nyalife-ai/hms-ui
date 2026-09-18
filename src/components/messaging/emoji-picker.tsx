@@ -334,7 +334,7 @@ export function EmojiPicker({
 
   return (
     <div
-      className="absolute bottom-full left-0 z-30 mb-2 w-72 overflow-hidden rounded-2xl border border-border bg-white shadow-lg"
+      className="absolute bottom-full left-0 z-30 mb-2 w-72 overflow-hidden rounded-2xl border border-border bg-surface shadow-lg"
       role="dialog"
       aria-label="Emoji picker"
     >

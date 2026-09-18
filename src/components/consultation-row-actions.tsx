@@ -52,7 +52,7 @@ export function ConsultationRowActions({
       {open && (
         <div
           role="menu"
-          className="absolute right-0 z-30 mt-1 w-56 overflow-hidden rounded-xl border border-border bg-white py-1 shadow-lg"
+          className="absolute right-0 z-30 mt-1 w-56 overflow-hidden rounded-xl border border-border bg-surface py-1 shadow-lg"
         >
           <button
             type="button"

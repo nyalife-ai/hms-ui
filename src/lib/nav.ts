@@ -110,7 +110,18 @@ export const NAV_SECTIONS: NavSection[] = [
           { label: "Results", href: "/laboratory/results" },
         ],
       },
-      { label: "Radiology", href: "/radiology", icon: ScanLine, module: "radiology" },
+      {
+        label: "Radiology",
+        href: "/radiology",
+        icon: ScanLine,
+        module: "radiology",
+        children: [
+          { label: "Overview", href: "/radiology" },
+          { label: "Requests", href: "/radiology/requests" },
+          { label: "Scan Types", href: "/radiology/scan-types" },
+          { label: "Report Templates", href: "/radiology/report-templates" },
+        ],
+      },
       {
         label: "Pharmacy",
         href: "/pharmacy",

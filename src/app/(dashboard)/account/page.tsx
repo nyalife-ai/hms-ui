@@ -27,7 +27,7 @@ import {
 import { unlockNotificationAudio } from "@/lib/notification-sound";
 
 const inputClass =
-  "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 type Tab = "profile" | "security" | "notifications";
 
@@ -278,7 +278,7 @@ export default function AccountPage() {
             className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition ${
               tab === item.id
                 ? "bg-brand-500 text-white"
-                : "bg-white text-slate-500 shadow-sm hover:bg-brand-50 hover:text-brand-700"
+                : "bg-surface text-foreground-light shadow-sm hover:bg-brand-50 hover:text-brand-700"
             }`}
           >
             <item.icon className="h-4 w-4" />
@@ -312,7 +312,7 @@ export default function AccountPage() {
                 <img
                   src={profile.profileImage}
                   alt=""
-                  className="h-16 w-16 rounded-full object-cover ring-2 ring-slate-100"
+                  className="h-16 w-16 rounded-full object-cover ring-2 ring-border"
                 />
               ) : (
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-50 text-lg font-semibold text-brand-700">
@@ -320,22 +320,22 @@ export default function AccountPage() {
                 </div>
               )}
               <div>
-                <label className="text-sm font-medium text-slate-700">
+                <label className="text-sm font-medium text-foreground-light">
                   Profile photo
                 </label>
                 <input
                   type="file"
                   accept="image/jpeg,image/png,image/webp,image/gif"
-                  className="mt-1 block w-full text-sm text-slate-600"
+                  className="mt-1 block w-full text-sm text-foreground-light"
                   disabled={busy}
                   onChange={(e) => void onAvatar(e.target.files?.[0] ?? null)}
                 />
-                <p className="mt-1 text-xs text-slate-400">Max 2MB · JPEG, PNG, WebP, GIF</p>
+                <p className="mt-1 text-xs text-foreground-lighter">Max 2MB · JPEG, PNG, WebP, GIF</p>
               </div>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-slate-700">
+                <label className="text-sm font-medium text-foreground-light">
                   First name
                 </label>
                 <input
@@ -345,7 +345,7 @@ export default function AccountPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-slate-700">
+                <label className="text-sm font-medium text-foreground-light">
                   Last name
                 </label>
                 <input
@@ -356,7 +356,7 @@ export default function AccountPage() {
               </div>
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-slate-700">Phone</label>
+              <label className="text-sm font-medium text-foreground-light">Phone</label>
               <input
                 className={inputClass}
                 value={phone}
@@ -365,14 +365,14 @@ export default function AccountPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-slate-700">Email</label>
+              <label className="text-sm font-medium text-foreground-light">Email</label>
               <input
-                className={`${inputClass} bg-slate-50 text-slate-500`}
+                className={`${inputClass} bg-surface-200 text-foreground-lighter`}
                 value={profile?.email || user?.email || ""}
                 disabled
                 readOnly
               />
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-foreground-lighter">
                 Email is managed by your administrator and cannot be changed here.
               </p>
             </div>
@@ -392,10 +392,10 @@ export default function AccountPage() {
             />
             <div className="flex flex-wrap items-center justify-between gap-3 px-5 pb-5 sm:max-w-xl">
               <div>
-                <p className="text-sm font-medium text-slate-800">
+                <p className="text-sm font-medium text-foreground">
                   {twoFactorOn ? "Enabled" : "Disabled"}
                 </p>
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-1 text-xs text-foreground-light">
                   Changing 2FA always requires verifying a code sent to you.
                 </p>
               </div>
@@ -405,7 +405,7 @@ export default function AccountPage() {
                 onClick={() => openTwoFactor(twoFactorOn ? "disable" : "enable")}
                 className={`rounded-full px-4 py-2 text-sm font-semibold transition disabled:opacity-50 ${
                   twoFactorOn
-                    ? "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                    ? "bg-surface-200 text-foreground hover:bg-border"
                     : "bg-brand-500 text-white hover:bg-brand-600"
                 }`}
               >
@@ -458,10 +458,10 @@ export default function AccountPage() {
             />
             <div className="flex flex-wrap items-center justify-between gap-3 px-5 pb-5 sm:max-w-xl">
               <div>
-                <p className="text-sm font-medium text-slate-800">
+                <p className="text-sm font-medium text-foreground">
                   Enable notification sounds
                 </p>
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-1 text-xs text-foreground-light">
                   {soundEnabled
                     ? "On — play a chime for new live alerts"
                     : "Off — silent alerts only"}
@@ -474,7 +474,7 @@ export default function AccountPage() {
                 className={`rounded-full px-4 py-2 text-sm font-semibold transition disabled:opacity-50 ${
                   soundEnabled
                     ? "bg-brand-500 text-white hover:bg-brand-600"
-                    : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                    : "bg-surface-200 text-foreground hover:bg-border"
                 }`}
               >
                 {soundEnabled ? "On" : "Off"}
@@ -498,15 +498,15 @@ export default function AccountPage() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="tf-title"
-            className="w-full max-w-md rounded-2xl bg-white shadow-xl"
+            className="w-full max-w-md rounded-2xl bg-surface shadow-xl"
           >
-            <div className="flex items-start justify-between border-b border-slate-100 px-5 py-4">
+            <div className="flex items-start justify-between border-b border-border px-5 py-4">
               <div>
-                <h2 id="tf-title" className="text-base font-semibold text-slate-900">
+                <h2 id="tf-title" className="text-base font-semibold text-foreground">
                   {twoFactorModal === "enable" ? "Enable" : "Disable"} two-factor
                   authentication
                 </h2>
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-1 text-xs text-foreground-light">
                   {tfStep === "channel"
                     ? "Choose where to receive your verification code."
                     : `Enter the code sent to ${tfMasked}.`}
@@ -514,7 +514,7 @@ export default function AccountPage() {
               </div>
               <button
                 type="button"
-                className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                className="rounded-full p-1.5 text-foreground-lighter hover:bg-surface-200 hover:text-foreground-light"
                 onClick={() => setTwoFactorModal(null)}
                 aria-label="Close"
               >
@@ -534,7 +534,7 @@ export default function AccountPage() {
                         className={`flex-1 rounded-xl border px-3 py-2.5 text-sm font-medium capitalize transition ${
                           tfChannel === ch
                             ? "border-brand-500 bg-brand-50 text-brand-800"
-                            : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                            : "border-border text-foreground-light hover:bg-surface-200"
                         }`}
                       >
                         {ch}
@@ -567,7 +567,7 @@ export default function AccountPage() {
                       type="button"
                       disabled={busy || tfCooldown > 0}
                       onClick={() => void sendTwoFactorCode()}
-                      className="rounded-full px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 disabled:opacity-50"
+                      className="rounded-full px-4 py-2 text-sm font-medium text-foreground-light hover:bg-surface-200 disabled:opacity-50"
                     >
                       {tfCooldown > 0 ? `Resend in ${tfCooldown}s` : "Resend code"}
                     </button>

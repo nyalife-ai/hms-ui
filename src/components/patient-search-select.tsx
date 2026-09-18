@@ -76,7 +76,7 @@ export function PatientSearchSelect({
   return (
     <div className="relative">
       <input
-        className="w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20"
+        className="w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20"
         placeholder={selectedLabel || placeholder}
         value={open ? query : selectedLabel || query}
         disabled={disabled}
@@ -99,7 +99,7 @@ export function PatientSearchSelect({
       {open && (
         <ul
           id={listId}
-          className="absolute z-30 mt-1 max-h-56 w-full overflow-y-auto rounded-xl border border-border bg-white py-1 shadow-lg"
+          className="absolute z-30 mt-1 max-h-56 w-full overflow-y-auto rounded-xl border border-border bg-surface py-1 shadow-lg"
         >
           {loading && (
             <li className="px-3 py-2 text-xs text-foreground-lighter">Searching…</li>

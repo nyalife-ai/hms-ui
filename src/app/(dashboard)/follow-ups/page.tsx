@@ -47,7 +47,7 @@ const STATUS_TONES: Record<string, BadgeTone> = {
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
 
 const inputClass =
-  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 type ViewMode = "list" | "calendar";
 type CalendarMode = "month" | "week" | "day";
@@ -361,7 +361,7 @@ export default function FollowUpsPage() {
         }
         action={
           <div className="flex flex-wrap items-center gap-2">
-            <div className="inline-flex rounded-full border border-border bg-white p-0.5">
+            <div className="inline-flex rounded-full border border-border bg-surface p-0.5">
               <button
                 type="button"
                 onClick={() => setView("list")}
@@ -604,7 +604,7 @@ export default function FollowUpsPage() {
                         ? "bg-amber-50 ring-2 ring-inset ring-amber-300"
                         : isToday
                           ? "bg-[#fffbeb]"
-                          : "bg-white hover:bg-surface-200/80"
+                          : "bg-surface hover:bg-surface-200/80"
                     } ${!inMonth ? "opacity-45" : ""}`}
                   >
                     <div className="mb-1 flex items-center justify-between">
@@ -687,7 +687,7 @@ export default function FollowUpsPage() {
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
-          <div className="max-h-[90vh] w-full max-w-md space-y-3 overflow-y-auto rounded-2xl bg-white p-5 shadow-xl">
+          <div className="max-h-[90vh] w-full max-w-md space-y-3 overflow-y-auto rounded-2xl bg-surface p-5 shadow-xl">
             <div className="flex items-center justify-between">
               <h2 className="font-semibold text-foreground">Schedule follow-up</h2>
               <button type="button" onClick={() => setOpen(false)}>
@@ -744,7 +744,7 @@ export default function FollowUpsPage() {
 
       {quickView && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
-          <div className="w-full max-w-md space-y-3 rounded-2xl bg-white p-5 shadow-xl">
+          <div className="w-full max-w-md space-y-3 rounded-2xl bg-surface p-5 shadow-xl">
             <div className="flex items-center justify-between">
               <h2 className="font-semibold text-foreground">Follow-up</h2>
               <button type="button" onClick={() => setQuickView(null)}>
@@ -771,7 +771,7 @@ export default function FollowUpsPage() {
                   Open linked consultation
                 </PrimaryButton>
               ) : (
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-foreground-lighter">
                   No linked consultation on file for this follow-up.
                 </p>
               )}
@@ -779,7 +779,7 @@ export default function FollowUpsPage() {
                 <button
                   type="button"
                   onClick={() => router.push(`/patients/${quickView.patientId}`)}
-                  className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:border-brand-300"
+                  className="rounded-xl border border-border px-3 py-2 text-xs font-semibold text-foreground-light hover:border-brand-300"
                 >
                   Open patient
                 </button>

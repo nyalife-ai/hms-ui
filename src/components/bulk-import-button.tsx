@@ -37,7 +37,7 @@ export function BulkImportButton({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-4 py-2.5 text-sm font-semibold text-foreground shadow-sm transition hover:bg-brand-50 hover:text-brand-700"
+        className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-4 py-2.5 text-sm font-semibold text-foreground shadow-sm transition hover:bg-brand-50 hover:text-brand-700"
       >
         <Upload className="h-4 w-4" />
         {label}

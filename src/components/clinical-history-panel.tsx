@@ -177,23 +177,23 @@ export function ClinicalHistoryPanel({
           />
         )}
         {!loading && !error && items.length > 0 && (
-          <ul className="divide-y divide-slate-100">
+          <ul className="divide-y divide-border">
             {items.slice(0, 12).map((item) => (
               <li
                 key={`${item.kind}-${item.id}`}
                 className="flex flex-wrap items-center justify-between gap-2 py-2.5"
               >
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-slate-800">
+                  <p className="text-sm font-medium text-foreground">
                     {item.label}
                     {item.summary ? (
-                      <span className="font-normal text-slate-500">
+                      <span className="font-normal text-foreground-lighter">
                         {" "}
                         · {item.summary}
                       </span>
                     ) : null}
                   </p>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-foreground-lighter">
                     {item.date}
                     {item.time ? ` · ${item.time}` : ""}
                     {item.provider ? ` · ${item.provider}` : ""}

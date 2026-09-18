@@ -44,7 +44,7 @@ import {
 } from "@/lib/visits";
 
 const inputClass =
-  "w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground placeholder:text-foreground-lighter focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground placeholder:text-foreground-lighter focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 const DOCTOR_STAGES = ["WAITING_DOCTOR", "IN_CONSULTATION", "LAB_PENDING", "RESULTS_READY"] as const;
 const ACTIVE_CONSULT_STAGES = ["IN_CONSULTATION", "LAB_PENDING", "RESULTS_READY"] as const;
@@ -171,7 +171,7 @@ function SelectedList({
           <button
             type="button"
             onClick={() => onRemove(item.id)}
-            className="shrink-0 rounded-lg p-1.5 text-foreground-muted hover:bg-white hover:text-rose-500"
+            className="shrink-0 rounded-lg p-1.5 text-foreground-muted hover:bg-surface-200 hover:text-rose-500"
             aria-label={`Remove ${item.label}`}
           >
             <Trash2 className="h-3.5 w-3.5" />
@@ -481,7 +481,7 @@ export default function ConsultationsPage() {
                 No patients waiting at pharmacy or billing yet.
               </p>
             ) : (
-              <ul className="divide-y divide-slate-50 px-2 pb-3">
+              <ul className="divide-y divide-border px-2 pb-3">
                 {dispatched.map((v) => {
                   const stops = nextStopsForVisit(v);
                   return (
@@ -619,7 +619,7 @@ export default function ConsultationsPage() {
                       type="button"
                       onClick={() => void persistNotes()}
                       disabled={savingNotes}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-border bg-white px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-surface-200 disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-surface-200 disabled:opacity-50"
                     >
                       <Save className="h-3.5 w-3.5" />
                       {savingNotes ? "Saving…" : "Save notes"}
@@ -981,7 +981,7 @@ export default function ConsultationsPage() {
                             onClick={() =>
                               setPrescriptions(prescriptions.filter((_, idx) => idx !== i))
                             }
-                            className="self-center rounded-lg p-2 text-foreground-muted hover:bg-white hover:text-rose-500"
+                            className="self-center rounded-lg p-2 text-foreground-muted hover:bg-surface-200 hover:text-rose-500"
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>

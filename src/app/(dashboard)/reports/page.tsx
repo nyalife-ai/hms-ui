@@ -67,7 +67,7 @@ import type { Role } from "@/lib/roles";
 const MAX_KPI_CARDS = 8;
 
 const inputClass =
-  "rounded-xl border border-border bg-white px-3 py-2 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
+  "rounded-xl border border-border bg-surface px-3 py-2 text-sm text-foreground focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20";
 
 const KPI_ICONS: Record<string, LucideIcon> = {
   patients: Users,
@@ -313,7 +313,7 @@ export default function ReportsAnalyticsPage() {
         }
       />
 
-      <div className="mb-4 flex flex-wrap items-end gap-3 rounded-2xl border border-border bg-white p-4">
+      <div className="mb-4 flex flex-wrap items-end gap-3 rounded-2xl border border-border bg-surface p-4">
         <label className="flex flex-col gap-1 text-xs font-medium text-foreground-light">
           Date range
           <select
@@ -706,7 +706,7 @@ function DomainPanel({
         </section>
       ) : null}
 
-      <details className="rounded-xl border border-border bg-white p-4 text-xs text-foreground-light">
+      <details className="rounded-xl border border-border bg-surface p-4 text-xs text-foreground-light">
         <summary className="cursor-pointer font-medium text-foreground">
           Metric definitions
         </summary>
