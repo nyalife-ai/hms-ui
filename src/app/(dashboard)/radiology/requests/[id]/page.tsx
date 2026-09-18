@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowLeft, Download, ImageUp, X } from "lucide-react";
+import { ArrowLeft, Download, ImageUp, Trash2, X } from "lucide-react";
 import { FieldLabel } from "@/components/field-label";
 import { RichTextEditor } from "@/components/rich-text-editor";
 import { RoleGuard } from "@/components/role-guard";
@@ -239,6 +239,19 @@ export default function RadiologyRequestDetailPage() {
       );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Download failed");
+    }
+  };
+
+  const onDeleteImage = async (image: ImageRow) => {
+    if (!window.confirm(`Delete "${image.fileName || "this file"}"? This cannot be undone.`)) {
+      return;
+    }
+    setError("");
+    try {
+      await api(`/imaging/images/${image.id}`, { method: "DELETE" });
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Delete failed");
     }
   };
 
@@ -577,14 +590,24 @@ export default function RadiologyRequestDetailPage() {
                         .join(" · ")}
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => void onDownloadImage(img)}
-                    className="shrink-0 rounded-full border border-border p-2 text-foreground-light hover:border-brand-300 hover:text-brand-700"
-                    aria-label="Download"
-                  >
-                    <Download className="h-4 w-4" />
-                  </button>
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => void onDownloadImage(img)}
+                      className="rounded-full border border-border p-2 text-foreground-light hover:border-brand-300 hover:text-brand-700"
+                      aria-label="Download"
+                    >
+                      <Download className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void onDeleteImage(img)}
+                      className="rounded-full border border-border p-2 text-foreground-light hover:border-rose-300 hover:text-rose-600"
+                      aria-label="Delete"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

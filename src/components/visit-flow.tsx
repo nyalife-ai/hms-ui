@@ -79,7 +79,7 @@ export function VisitQueueList({
   return (
     <ul className="space-y-1 px-3 pb-4">
       {visits.map((v) => (
-        <li key={v.id} className="flex items-center gap-1">
+        <li key={v.id} className="flex flex-col gap-1">
           <button
             onClick={() => onSelect(v.id)}
             className={`flex min-w-0 flex-1 items-center gap-3 rounded-xl px-2.5 py-2.5 text-left transition ${
