@@ -66,6 +66,7 @@ function JourneyInner() {
     startConsultation,
     collectConsultFee,
     waiveConsultFee,
+    deferConsultFee,
     completeConsultation,
     updateClaimStatus,
   } = useVisits();
@@ -323,6 +324,17 @@ function JourneyInner() {
                         onClick={() => void run(() => waiveConsultFee(visit.id))}
                       >
                         Waive fee
+                      </button>
+                    )}
+                    {canEdit(role, ["ACCOUNTANT"]) && (
+                      <button
+                        type="button"
+                        disabled={busy}
+                        className="rounded-full border border-border px-4 py-2 text-sm font-semibold text-foreground"
+                        onClick={() => void run(() => deferConsultFee(visit.id))}
+                        title="Bill the consult fee together with the final visit invoice instead of collecting it now"
+                      >
+                        Defer to checkout
                       </button>
                     )}
                   </div>

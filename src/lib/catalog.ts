@@ -166,8 +166,13 @@ export type CatalogDoctor = {
   userId: string;
   name: string;
   specialty: string;
+  /** Short current-load status for display (e.g. "2 patients waiting"). */
   hours: string;
   available: boolean;
+  /** Doctor currently has a patient in an active consultation. */
+  currentlyInConsultation: boolean;
+  /** Number of patients currently queued for this doctor. */
+  waitingCount: number;
   phone: string;
   email: string;
 };

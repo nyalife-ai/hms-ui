@@ -363,8 +363,8 @@ export function AgendaCard() {
 
 export function DoctorsScheduleCard() {
   const { data: doctors } = useDoctors();
-  const available = doctors.filter((d) => d.available);
-  const unavailable = doctors.filter((d) => !d.available);
+  const available = doctors.filter((d) => d.available && !d.currentlyInConsultation);
+  const unavailable = doctors.filter((d) => !d.available || d.currentlyInConsultation);
   return (
     <Card>
       <CardHeader title="Doctors' Schedule" />
@@ -393,8 +393,18 @@ export function DoctorsScheduleCard() {
               <p className="truncate text-xs font-semibold text-foreground">{doc.name}</p>
               <p className="truncate text-[11px] text-foreground-lighter">{doc.specialty}</p>
             </div>
-            <Badge tone={doc.available ? "teal" : "red"}>
-              {doc.available ? "Available" : "Unavailable"}
+            <Badge
+              tone={
+                !doc.available
+                  ? "red"
+                  : doc.currentlyInConsultation
+                    ? "amber"
+                    : doc.waitingCount > 0
+                      ? "blue"
+                      : "teal"
+              }
+            >
+              {!doc.available ? "Inactive" : doc.hours}
             </Badge>
           </li>
         ))}

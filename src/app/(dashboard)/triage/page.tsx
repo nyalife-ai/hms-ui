@@ -65,7 +65,7 @@ function emptySymptom(): TriageSymptom {
 
 export default function TriagePage() {
   const { user } = useAuth();
-  const { visits, loading, refresh, recordTriage } = useVisits();
+  const { visits, loading, refresh, recordTriage, reassignDoctor } = useVisits();
   const [catalogue, setCatalogue] = useState<SymptomCatalogueResponse | null>(null);
 
   const queue = useMemo(
@@ -83,6 +83,42 @@ export default function TriagePage() {
     () => visits.filter((v) => v.stage === "AWAITING_PAYMENT"),
     [visits],
   );
+  const waitingForDoctor = useMemo(
+    () =>
+      visits
+        .filter((v) => v.stage === "WAITING_DOCTOR" || v.stage === "IN_CONSULTATION")
+        .slice()
+        .sort(
+          (a, b) =>
+            new Date(a.triageCompletedAt || a.checkedInAt).getTime() -
+            new Date(b.triageCompletedAt || b.checkedInAt).getTime(),
+        ),
+    [visits],
+  );
+  const [reassigningId, setReassigningId] = useState("");
+  const [reassignDoctorId, setReassignDoctorId] = useState("");
+  const [reassignReason, setReassignReason] = useState("");
+  const [reassignBusy, setReassignBusy] = useState(false);
+  const [reassignError, setReassignError] = useState("");
+
+  const submitReassign = async (visitId: string) => {
+    if (!reassignDoctorId) {
+      setReassignError("Select the correct doctor.");
+      return;
+    }
+    setReassignBusy(true);
+    setReassignError("");
+    try {
+      await reassignDoctor(visitId, reassignDoctorId, reassignReason.trim() || undefined);
+      setReassigningId("");
+      setReassignDoctorId("");
+      setReassignReason("");
+    } catch (err) {
+      setReassignError(err instanceof Error ? err.message : "Could not reassign doctor");
+    } finally {
+      setReassignBusy(false);
+    }
+  };
 
   const [selectedId, setSelectedId] = useState("");
   const [vitals, setVitals] = useState<Vitals>(EMPTY_VITALS);
@@ -361,6 +397,66 @@ export default function TriagePage() {
                 visits={atFinance}
                 onSelect={() => undefined}
                 emptyMessage=""
+              />
+            </Card>
+          )}
+          {waitingForDoctor.length > 0 && (
+            <Card>
+              <CardHeader
+                title="Waiting for doctor"
+                subtitle="Picked the wrong doctor? Reassign here"
+              />
+              <VisitQueueList
+                visits={waitingForDoctor}
+                onSelect={() => undefined}
+                emptyMessage=""
+                trailing={(v) => (
+                  <div className="px-2.5 pb-2.5">
+                    <div className="flex items-center justify-between gap-2 text-[11px] text-foreground-lighter">
+                      <span className="truncate">
+                        Assigned: {v.doctorName || "Unassigned"}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setReassigningId(reassigningId === v.id ? "" : v.id);
+                          setReassignDoctorId("");
+                          setReassignReason("");
+                          setReassignError("");
+                        }}
+                        className="shrink-0 rounded-full border border-border px-2.5 py-1 font-medium text-foreground-light hover:border-brand-300"
+                      >
+                        {reassigningId === v.id ? "Cancel" : "Reassign"}
+                      </button>
+                    </div>
+                    {reassigningId === v.id && (
+                      <div className="mt-2 space-y-2 rounded-xl border border-border bg-surface-200 p-2.5">
+                        <DoctorSearchSelect
+                          value={reassignDoctorId}
+                          onChange={(doctorId) => setReassignDoctorId(doctorId)}
+                          placeholder="Search correct doctor…"
+                        />
+                        <input
+                          className={inputClass}
+                          placeholder="Reason (optional)"
+                          value={reassignReason}
+                          onChange={(e) => setReassignReason(e.target.value)}
+                        />
+                        {reassignError && (
+                          <p className="text-xs text-rose-600">{reassignError}</p>
+                        )}
+                        <button
+                          type="button"
+                          disabled={reassignBusy || !reassignDoctorId}
+                          onClick={() => void submitReassign(v.id)}
+                          className="w-full rounded-lg bg-brand-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-600 disabled:opacity-50"
+                        >
+                          {reassignBusy ? "Reassigning…" : "Confirm reassignment"}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
               />
             </Card>
           )}

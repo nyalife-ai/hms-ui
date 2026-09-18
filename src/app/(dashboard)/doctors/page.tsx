@@ -56,7 +56,9 @@ export default function DoctorsPage() {
   const [menuId, setMenuId] = useState("");
 
   const meta = toPageMeta({ total, page, limit });
-  const availableCount = doctors.filter((d) => d.available).length;
+  const availableCount = doctors.filter(
+    (d) => d.available && !d.currentlyInConsultation,
+  ).length;
 
   return (
     <RoleGuard module="doctors">
@@ -119,8 +121,18 @@ export default function DoctorsPage() {
               <div>
                 <h3 className="text-sm font-bold text-foreground">{doc.name}</h3>
                 <div className="mt-1.5">
-                  <Badge tone={doc.available ? "teal" : "red"}>
-                    {doc.available ? "Available" : "Unavailable"}
+                  <Badge
+                    tone={
+                      !doc.available
+                        ? "red"
+                        : doc.currentlyInConsultation
+                          ? "amber"
+                          : doc.waitingCount > 0
+                            ? "blue"
+                            : "teal"
+                    }
+                  >
+                    {!doc.available ? "Inactive" : doc.hours}
                   </Badge>
                 </div>
               </div>
@@ -162,7 +174,6 @@ export default function DoctorsPage() {
 
             <div className="border-t border-border pt-3 text-center">
               <p className="text-sm font-semibold text-foreground">{doc.specialty}</p>
-              <p className="mt-0.5 text-xs text-foreground-lighter">{doc.hours}</p>
               <p className="mt-1 truncate text-[11px] text-foreground-lighter">{doc.email}</p>
             </div>
 

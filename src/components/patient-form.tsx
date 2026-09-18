@@ -56,12 +56,12 @@ export function toPatientsApiGender(
   return "OTHER";
 }
 
-/** Build POST /ops/patients body (Male/Female/Other). */
+/** Build POST /ops/patients body (MALE/FEMALE/OTHER — matches the patients module CreatePatientDto). */
 export function toOpsCreateBody(values: PatientFormValues) {
   return {
     firstName: values.firstName.trim(),
     lastName: values.lastName.trim(),
-    gender: values.gender,
+    gender: toPatientsApiGender(values.gender),
     phone: values.phone.trim() || undefined,
     email: values.email.trim() || undefined,
     dateOfBirth: values.dateOfBirth || undefined,

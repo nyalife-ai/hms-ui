@@ -57,7 +57,8 @@ type FollowUpRow = {
   patientId: string;
   patientName: string;
   patientMrn: string;
-  consultationId: string;
+  /** Absent when the follow-up was created for a patient with no prior consultation. */
+  consultationId?: string;
   appointmentId: string | null;
   /** Outpatient visit id for doctor journey `/consultations/:visitId` */
   visitId?: string | null;

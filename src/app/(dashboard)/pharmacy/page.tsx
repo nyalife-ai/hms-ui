@@ -59,6 +59,9 @@ export default function PharmacyOverviewPage() {
   const [loading, setLoading] = useState(true);
   const [checkoutVisit, setCheckoutVisit] = useState<Visit | null>(null);
   const [dispensingId, setDispensingId] = useState("");
+  const [dispenseWarnings, setDispenseWarnings] = useState<
+    { visitId: string; patientName: string; warnings: string[] }[]
+  >([]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -86,18 +89,32 @@ export default function PharmacyOverviewPage() {
   const dispenseVisit = async (visit: Visit) => {
     setDispensingId(visit.id);
     setError("");
+    setDispenseWarnings((prev) => prev.filter((w) => w.visitId !== visit.id));
     try {
-      await api("/pharmacy/dispense", {
-        method: "POST",
-        body: JSON.stringify({
-          visitId: visit.id,
-          lines: (visit.prescriptions ?? []).map((p) => ({
-            medication: p.medication,
-            medicationId: p.medicationId,
-            quantity: Math.max(1, Number(p.quantity) || 1),
-          })),
-        }),
-      });
+      const result = await api<{ dispensed: number; warnings: string[] }>(
+        "/pharmacy/dispense",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            visitId: visit.id,
+            lines: (visit.prescriptions ?? []).map((p) => ({
+              medication: p.medication,
+              medicationId: p.medicationId,
+              quantity: Math.max(1, Number(p.quantity) || 1),
+            })),
+          }),
+        },
+      );
+      if (result.warnings?.length) {
+        setDispenseWarnings((prev) => [
+          ...prev,
+          {
+            visitId: visit.id,
+            patientName: visit.patientName,
+            warnings: result.warnings,
+          },
+        ]);
+      }
       await refreshVisits();
       await load();
     } catch (err) {
@@ -151,6 +168,39 @@ export default function PharmacyOverviewPage() {
         }
       />
       {error && <p className="mb-4 text-sm text-rose-500">{error}</p>}
+      {dispenseWarnings.length > 0 && (
+        <div className="mb-4 space-y-2">
+          {dispenseWarnings.map((w) => (
+            <div
+              key={w.visitId}
+              className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-sm text-amber-800"
+            >
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              <div>
+                <p className="font-medium">
+                  {w.patientName} — dispensed with stock shortfalls
+                </p>
+                <ul className="mt-1 list-disc space-y-0.5 pl-4 text-xs">
+                  {w.warnings.map((line, i) => (
+                    <li key={i}>{line}</li>
+                  ))}
+                </ul>
+              </div>
+              <button
+                type="button"
+                onClick={() =>
+                  setDispenseWarnings((prev) =>
+                    prev.filter((x) => x.visitId !== w.visitId),
+                  )
+                }
+                className="ml-auto shrink-0 text-xs font-medium text-amber-700 hover:underline"
+              >
+                Dismiss
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-4">
         {loading &&

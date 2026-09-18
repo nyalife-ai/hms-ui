@@ -41,6 +41,8 @@ type Rx = {
     status: string;
     dispensedByName?: string | null;
     dispensedAt?: string | null;
+    /** On-hand, non-expired batch stock for this medication (FEFO-eligible). */
+    availableQuantity?: number;
   }>;
 };
 
@@ -302,11 +304,22 @@ export default function PharmacyPrescriptionsPage() {
               </td>
               <td className="px-5 py-3.5 text-foreground-light">{r.prescribedBy}</td>
               <td className="px-5 py-3.5 text-xs text-foreground-light">
-                {r.lines.map((l) => (
-                  <div key={l.id}>
-                    {l.medicationName} — qty {l.quantity} ({l.status.toLowerCase()})
-                  </div>
-                ))}
+                {r.lines.map((l) => {
+                  const short =
+                    l.status === "PENDING" &&
+                    (l.availableQuantity ?? 0) < l.quantity;
+                  return (
+                    <div key={l.id} className={short ? "text-rose-600" : undefined}>
+                      {l.medicationName} — qty {l.quantity} ({l.status.toLowerCase()})
+                      {l.status === "PENDING" && (
+                        <span className="ml-1">
+                          · {l.availableQuantity ?? 0} in stock
+                          {short ? " (short)" : ""}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
               </td>
               <td className="px-5 py-3.5">
                 <Badge tone={r.status === "DISPENSED" ? "green" : "amber"}>
@@ -529,12 +542,21 @@ export default function PharmacyPrescriptionsPage() {
               </p>
             )}
             <ul className="space-y-2">
-              {detail.lines.map((l) => (
+              {detail.lines.map((l) => {
+                const short =
+                  l.status === "PENDING" && (l.availableQuantity ?? 0) < l.quantity;
+                return (
                 <li key={l.id} className="rounded-xl bg-[#f3f7f7] px-3 py-2 text-sm">
                   <p className="font-medium text-foreground">{l.medicationName}</p>
                   <p className="text-xs text-foreground-light">
                     {l.dosage} · {l.frequency} · {l.duration} · qty {l.quantity} · {l.status}
                   </p>
+                  {l.status === "PENDING" && (
+                    <p className={`text-xs ${short ? "font-medium text-rose-600" : "text-foreground-lighter"}`}>
+                      {l.availableQuantity ?? 0} unit(s) in stock
+                      {short ? ` — short ${l.quantity - (l.availableQuantity ?? 0)}` : ""}
+                    </p>
+                  )}
                   {l.dispensedByName && (
                     <p className="text-xs text-foreground-lighter">
                       Dispensed by {l.dispensedByName}
@@ -543,7 +565,8 @@ export default function PharmacyPrescriptionsPage() {
                   )}
                   {l.instructions && <p className="text-xs text-foreground-lighter">{l.instructions}</p>}
                 </li>
-              ))}
+                );
+              })}
             </ul>
             {(detail.status === "PENDING" || detail.status === "PARTIALLY_DISPENSED") &&
               !detail.isVoided && (

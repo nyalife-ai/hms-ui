@@ -25,7 +25,7 @@ export type VisitStage =
   | "CLAIM_SUBMITTED"
   | "COMPLETED";
 
-export type ConsultFeeStatus = "PENDING" | "PAID" | "WAIVED";
+export type ConsultFeeStatus = "PENDING" | "PAID" | "WAIVED" | "DEFERRED";
 
 export const STAGE_META: Record<VisitStage, { label: string; tone: BadgeTone; step: number }> = {
   CHECKED_IN: { label: "Waiting for Triage", tone: "blue", step: 2 },
@@ -186,8 +186,14 @@ interface VisitContextValue {
     visitId: string,
     payload: import("./triage").TriageSubmitPayload,
   ) => Promise<void>;
+  reassignDoctor: (
+    visitId: string,
+    doctorStaffId: string,
+    reason?: string,
+  ) => Promise<void>;
   chargeConsultFee: (visitId: string) => Promise<void>;
   waiveConsultFee: (visitId: string) => Promise<void>;
+  deferConsultFee: (visitId: string) => Promise<void>;
   collectConsultFee: (
     visitId: string,
     mode: "CASH" | "MPESA",
@@ -283,12 +289,23 @@ export function VisitProvider({ children }: { children: ReactNode }) {
       });
       await refresh();
     },
+    reassignDoctor: async (visitId, doctorStaffId, reason) => {
+      await api(`/visits/${visitId}/reassign-doctor`, {
+        method: "PATCH",
+        body: JSON.stringify({ doctorStaffId, reason }),
+      });
+      await refresh();
+    },
     chargeConsultFee: async (visitId) => {
       await api(`/visits/${visitId}/charge-consult-fee`, { method: "POST" });
       await refresh();
     },
     waiveConsultFee: async (visitId) => {
       await api(`/visits/${visitId}/waive-consult-fee`, { method: "POST" });
+      await refresh();
+    },
+    deferConsultFee: async (visitId) => {
+      await api(`/visits/${visitId}/defer-consult-fee`, { method: "POST" });
       await refresh();
     },
     collectConsultFee: async (visitId, mode, opts) => {

@@ -158,7 +158,7 @@ export function DoctorSearchSelect({
                 <span className="text-sm font-medium text-foreground">{d.name}</span>
                 <span className="text-[11px] text-foreground-lighter">
                   {d.specialty}
-                  {d.available === false ? " · unavailable" : ""}
+                  {d.available === false ? " · unavailable" : ` · ${d.hours}`}
                 </span>
               </button>
             </li>
