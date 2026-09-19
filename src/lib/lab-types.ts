@@ -27,6 +27,15 @@ export type LabSampleRow = {
   notes: string | null;
 };
 
+export type LabImageRow = {
+  id: string;
+  fileName: string | null;
+  mimeType: string | null;
+  description: string | null;
+  fileSize: number | null;
+  createdAt: string;
+};
+
 export type LabOrderedPanel = {
   id: string;
   testName: string;
@@ -87,6 +96,7 @@ export type LabRequestDetail = {
     testName: string;
     testTypeId: string;
   }>;
+  images: LabImageRow[];
 };
 
 /** Doctor Consultation Lab Report — released LIS lines for a visit */

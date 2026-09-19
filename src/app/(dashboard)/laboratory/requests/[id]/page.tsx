@@ -2,15 +2,18 @@
 
 import {
   ArrowLeft,
+  Download,
   FlaskConical,
+  ImageUp,
   Link2,
   Printer,
   Save,
   Send,
+  Trash2,
 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { FieldLabel } from "@/components/field-label";
 import { RoleGuard } from "@/components/role-guard";
 import {
@@ -21,7 +24,7 @@ import {
   PrimaryButton,
   type BadgeTone,
 } from "@/components/ui";
-import { api } from "@/lib/api";
+import { api, downloadFile, uploadFile } from "@/lib/api";
 import { fetchHospitalSettings } from "@/lib/hospital";
 import { openLabReportPdf } from "@/lib/lab-report-pdf";
 import type { LabRequestDetail } from "@/lib/lab-types";
@@ -87,6 +90,9 @@ export default function LabRequestDetailPage() {
   const [clinicalNotes, setClinicalNotes] = useState("");
   const [sampleType, setSampleType] = useState("BLOOD");
   const [sampleNotes, setSampleNotes] = useState("");
+  const [downloadBusy, setDownloadBusy] = useState(false);
+  const [uploadBusy, setUploadBusy] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -277,6 +283,70 @@ export default function LabRequestDetailPage() {
     }
   };
 
+  const onDownloadDocxReport = async () => {
+    if (!detail) return;
+    setDownloadBusy(true);
+    setError("");
+    try {
+      await downloadFile(
+        `/laboratory/requests/${detail.id}/report/docx`,
+        `laboratory-report-${detail.requestNumber ?? detail.id}.docx`,
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Download failed");
+    } finally {
+      setDownloadBusy(false);
+    }
+  };
+
+  const onUploadImage = async (file: File | null) => {
+    if (!file || !detail) return;
+    setUploadBusy(true);
+    setError("");
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      await uploadFile(`/laboratory/requests/${detail.id}/images`, formData);
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setUploadBusy(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const onDownloadImage = async (image: { id: string; fileName: string | null }) => {
+    try {
+      await downloadFile(
+        `/laboratory/images/${image.id}/content`,
+        image.fileName || `laboratory-image-${image.id}`,
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Download failed");
+    }
+  };
+
+  const onDeleteImage = async (image: { id: string; fileName: string | null }) => {
+    if (!window.confirm(`Delete "${image.fileName || "this file"}"? This cannot be undone.`)) {
+      return;
+    }
+    setError("");
+    try {
+      await api(`/laboratory/images/${image.id}`, { method: "DELETE" });
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Delete failed");
+    }
+  };
+
+  const formatBytes = (bytes: number | null): string => {
+    if (bytes == null) return "—";
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
   const category =
     detail?.categories?.[0] ||
     detail?.orderedTestTypes?.[0]?.category ||
@@ -310,6 +380,16 @@ export default function LabRequestDetailPage() {
                 className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-foreground hover:border-brand-300"
               >
                 <Printer className="h-3.5 w-3.5" /> Print PDF
+              </button>
+            )}
+            {detail && detail.status === "COMPLETED" && (
+              <button
+                type="button"
+                disabled={downloadBusy}
+                onClick={() => void onDownloadDocxReport()}
+                className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-foreground hover:border-brand-300 disabled:opacity-50"
+              >
+                <Download className="h-3.5 w-3.5" /> {downloadBusy ? "Preparing…" : "Download DOCX"}
               </button>
             )}
             <Link
@@ -530,6 +610,72 @@ export default function LabRequestDetailPage() {
               >
                 Open samples board →
               </Link>
+            </div>
+          </Card>
+
+          <Card>
+            <CardHeader
+              title="Images & attachments"
+              subtitle="Microscopy, specimen photos, or reference files"
+              action={
+                <>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    className="hidden"
+                    onChange={(e) => void onUploadImage(e.target.files?.[0] ?? null)}
+                  />
+                  <button
+                    type="button"
+                    disabled={uploadBusy}
+                    onClick={() => fileInputRef.current?.click()}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-foreground hover:border-brand-300 disabled:opacity-50"
+                  >
+                    <ImageUp className="h-3.5 w-3.5" />
+                    {uploadBusy ? "Uploading…" : "Upload"}
+                  </button>
+                </>
+              }
+            />
+            <div className="space-y-2 px-5 pb-5">
+              {(!detail.images || detail.images.length === 0) && (
+                <p className="text-sm text-foreground-lighter">No images uploaded yet.</p>
+              )}
+              {detail.images?.map((img) => (
+                <div
+                  key={img.id}
+                  className="flex items-center justify-between gap-2 rounded-xl border border-border p-3 text-sm"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-foreground">
+                      {img.fileName || "Untitled file"}
+                    </p>
+                    <p className="text-xs text-foreground-lighter">
+                      {[img.description, formatBytes(img.fileSize), formatWhen(img.createdAt)]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => void onDownloadImage(img)}
+                      className="rounded-full border border-border p-2 text-foreground-light hover:border-brand-300 hover:text-brand-700"
+                      aria-label="Download"
+                    >
+                      <Download className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void onDeleteImage(img)}
+                      className="rounded-full border border-border p-2 text-foreground-light hover:border-rose-300 hover:text-rose-600"
+                      aria-label="Delete"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           </Card>
 
